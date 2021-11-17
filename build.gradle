@@ -1,0 +1,41 @@
+plugins {
+  id 'java-library'
+}
+
+
+description 'Java ZBDD Implementation'
+group 'de.sayayi.lib'
+version '1.0-SNAPSHOT'
+
+buildDir = ".build"
+
+
+ext {
+  jetbrainsAnnotationsVersion = "22.0.0"
+  junitVersion = "5.8.1"
+}
+
+
+java {
+  toolchain {
+    languageVersion = JavaLanguageVersion.of(8)
+  }
+}
+
+
+test {
+  useJUnitPlatform()
+}
+
+
+repositories {
+  mavenCentral()
+}
+
+
+dependencies {
+  compileOnlyApi "org.jetbrains:annotations:${jetbrainsAnnotationsVersion}"
+
+  testImplementation "org.junit.jupiter:junit-jupiter-api:${junitVersion}"
+  testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${junitVersion}"
+}
