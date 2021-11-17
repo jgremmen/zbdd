@@ -5,9 +5,9 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Range;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.List;
 
 import static de.sayayi.lib.zbdd.ZbddCache.BinaryOperation.DIFF;
 import static de.sayayi.lib.zbdd.ZbddCache.BinaryOperation.DIV;
@@ -19,6 +19,9 @@ import static de.sayayi.lib.zbdd.ZbddCache.UnaryOperation.CHANGE;
 import static de.sayayi.lib.zbdd.ZbddCache.UnaryOperation.SUBSET0;
 import static de.sayayi.lib.zbdd.ZbddCache.UnaryOperation.SUBSET1;
 import static java.lang.Integer.MAX_VALUE;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.joining;
 
 
 public class Zbdd
@@ -38,7 +41,7 @@ public class Zbdd
 
   private int lastVar;
 
-  private int nodesTableSize = 128;
+  private int nodesTableSize = 32;
   private short[] referenceCount;
 
   /**
@@ -670,31 +673,43 @@ public class Zbdd
   }
 
 
-  public String printSet(int zbdd)
+  public @NotNull String toString(int zbdd)
   {
-    if (zbdd == ZBDD_EMPTY)
-      return nameResolver.getEmptyName();
-    else if (zbdd == ZBDD_BASE)
-      return nameResolver.getBaseName();
-
-    Set<String> set = new LinkedHashSet<>();
-
-    printSet_cubes(set, new IntStack(lastVar), zbdd);
-
-    return set.toString();
+    return getCubes(zbdd).stream()
+        .map(vars -> nameResolver.getCube(vars))
+        .sorted()
+        .collect(joining(", ", "{", "}"));
   }
 
 
-  private void printSet_cubes(Set<String> set, IntStack vars, int zbdd)
+  public @NotNull List<int[]> getCubes(int zbdd)
+  {
+    if (zbdd == ZBDD_EMPTY)
+      return emptyList();
+    else if (zbdd == ZBDD_BASE)
+      return singletonList(new int[0]);
+
+    final List<int[]> cubes = new ArrayList<>(count(zbdd));
+
+    getCubes0(cubes, new IntStack(lastVar), zbdd);
+
+    return cubes;
+  }
+
+
+  private void getCubes0(List<int[]> set, IntStack vars, int zbdd)
   {
     if (zbdd == ZBDD_BASE)
-      set.add(nameResolver.getCube(vars.getStack()));
+      set.add(vars.getStack());
     else if (zbdd != ZBDD_EMPTY)
     {
+      // walk 1-branch
       vars.push(getVar(zbdd));
-      printSet_cubes(set, vars, getHigh(zbdd));
+      getCubes0(set, vars, getHigh(zbdd));
       vars.pop();
-      printSet_cubes(set, vars, getLow(zbdd));
+
+      // walk 0-branch
+      getCubes0(set, vars, getLow(zbdd));
     }
   }
 }
