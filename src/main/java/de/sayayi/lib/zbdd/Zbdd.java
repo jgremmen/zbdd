@@ -55,6 +55,8 @@ public class Zbdd
   private int deadNodesCount;
   private int nodesMinFree;
 
+  private Statistics statistics;
+
   private ZbddNameResolver nameResolver = var -> "v" + var;
   private ZbddCache cache = NoCache.INSTANCE;
 
@@ -75,6 +77,8 @@ public class Zbdd
 
     initFixedNode(ZBDD_EMPTY);
     initFixedNode(ZBDD_BASE);
+
+    statistics = new Statistics();
 
     updateGrowParameters();
   }
@@ -97,6 +101,12 @@ public class Zbdd
 
   public void setNameResolver(@NotNull ZbddNameResolver nameResolver) {
     this.nameResolver = nameResolver;
+  }
+
+
+  @Contract(pure = true)
+  public @NotNull ZBDDStatistics getStatistics() {
+    return statistics;
   }
 
 
@@ -637,8 +647,13 @@ public class Zbdd
                         @Range(from = 0, to = MAX_NODES) int low,
                         @Range(from = 0, to = MAX_NODES) int high)
   {
+    statistics.nodeLookups++;
+
     if (high == ZBDD_EMPTY)
+    {
+      statistics.nodeLookupHitCount++;
       return low;
+    }
 
     int hash = hash(var, low, high);
 
@@ -648,7 +663,10 @@ public class Zbdd
       final int offset = r * NODE_WIDTH;
 
       if (nodes[offset + IDX_VAR] == var && nodes[offset + IDX_P0] == low && nodes[offset + IDX_P1] == high)
+      {
+        statistics.nodeLookupHitCount++;
         return r;
+      }
 
       r = nodes[offset + IDX_NEXT];
     }
@@ -704,6 +722,8 @@ public class Zbdd
 
   public int gc()
   {
+    statistics.gcCount++;
+
     // mark referenced nodes...
     for(int i = nodesTableSize; i-- > 0;)
     {
@@ -741,7 +761,10 @@ public class Zbdd
 
     deadNodesCount = 0;
 
-    return freeNodesCount - oldFreeNodesCount;
+    final int gcFreedNodesCount = freeNodesCount - oldFreeNodesCount;
+    statistics.gcFreedNodes += gcFreedNodesCount;
+
+    return gcFreedNodesCount;
   }
 
 
@@ -1051,6 +1074,80 @@ public class Zbdd
     {
       return zbdd == 0 ? "Empty" : zbdd == 1 ? "Base"
           : ("Node(var=" + nameResolver.getVariable(getVar()) + ", P0=" + getP0() + ", P1=" + getP1() + ")");
+    }
+  }
+
+
+
+
+  private final class Statistics implements ZBDDStatistics
+  {
+    private int nodeLookups;
+    private int nodeLookupHitCount;
+    private int gcCount;
+    private long gcFreedNodes;
+
+
+    @Override
+    public int getNodeTableSize() {
+      return nodesTableSize;
+    }
+
+
+    @Override
+    public int getFreeNodes() {
+      return freeNodesCount;
+    }
+
+
+    @Override
+    public int getDeadNodes() {
+      return deadNodesCount;
+    }
+
+
+    @Override
+    public int getNodeLookups() {
+      return nodeLookups;
+    }
+
+
+    @Override
+    public int getNodeLookupHitCount() {
+      return nodeLookupHitCount;
+    }
+
+
+    @Override
+    public int getGCCount() {
+      return gcCount;
+    }
+
+
+    @Override
+    public long getGCFreedNodes() {
+      return gcFreedNodes;
+    }
+
+
+    @Override
+    public long getMemoryUsage() {
+      return nodes.length * 4L;
+    }
+
+
+    @Override
+    public int getRegisteredVars() {
+      return lastVar;
+    }
+
+
+    @Override
+    public String toString()
+    {
+      return "Statistics(nodesOccupied=" + getOccupiedNodes() + ", nodesFree=" + getFreeNodes() +
+          ", nodesDead=" + getDeadNodes() +
+          ", lookupHitRatio=" + Math.round(getNodeLookupHitRatio() * 1000) / 10.0 + "%)";
     }
   }
 }
