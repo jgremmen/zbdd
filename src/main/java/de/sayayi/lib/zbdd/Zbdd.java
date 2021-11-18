@@ -394,6 +394,17 @@ public class Zbdd
   }
 
 
+  @Contract(mutates = "this")
+  public int atomize(int zbdd)
+  {
+    if (zbdd == ZBDD_EMPTY || zbdd == ZBDD_BASE)
+      return ZBDD_EMPTY;
+
+    return stackPop(mk(getVar(zbdd),
+        stackPush(union(stackPush(atomize(getLow(zbdd))), stackPush(atomize(getHigh(zbdd))))), ZBDD_BASE), 3);
+  }
+
+
   protected int mk(@Range(from = 1, to = MAX_VALUE) int var, int low, int high)
   {
     if (high == ZBDD_EMPTY)
@@ -662,14 +673,17 @@ public class Zbdd
   private void checkZbdd(int zbdd)
   {
     if (zbdd < 0 || zbdd >= nodesTableSize)
-      throw new IllegalArgumentException("zbdd must be in range 0.." + (nodesTableSize - 1));
+      throw new ZbddException("zbdd must be in range 0.." + (nodesTableSize - 1));
+
+    if (zbdd >= 2 && nodes[zbdd * 5 + IDX_VAR] == -1)
+      throw new ZbddException("unknown zbdd node " + zbdd);
   }
 
 
   private void checkVar(int var)
   {
     if (var <= 0 || var > lastVar)
-      throw new IllegalArgumentException("var must be in range 1.." + var);
+      throw new ZbddException("var must be in range 1.." + var);
   }
 
 
