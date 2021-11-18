@@ -13,6 +13,9 @@ public interface ZbddCache
   int lookupOrPutIfAbsent(@NotNull BinaryOperation operation, int p, int q, @NotNull IntSupplier resultSupplier);
 
 
+  void clear();
+
+
 
 
   enum UnaryOperation {
@@ -44,6 +47,11 @@ public interface ZbddCache
     public int lookupOrPutIfAbsent(@NotNull BinaryOperation operation, int p, int q,
                                    @NotNull IntSupplier resultSupplier) {
       return resultSupplier.getAsInt();
+    }
+
+
+    @Override
+    public void clear() {
     }
   }
 }
