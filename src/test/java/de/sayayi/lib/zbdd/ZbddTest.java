@@ -162,7 +162,6 @@ class ZbddTest
   @Test void queens09() { checkSolution(9, 352, 12500); }
   @Test void queens10() { checkSolution(10, 724, 32000); }
   @Test void queens11() { checkSolution(11, 2680, 200000); }
-  @Test void queens12() { checkSolution(12, 14200, 500000); }
 
 
   private void checkSolution(int n, int solutionsExpected, int tableSize)
@@ -203,10 +202,11 @@ class ZbddTest
       solution = tmp;
     }
 
-    assertEquals(solutionsExpected, zbdd.count(solution));
+    int solutions = zbdd.count(zbdd.incRef(solution));
+    assertEquals(solutionsExpected, solutions);
 
     ZbddNameResolver nameResolver = zbdd.getNameResolver();
-    System.out.println("Queens " + n + "x" + n + "  (" + zbdd.count(solution) + ")");
+    System.out.println("Queens " + n + "x" + n + "  (" + solutions + ")");
     for(int[] cube: zbdd.getCubes(solution))
       System.out.println("  " + nameResolver.getCube(cube));
     System.out.println();
@@ -250,7 +250,7 @@ class ZbddTest
 
     @Override
     public @Range(from = 1, to = MAX_NODES) int getMinimumFreeNodes(@NotNull ZbddStatistics statistics) {
-      return statistics.getNodeTableSize() / 5;
+      return statistics.getNodeTableSize() / 20;
     }
 
 
