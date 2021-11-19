@@ -130,64 +130,18 @@ class ZbddTest
   }
 
 
-  @Test
-  void queens1() {
-    checkSolution(1, 1);
-  }
-
-
-  @Test
-  void queens2() {
-    checkSolution(2, 0);
-  }
-
-
-  @Test
-  void queens3() {
-    checkSolution(3, 0);
-  }
-
-
-  @Test
-  void queens4() {
-    checkSolution(4, 2);
-  }
-
-
-  @Test
-  void queens5() {
-    checkSolution(5, 10);
-  }
-
-
-  @Test
-  void queens6() {
-    checkSolution(6, 4);
-  }
-
-
-  @Test
-  void queens7() {
-    checkSolution(7, 40);
-  }
-
-
-  @Test
-  void queens8() {
-    checkSolution(8, 92);
-  }
-
-
-  @Test
-  void queens9() {
-    checkSolution(9, 352);
-  }
-
-
-  @Test
-  void queens10() {
-    checkSolution(10, 724);
-  }
+  @Test void queens1() { checkSolution(1, 1); }
+  @Test void queens2() { checkSolution(2, 0); }
+  @Test void queens3() { checkSolution(3, 0); }
+  @Test void queens4() { checkSolution(4, 2); }
+  @Test void queens5() { checkSolution(5, 10); }
+  @Test void queens6() { checkSolution(6, 4); }
+  @Test void queens7() { checkSolution(7, 40); }
+  @Test void queens8() { checkSolution(8, 92); }
+  @Test void queens9() { checkSolution(9, 352); }
+  @Test void queens10() { checkSolution(10, 724); }
+  @Test void queens11() { checkSolution(11, 2680); }
+  @Test void queens12() { checkSolution(12, 14200); }
 
 
   private void checkSolution(int n, int solutionsExpected)
@@ -202,24 +156,29 @@ class ZbddTest
     {
       int tmp = ZBDD_EMPTY;
 
+      zbdd.incRef(solution);
+
       for(int c = 0; c < n; c++)
       {
         int sc = solution;
+        int tmp0 = zbdd.incRef(tmp);
 
         for(int r = 0; r < s; r++)
         {
-          sc = zbdd.incRef(zbdd.subset0(sc, vars[r][c]));
+          sc = zbdd.subset0(sc, vars[r][c]);
 
           if ((ct = c - (s - r)) >= 0)
-            sc = zbdd.incRef(zbdd.subset0(sc, vars[r][ct]));
+            sc = zbdd.subset0(sc, vars[r][ct]);
 
           if ((ct = c + (s - r)) < n)
-            sc = zbdd.incRef(zbdd.subset0(sc, vars[r][ct]));
+            sc = zbdd.subset0(sc, vars[r][ct]);
         }
 
-        tmp = zbdd.incRef(zbdd.union(tmp, zbdd.incRef(zbdd.change(sc, vars[s][c]))));
+        tmp = zbdd.union(tmp0, zbdd.change(sc, vars[s][c]));
+        zbdd.decRef(tmp0);
       }
 
+      zbdd.decRef(solution);
       solution = tmp;
     }
 
@@ -231,7 +190,7 @@ class ZbddTest
   {
     final int[][] vars = new int[n][n];
     final Map<Integer,String> varNames = new HashMap<>();
-    final String format = n < 10 ? "Qr%dc%d" : "Qr%02dc%02d";
+    final String format = n < 10 ? "r%dc%d" : "r%02dc%02d";
 
     for(int r = 0; r < n; r++)
       for(int c = 0; c < n; c++)
