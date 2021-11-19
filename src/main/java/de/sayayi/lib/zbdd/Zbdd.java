@@ -830,17 +830,6 @@ public class Zbdd
   }
 
 
-  protected int computeIncreaseLimit(int currentSize)
-  {
-    if (currentSize <= 200000)
-      return 300000;
-    if (currentSize >= 4000000)
-      return 50000;
-
-    return 300000 - ((currentSize - 200000) * (300000 - 50000)) / (4000000 - 200000);
-  }
-
-
   protected void chainBeforeHash(int zbdd, int hash)
   {
     final int hashPrevious = hash * NODE_WIDTH + IDX_PREV;
