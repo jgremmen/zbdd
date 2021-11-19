@@ -42,8 +42,8 @@ public class Zbdd
   private static final int IDX_NEXT = 4;
   private static final int IDX_REFCOUNT = 5;
 
-  public static final int ZBDD_EMPTY = 0;
-  public static final int ZBDD_BASE = 1;
+  protected static final int ZBDD_EMPTY = 0;
+  protected static final int ZBDD_BASE = 1;
 
   private final ZbddNodesAdvisor nodesAdvisor;
   private final Statistics statistics;
@@ -83,14 +83,14 @@ public class Zbdd
       nodes[i * NODE_WIDTH + IDX_NEXT] = (i + 1) % nodesTableSize;
     }
 
-    initFixedNode(ZBDD_EMPTY);
-    initFixedNode(ZBDD_BASE);
+    initLeafNode(ZBDD_EMPTY);
+    initLeafNode(ZBDD_BASE);
 
     statistics = new Statistics();
   }
 
 
-  private void initFixedNode(int zbdd)
+  private void initLeafNode(int zbdd)
   {
     final int offset = zbdd * NODE_WIDTH;
 
@@ -135,7 +135,8 @@ public class Zbdd
 
 
   @Contract(mutates = "this")
-  public int cube(int... cubeVars)
+  @Range(from = 0, to = MAX_NODES)
+  public int cube(int @NotNull ... cubeVars)
   {
     final int n = cubeVars.length;
     int r = ZBDD_BASE;
@@ -144,22 +145,14 @@ public class Zbdd
     {
       // singleton -> create immediately
       if (n == 1)
-      {
-        int var = cubeVars[0];
-        checkVar(var);
-
-        r = getNode(var, ZBDD_EMPTY, ZBDD_BASE);
-      }
+        r = getNode(checkVar(cubeVars[0]), ZBDD_EMPTY, ZBDD_BASE);
       else
       {
         // var count >= 2
         Arrays.sort(cubeVars = copyOf(cubeVars, n));
 
         for(int var: cubeVars)
-        {
-          checkVar(var);
-
-          if (var != getVar(r))
+          if (checkVar(var) != getVar(r))
           {
             final int p1 = r;
 
@@ -167,7 +160,6 @@ public class Zbdd
             r = getNode(var, ZBDD_EMPTY, p1);
             __decRef(p1);
           }
-        }
       }
     }
 
@@ -176,6 +168,7 @@ public class Zbdd
 
 
   @Contract(mutates = "this")
+  @Range(from = 0, to = MAX_NODES)
   public int universe()
   {
     int r = ZBDD_BASE;
@@ -194,13 +187,10 @@ public class Zbdd
 
 
   @Contract(mutates = "this")
+  @Range(from = 0, to = MAX_NODES)
   public int subset0(@Range(from = 0, to = MAX_NODES) int zbdd,
-                     @Range(from = 1, to = MAX_VALUE) int var)
-  {
-    checkZbdd(zbdd, "zbdd");
-    checkVar(var);
-
-    return __subset0(zbdd, var);
+                     @Range(from = 1, to = MAX_VALUE) int var) {
+    return __subset0(checkZbdd(zbdd, "zbdd"), checkVar(var));
   }
 
 
@@ -230,13 +220,10 @@ public class Zbdd
 
 
   @Contract(mutates = "this")
+  @Range(from = 0, to = MAX_NODES)
   public int subset1(@Range(from = 0, to = MAX_NODES) int zbdd,
-                     @Range(from = 1, to = MAX_VALUE) int var)
-  {
-    checkZbdd(zbdd, "zbdd");
-    checkVar(var);
-
-    return __subset1(zbdd, var);
+                     @Range(from = 1, to = MAX_VALUE) int var) {
+    return __subset1(checkZbdd(zbdd, "zbdd"), checkVar(var));
   }
 
 
@@ -266,13 +253,10 @@ public class Zbdd
 
 
   @Contract(mutates = "this")
+  @Range(from = 0, to = MAX_NODES)
   public int change(@Range(from = 0, to = MAX_NODES) int zbdd,
-                    @Range(from = 1, to = MAX_VALUE) int var)
-  {
-    checkZbdd(zbdd, "zbdd");
-    checkVar(var);
-
-    return __change(zbdd, var);
+                    @Range(from = 1, to = MAX_VALUE) int var) {
+    return __change(checkZbdd(zbdd, "zbdd"), checkVar(var));
   }
 
 
@@ -302,11 +286,8 @@ public class Zbdd
 
 
   @Contract(pure = true)
-  public int count(@Range(from = 0, to = MAX_NODES) int zbdd)
-  {
-    checkZbdd(zbdd, "zbdd");
-
-    return __count(zbdd);
+  public int count(@Range(from = 0, to = MAX_NODES) int zbdd) {
+    return __count(checkZbdd(zbdd, "zbdd"));
   }
 
 
@@ -323,12 +304,9 @@ public class Zbdd
 
 
   @Contract(mutates = "this")
-  public int union(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q)
-  {
-    checkZbdd(p, "p");
-    checkZbdd(q, "q");
-
-    return __union(p, q);
+  @Range(from = 0, to = MAX_NODES)
+  public int union(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q) {
+    return __union(checkZbdd(p, "p"), checkZbdd(q, "q"));
   }
 
 
@@ -377,12 +355,9 @@ public class Zbdd
 
 
   @Contract(mutates = "this")
-  public int intersect(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q)
-  {
-    checkZbdd(p, "p");
-    checkZbdd(q, "q");
-
-    return __intersect(p, q);
+  @Range(from = 0, to = MAX_NODES)
+  public int intersect(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q) {
+    return __intersect(checkZbdd(p, "p"), checkZbdd(q, "q"));
   }
 
 
@@ -424,12 +399,9 @@ public class Zbdd
 
 
   @Contract(mutates = "this")
-  public int difference(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q)
-  {
-    checkZbdd(p, "p");
-    checkZbdd(q, "q");
-
-    return __difference(p, q);
+  @Range(from = 0, to = MAX_NODES)
+  public int difference(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q) {
+    return __difference(checkZbdd(p, "p"), checkZbdd(q, "q"));
   }
 
 
@@ -476,12 +448,9 @@ public class Zbdd
 
 
   @Contract(mutates = "this")
-  public int multiply(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q)
-  {
-    checkZbdd(p, "p");
-    checkZbdd(q, "q");
-
-    return __multiply(p, q);
+  @Range(from = 0, to = MAX_NODES)
+  public int multiply(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q) {
+    return __multiply(checkZbdd(p, "p"), checkZbdd(q, "q"));
   }
 
 
@@ -532,12 +501,9 @@ public class Zbdd
 
 
   @Contract(mutates = "this")
-  public int divide(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q)
-  {
-    checkZbdd(p, "p");
-    checkZbdd(q, "q");
-
-    return __divide(p, q);
+  @Range(from = 0, to = MAX_NODES)
+  public int divide(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q) {
+    return __divide(checkZbdd(p, "p"), checkZbdd(q, "q"));
   }
 
 
@@ -589,12 +555,9 @@ public class Zbdd
 
 
   @Contract(mutates = "this")
-  public int modulo(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q)
-  {
-    checkZbdd(p, "p");
-    checkZbdd(q, "q");
-
-    return __modulo(p, q);
+  @Range(from = 0, to = MAX_NODES)
+  public int modulo(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q) {
+    return __modulo(checkZbdd(p, "p"), checkZbdd(q, "q"));
   }
 
 
@@ -619,19 +582,15 @@ public class Zbdd
 
 
   @Contract(mutates = "this")
-  public int atomize(@Range(from = 0, to = MAX_NODES) int zbdd)
-  {
-    checkZbdd(zbdd, "zbdd");
-
-    return __atomize(zbdd);
+  @Range(from = 0, to = MAX_NODES)
+  public int atomize(@Range(from = 0, to = MAX_NODES) int zbdd) {
+    return __atomize(checkZbdd(zbdd, "zbdd"));
   }
 
 
   @Contract(mutates = "this")
   protected int __atomize(int zbdd)
   {
-    checkZbdd(zbdd, "zbdd");
-
     if (zbdd == ZBDD_EMPTY || zbdd == ZBDD_BASE)
       return ZBDD_EMPTY;
 
@@ -788,7 +747,8 @@ public class Zbdd
 
   protected void ensureCapacity()
   {
-    if (nodesAdvisor.isGCRequired(statistics) && gc() >= nodesAdvisor.getMinimumFreeNodes(statistics))
+    if (deadNodesCount > 0 && nodesAdvisor.isGCRequired(statistics) &&
+        gc() >= nodesAdvisor.getMinimumFreeNodes(statistics))
       return;
 
     final int oldTableSize = nodesTableSize;
@@ -847,11 +807,8 @@ public class Zbdd
 
 
   @Contract(mutates = "this")
-  public int incRef(@Range(from = 0, to = MAX_NODES) int zbdd)
-  {
-    checkZbdd(zbdd, "zbdd");
-
-    return __incRef(zbdd);
+  public int incRef(@Range(from = 0, to = MAX_NODES) int zbdd) {
+    return __incRef(checkZbdd(zbdd, "zbdd"));
   }
 
 
@@ -885,11 +842,8 @@ public class Zbdd
 
 
   @SuppressWarnings("UnusedReturnValue")
-  public int decRef(@Range(from = 0, to = MAX_NODES) int zbdd)
-  {
-    checkZbdd(zbdd, "zbdd");
-
-    return __decRef(zbdd);
+  public int decRef(@Range(from = 0, to = MAX_NODES) int zbdd) {
+    return __decRef(checkZbdd(zbdd, "zbdd"));
   }
 
 
@@ -913,20 +867,26 @@ public class Zbdd
   }
 
 
-  private void checkZbdd(int zbdd, String param)
+  @Contract(value = "_, _ -> param1")
+  private int checkZbdd(int zbdd, String param)
   {
     if (zbdd < 0 || zbdd >= nodesTableSize)
       throw new ZbddException(param + " must be in range 0.." + (nodesTableSize - 1));
 
     if (zbdd >= 2 && nodes[zbdd * NODE_WIDTH + IDX_VAR] == -1)
       throw new ZbddException("invalid " + param + " node " + zbdd);
+
+    return zbdd;
   }
 
 
-  private void checkVar(int var)
+  @Contract(value = "_ -> param1")
+  private int checkVar(int var)
   {
     if (var <= 0 || var > lastVar)
       throw new ZbddException("var must be in range 1.." + var);
+
+    return var;
   }
 
 
@@ -1173,8 +1133,8 @@ public class Zbdd
       final int tableSize = statistics.getNodeTableSize();
 
       // size > 250000
-      // dead nodes > 40% of table size
-      return tableSize > 250000 || statistics.getDeadNodes() > ((tableSize / 5) * 2);
+      // dead nodes > 20% of table size
+      return tableSize > 250000 || statistics.getDeadNodes() > (tableSize / 5);
     }
   };
 }

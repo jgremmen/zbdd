@@ -1,10 +1,13 @@
 package de.sayayi.lib.zbdd;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Range;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import static de.sayayi.lib.zbdd.Zbdd.MAX_NODES;
 import static de.sayayi.lib.zbdd.Zbdd.ZBDD_BASE;
 import static de.sayayi.lib.zbdd.Zbdd.ZBDD_EMPTY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -130,23 +133,23 @@ class ZbddTest
   }
 
 
-  @Test void queens01() { checkSolution(1, 1); }
-  @Test void queens02() { checkSolution(2, 0); }
-  @Test void queens03() { checkSolution(3, 0); }
-  @Test void queens04() { checkSolution(4, 2); }
-  @Test void queens05() { checkSolution(5, 10); }
-  @Test void queens06() { checkSolution(6, 4); }
-  @Test void queens07() { checkSolution(7, 40); }
-  @Test void queens08() { checkSolution(8, 92); }
-  @Test void queens09() { checkSolution(9, 352); }
-  @Test void queens10() { checkSolution(10, 724); }
-  @Test void queens11() { checkSolution(11, 2680); }
-  @Test void queens12() { checkSolution(12, 14200); }
+  @Test void queens01() { checkSolution(1, 1,16); }
+  @Test void queens02() { checkSolution(2, 0, 16); }
+  @Test void queens03() { checkSolution(3, 0, 16); }
+  @Test void queens04() { checkSolution(4, 2, 32); }
+  @Test void queens05() { checkSolution(5, 10, 150); }
+  @Test void queens06() { checkSolution(6, 4, 200); }
+  @Test void queens07() { checkSolution(7, 40, 600); }
+  @Test void queens08() { checkSolution(8, 92, 2000); }
+  @Test void queens09() { checkSolution(9, 352, 12500); }
+  @Test void queens10() { checkSolution(10, 724, 32000); }
+  @Test void queens11() { checkSolution(11, 2680, 200000); }
+  @Test void queens12() { checkSolution(12, 14200, 500000); }
 
 
-  private void checkSolution(int n, int solutionsExpected)
+  private void checkSolution(int n, int solutionsExpected, int tableSize)
   {
-    final Zbdd zbdd = new Zbdd();
+    final Zbdd zbdd = new Zbdd(new SimpleNodesAdvisor(tableSize));
     final int[][] vars = getVars(zbdd, n);
 
     int solution = ZBDD_BASE;
@@ -200,5 +203,42 @@ class ZbddTest
     zbdd.setNameResolver(varNames::get);
 
     return vars;
+  }
+
+
+
+
+  private static final class SimpleNodesAdvisor implements ZbddNodesAdvisor
+  {
+    private final int initialSize;
+
+
+    private SimpleNodesAdvisor(int initialSize) {
+      this.initialSize = initialSize;
+    }
+
+
+    @Override
+    public @Range(from = 4, to = MAX_NODES) int getInitialNodes() {
+      return initialSize;
+    }
+
+
+    @Override
+    public @Range(from = 1, to = MAX_NODES) int getMinimumFreeNodes(@NotNull ZbddStatistics statistics) {
+      return statistics.getNodeTableSize() / 5;
+    }
+
+
+    @Override
+    public @Range(from = 1, to = MAX_NODES) int adviseNodesGrowth(@NotNull ZbddStatistics statistics) {
+      return statistics.getNodeTableSize() / 5;  // +20%
+    }
+
+
+    @Override
+    public boolean isGCRequired(@NotNull ZbddStatistics statistics) {
+      return statistics.getDeadNodes() > (statistics.getNodeTableSize() / 10);
+    }
   }
 }
