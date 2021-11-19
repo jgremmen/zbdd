@@ -28,7 +28,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.Integer.MAX_VALUE;
 import static java.util.Arrays.copyOf;
@@ -59,8 +58,6 @@ public class Zbdd
 
   protected static final int ZBDD_EMPTY = 0;
   protected static final int ZBDD_BASE = 1;
-
-  private static final AtomicInteger ID = new AtomicInteger();
 
   private final @NotNull ZbddNodesAdvisor nodesAdvisor;
   private final @NotNull Statistics statistics;
