@@ -45,24 +45,32 @@ public class Zbdd
   public static final int ZBDD_EMPTY = 0;
   public static final int ZBDD_BASE = 1;
 
+  private final ZbddNodesAdvisor nodesAdvisor;
+  private final Statistics statistics;
+
   private int lastVar;
 
-  private int nodesTableSize = 32;
+  private int nodesTableSize;
   private int[] nodes;
 
   private int firstFreeNode;
   private int freeNodesCount;
   private int deadNodesCount;
-  private int nodesMinFree;
-
-  private Statistics statistics;
 
   private ZbddNameResolver nameResolver = var -> "v" + var;
   private ZbddCache cache = NoCache.INSTANCE;
 
 
-  public Zbdd()
+  public Zbdd() {
+    this(NodesAdvisor.INSTANCE);
+  }
+
+
+  public Zbdd(@NotNull ZbddNodesAdvisor nodesAdvisor)
   {
+    this.nodesAdvisor = nodesAdvisor;
+
+    nodesTableSize = nodesAdvisor.getInitialNodes();
     nodes = new int[nodesTableSize * NODE_WIDTH];
 
     deadNodesCount = 0;
@@ -79,8 +87,6 @@ public class Zbdd
     initFixedNode(ZBDD_BASE);
 
     statistics = new Statistics();
-
-    updateGrowParameters();
   }
 
 
@@ -694,11 +700,6 @@ public class Zbdd
   }
 
 
-  protected void updateGrowParameters() {
-    nodesMinFree = Math.min(nodesTableSize * 20 / 100, 99999);
-  }
-
-
   protected int getVar(int zbdd) {
     return zbdd < 2 ? -1 : (nodes[zbdd * NODE_WIDTH + IDX_VAR] & ~NODE_MARK);
   }
@@ -787,15 +788,12 @@ public class Zbdd
 
   protected void ensureCapacity()
   {
-    if (deadNodesCount > 0 || nodesTableSize > 20000)
-    {
-      if (gc() >= nodesMinFree)
-        return;
-    }
+    if (nodesAdvisor.isGCRequired(statistics) && gc() >= nodesAdvisor.getMinimumFreeNodes(statistics))
+      return;
 
     final int oldTableSize = nodesTableSize;
 
-    nodesTableSize = Math.min(nodesTableSize + computeIncreaseLimit(nodesMinFree), MAX_NODES);
+    nodesTableSize = Math.min(nodesTableSize + nodesAdvisor.adviseNodesGrowth(statistics), MAX_NODES);
     nodes = copyOf(nodes, nodesTableSize * NODE_WIDTH);
 
     firstFreeNode = freeNodesCount = 0;
@@ -829,8 +827,6 @@ public class Zbdd
         freeNodesCount++;
       }
     }
-
-    updateGrowParameters();
   }
 
 
@@ -1150,4 +1146,46 @@ public class Zbdd
           ", lookupHitRatio=" + Math.round(getNodeLookupHitRatio() * 1000) / 10.0 + "%)";
     }
   }
+
+
+
+
+  private enum NodesAdvisor implements ZbddNodesAdvisor
+  {
+    INSTANCE;
+
+
+    @Override
+    public @Range(from = 4, to = MAX_NODES) int getInitialNodes() {
+      return 128;
+    }
+
+
+    @Override
+    public @Range(from = 1, to = MAX_NODES) int getMinimumFreeNodes(@NotNull ZBDDStatistics statistics) {
+      return statistics.getNodeTableSize() * 2 / 10;  // 20%
+    }
+
+
+    @Override
+    public int adviseNodesGrowth(@NotNull ZBDDStatistics statistics)
+    {
+      final int tableSize = statistics.getNodeTableSize();
+
+      // size < 500000 -> increase by 150%
+      // size > 500000 -> increase by 30%
+      return tableSize < 500000 ? (tableSize / 2) * 3 : (tableSize / 10) * 3;
+    }
+
+
+    @Override
+    public boolean isGCRequired(@NotNull ZBDDStatistics statistics)
+    {
+      final int tableSize = statistics.getNodeTableSize();
+
+      // size > 250000
+      // dead nodes > 40% of table size
+      return tableSize > 250000 || statistics.getDeadNodes() > ((tableSize / 5) * 2);
+    }
+  };
 }
