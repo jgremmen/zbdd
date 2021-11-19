@@ -27,14 +27,16 @@ import java.util.function.IntSupplier;
 public interface ZbddCache
 {
   @Range(from = 0, to = Zbdd.MAX_NODES)
-  int lookupOrPutIfAbsent(@NotNull UnaryOperation operation,
-                          @Range(from = 0, to = Zbdd.MAX_NODES) int zbdd,
+  int lookupOrPutIfAbsent(@NotNull Zbdd zbdd,
+                          @NotNull UnaryOperation operation,
+                          @Range(from = 0, to = Zbdd.MAX_NODES) int p,
                           @Range(from = 1, to = Integer.MAX_VALUE) int var,
                           @NotNull IntSupplier resultSupplier);
 
 
   @Range(from = 0, to = Zbdd.MAX_NODES)
-  int lookupOrPutIfAbsent(@NotNull BinaryOperation operation,
+  int lookupOrPutIfAbsent(@NotNull Zbdd zbdd,
+                          @NotNull BinaryOperation operation,
                           @Range(from = 0, to = Zbdd.MAX_NODES) int p,
                           @Range(from = 0, to = Zbdd.MAX_NODES) int q,
                           @NotNull IntSupplier resultSupplier);
@@ -65,14 +67,14 @@ public interface ZbddCache
 
 
     @Override
-    public int lookupOrPutIfAbsent(@NotNull UnaryOperation operation, int zbdd, int var,
+    public int lookupOrPutIfAbsent(@NotNull Zbdd zbdd, @NotNull UnaryOperation operation, int p, int var,
                                    @NotNull IntSupplier resultSupplier) {
       return resultSupplier.getAsInt();
     }
 
 
     @Override
-    public int lookupOrPutIfAbsent(@NotNull BinaryOperation operation, int p, int q,
+    public int lookupOrPutIfAbsent(@NotNull Zbdd zbdd, @NotNull BinaryOperation operation, int p, int q,
                                    @NotNull IntSupplier resultSupplier) {
       return resultSupplier.getAsInt();
     }

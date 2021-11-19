@@ -91,20 +91,12 @@ public class Zbdd
     nodesTableSize = nodesAdvisor.getInitialNodes();
     nodes = new int[nodesTableSize * NODE_WIDTH];
 
-    deadNodesCount = 0;
-    firstFreeNode = 2;
-    freeNodesCount = nodesTableSize - 2;
-
-    for(int i = 2; i < nodesTableSize; i++)
-    {
-      nodes[i * NODE_WIDTH + IDX_VAR] = -1;
-      nodes[i * NODE_WIDTH + IDX_NEXT] = (i + 1) % nodesTableSize;
-    }
-
     initLeafNode(ZBDD_EMPTY);
     initLeafNode(ZBDD_BASE);
 
     statistics = new Statistics();
+
+    clear();
   }
 
 
@@ -131,6 +123,32 @@ public class Zbdd
   @Contract(pure = true)
   public @NotNull ZbddStatistics getStatistics() {
     return statistics;
+  }
+
+
+  @Contract(mutates = "this")
+  public void clear()
+  {
+    lastVar = 0;
+    deadNodesCount = 0;
+    firstFreeNode = 2;
+    freeNodesCount = nodesTableSize - 2;
+
+    for(int i = 2; i < nodesTableSize; i++)
+    {
+      final int offset = i * NODE_WIDTH;
+
+      nodes[offset + IDX_VAR] = -1;
+      nodes[offset + IDX_PREV] = 0;
+      nodes[offset + IDX_NEXT] = (i + 1) % nodesTableSize;
+    }
+
+    statistics.nodeLookupHitCount = 0;
+    statistics.nodeLookups = 0;
+    statistics.gcFreedNodes = 0;
+    statistics.gcCount = 0;
+
+    cache.clear();
   }
 
 
@@ -223,7 +241,7 @@ public class Zbdd
     if (top == var)
       return getP0(zbdd);
 
-    return cache.lookupOrPutIfAbsent(SUBSET0, zbdd, var, () -> {
+    return cache.lookupOrPutIfAbsent(this, SUBSET0, zbdd, var, () -> {
       __incRef(zbdd);
 
       final int p0 = __incRef(__subset0(getP0(zbdd), var));
@@ -256,7 +274,7 @@ public class Zbdd
     if (top == var)
       return getP1(zbdd);
 
-    return cache.lookupOrPutIfAbsent(SUBSET1, zbdd, var, () -> {
+    return cache.lookupOrPutIfAbsent(this, SUBSET1, zbdd, var, () -> {
       __incRef(zbdd);
 
       final int p0 = __incRef(__subset1(getP0(zbdd), var));
@@ -289,7 +307,7 @@ public class Zbdd
     if (top == var)
       return getNode(var, getP1(zbdd), getP0(zbdd));
 
-    return cache.lookupOrPutIfAbsent(CHANGE, zbdd, var, () -> {
+    return cache.lookupOrPutIfAbsent(this, CHANGE, zbdd, var, () -> {
       __incRef(zbdd);
 
       final int p0 = __incRef(__change(getP0(zbdd), var));
@@ -342,7 +360,7 @@ public class Zbdd
     if (ptop > qtop)
       return __union(q, p);
 
-    return cache.lookupOrPutIfAbsent(UNION, p, q, () -> {
+    return cache.lookupOrPutIfAbsent(this, UNION, p, q, () -> {
       __incRef(p, q);
 
       int r;
@@ -387,9 +405,8 @@ public class Zbdd
     if (p == q)
       return p;
 
-    return cache.lookupOrPutIfAbsent(INTERSECT, p, q, () -> {
-      __incRef(p);
-      __incRef(q);
+    return cache.lookupOrPutIfAbsent(this, INTERSECT, p, q, () -> {
+      __incRef(p, q);
 
       final int ptop = getVar(p);
       final int qtop = getVar(q);
@@ -431,7 +448,7 @@ public class Zbdd
     if (q == ZBDD_EMPTY)
       return p;
 
-    return cache.lookupOrPutIfAbsent(DIFF, p, q, () -> {
+    return cache.lookupOrPutIfAbsent(this, DIFF, p, q, () -> {
       __incRef(p, q);
 
       final int ptop = getVar(p);
@@ -488,7 +505,7 @@ public class Zbdd
     if (ptop > qtop)
       return __multiply(q, p);
 
-    return cache.lookupOrPutIfAbsent(MUL, p, q, () -> {
+    return cache.lookupOrPutIfAbsent(this, MUL, p, q, () -> {
       __incRef(p, q);
 
       // factor P = p0 + v * p1
@@ -538,7 +555,7 @@ public class Zbdd
     if (q == ZBDD_BASE)
       return p;
 
-    return cache.lookupOrPutIfAbsent(DIV, p, q, () -> {
+    return cache.lookupOrPutIfAbsent(this, DIV, p, q, () -> {
       __incRef(p, q);
 
       final int v = getVar(q);
@@ -585,7 +602,7 @@ public class Zbdd
     checkZbdd(p, "p");
     checkZbdd(q, "q");
 
-    return cache.lookupOrPutIfAbsent(MOD, p, q, () -> {
+    return cache.lookupOrPutIfAbsent(this, MOD, p, q, () -> {
       __incRef(p, q);
 
       final int p_div_q = __incRef(__divide(p, q));
@@ -627,25 +644,25 @@ public class Zbdd
 
 
   protected int getNode(@Range(from = 1, to = MAX_VALUE) int var,
-                        @Range(from = 0, to = MAX_NODES) int low,
-                        @Range(from = 0, to = MAX_NODES) int high)
+                        @Range(from = 0, to = MAX_NODES) int p0,
+                        @Range(from = 0, to = MAX_NODES) int p1)
   {
     statistics.nodeLookups++;
 
-    if (high == ZBDD_EMPTY)
+    if (p1 == ZBDD_EMPTY)
     {
       statistics.nodeLookupHitCount++;
-      return low;
+      return p0;
     }
 
-    int hash = hash(var, low, high);
+    int hash = hash(var, p0, p1);
 
     // find node in chain...
     for(int r = nodes[hash * NODE_WIDTH + IDX_PREV]; r != 0;)
     {
       final int offset = r * NODE_WIDTH;
 
-      if (nodes[offset + IDX_VAR] == var && nodes[offset + IDX_P0] == low && nodes[offset + IDX_P1] == high)
+      if (nodes[offset + IDX_VAR] == var && nodes[offset + IDX_P0] == p0 && nodes[offset + IDX_P1] == p1)
       {
         statistics.nodeLookupHitCount++;
         return r;
@@ -657,7 +674,7 @@ public class Zbdd
     if (freeNodesCount < 2)
     {
       ensureCapacity();
-      hash = hash(var, low, high);  // may have changed due to grow
+      hash = hash(var, p0, p1);  // may have changed due to grow
     }
 
     final int r = firstFreeNode;
@@ -667,8 +684,8 @@ public class Zbdd
 
     // set new node
     nodes[offset + IDX_VAR] = var;
-    nodes[offset + IDX_P0] = low;
-    nodes[offset + IDX_P1] = high;
+    nodes[offset + IDX_P0] = p0;
+    nodes[offset + IDX_P1] = p1;
     nodes[offset + IDX_REFCOUNT] = -1;
 
     chainBeforeHash(r, hash);
@@ -677,24 +694,27 @@ public class Zbdd
   }
 
 
+  @Contract(pure = true)
   protected int getVar(int zbdd) {
     return zbdd < 2 ? -1 : (nodes[zbdd * NODE_WIDTH + IDX_VAR] & ~NODE_MARK);
   }
 
 
+  @Contract(pure = true)
   protected int getP0(int zbdd) {
     return nodes[zbdd * NODE_WIDTH + IDX_P0];
   }
 
 
+  @Contract(pure = true)
   protected int getP1(int zbdd) {
     return nodes[zbdd * NODE_WIDTH + IDX_P1];
   }
 
 
   @Contract(pure = true)
-  protected int hash(int var, int low, int high) {
-    return ((var * 12582917 + low * 4256249 + high * 741457) & 0x7fffffff) % nodesTableSize;
+  protected int hash(int var, int p0, int p1) {
+    return ((var * 12582917 + p0 * 4256249 + p1 * 741457) & 0x7fffffff) % nodesTableSize;
   }
 
 
