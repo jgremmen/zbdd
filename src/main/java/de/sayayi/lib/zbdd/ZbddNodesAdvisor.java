@@ -16,14 +16,14 @@ public interface ZbddNodesAdvisor
 
   @Contract(pure = true)
   @Range(from = 1, to = MAX_NODES)
-  int getMinimumFreeNodes(@NotNull ZBDDStatistics statistics);
+  int getMinimumFreeNodes(@NotNull ZbddStatistics statistics);
 
 
   @Contract(pure = true)
   @Range(from = 1, to = MAX_NODES)
-  int adviseNodesGrowth(@NotNull ZBDDStatistics statistics);
+  int adviseNodesGrowth(@NotNull ZbddStatistics statistics);
 
 
   @Contract(pure = true)
-  boolean isGCRequired(@NotNull ZBDDStatistics statistics);
+  boolean isGCRequired(@NotNull ZbddStatistics statistics);
 }

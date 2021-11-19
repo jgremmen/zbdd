@@ -1,7 +1,7 @@
 package de.sayayi.lib.zbdd;
 
 
-public interface ZBDDStatistics
+public interface ZbddStatistics
 {
   int getNodeTableSize();
 

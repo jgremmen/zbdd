@@ -111,7 +111,7 @@ public class Zbdd
 
 
   @Contract(pure = true)
-  public @NotNull ZBDDStatistics getStatistics() {
+  public @NotNull ZbddStatistics getStatistics() {
     return statistics;
   }
 
@@ -1065,7 +1065,7 @@ public class Zbdd
 
 
 
-  private final class Statistics implements ZBDDStatistics
+  private final class Statistics implements ZbddStatistics
   {
     private int nodeLookups;
     private int nodeLookupHitCount;
@@ -1151,13 +1151,13 @@ public class Zbdd
 
 
     @Override
-    public @Range(from = 1, to = MAX_NODES) int getMinimumFreeNodes(@NotNull ZBDDStatistics statistics) {
+    public @Range(from = 1, to = MAX_NODES) int getMinimumFreeNodes(@NotNull ZbddStatistics statistics) {
       return statistics.getNodeTableSize() * 2 / 10;  // 20%
     }
 
 
     @Override
-    public int adviseNodesGrowth(@NotNull ZBDDStatistics statistics)
+    public int adviseNodesGrowth(@NotNull ZbddStatistics statistics)
     {
       final int tableSize = statistics.getNodeTableSize();
 
@@ -1168,7 +1168,7 @@ public class Zbdd
 
 
     @Override
-    public boolean isGCRequired(@NotNull ZBDDStatistics statistics)
+    public boolean isGCRequired(@NotNull ZbddStatistics statistics)
     {
       final int tableSize = statistics.getNodeTableSize();
 
