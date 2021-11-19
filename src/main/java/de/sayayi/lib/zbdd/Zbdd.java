@@ -15,7 +15,6 @@
  */
 package de.sayayi.lib.zbdd;
 
-import de.sayayi.lib.zbdd.ZbddCache.NoCache;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -29,16 +28,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import static de.sayayi.lib.zbdd.ZbddCache.BinaryOperation.DIFF;
-import static de.sayayi.lib.zbdd.ZbddCache.BinaryOperation.DIV;
-import static de.sayayi.lib.zbdd.ZbddCache.BinaryOperation.INTERSECT;
-import static de.sayayi.lib.zbdd.ZbddCache.BinaryOperation.MOD;
-import static de.sayayi.lib.zbdd.ZbddCache.BinaryOperation.MUL;
-import static de.sayayi.lib.zbdd.ZbddCache.BinaryOperation.UNION;
-import static de.sayayi.lib.zbdd.ZbddCache.UnaryOperation.CHANGE;
-import static de.sayayi.lib.zbdd.ZbddCache.UnaryOperation.SUBSET0;
-import static de.sayayi.lib.zbdd.ZbddCache.UnaryOperation.SUBSET1;
 import static java.lang.Integer.MAX_VALUE;
 import static java.util.Arrays.copyOf;
 import static java.util.Collections.emptyList;
@@ -69,6 +60,8 @@ public class Zbdd
   protected static final int ZBDD_EMPTY = 0;
   protected static final int ZBDD_BASE = 1;
 
+  private static final AtomicInteger ID = new AtomicInteger();
+
   private final @NotNull ZbddNodesAdvisor nodesAdvisor;
   private final @NotNull Statistics statistics;
 
@@ -83,9 +76,6 @@ public class Zbdd
 
   @Getter @Setter
   private @NotNull ZbddNameResolver nameResolver = var -> "v" + var;
-
-  @Getter
-  private @NotNull ZbddCache cache = NoCache.INSTANCE;
 
 
   public Zbdd() {
@@ -119,11 +109,6 @@ public class Zbdd
   }
 
 
-  public void setCache(@NotNull ZbddCache cache) {
-    (this.cache = cache).clear();
-  }
-
-
   @Contract(pure = true)
   public @NotNull ZbddStatistics getStatistics() {
     return statistics;
@@ -151,8 +136,6 @@ public class Zbdd
     statistics.nodeLookups = 0;
     statistics.gcFreedNodes = 0;
     statistics.gcCount = 0;
-
-    cache.clear();
   }
 
 
@@ -245,17 +228,15 @@ public class Zbdd
     if (top == var)
       return getP0(zbdd);
 
-    return cache.lookupOrPutIfAbsent(this, SUBSET0, zbdd, var, () -> {
-      __incRef(zbdd);
+    __incRef(zbdd);
 
-      final int p0 = __incRef(__subset0(getP0(zbdd), var));
-      final int p1 = __incRef(__subset0(getP1(zbdd), var));
-      final int r = getNode(top, p0, p1);
+    final int p0 = __incRef(__subset0(getP0(zbdd), var));
+    final int p1 = __incRef(__subset0(getP1(zbdd), var));
+    final int r = getNode(top, p0, p1);
 
-      __decRef(zbdd, p0, p1);
+    __decRef(zbdd, p0, p1);
 
-      return r;
-    });
+    return r;
   }
 
 
@@ -278,17 +259,15 @@ public class Zbdd
     if (top == var)
       return getP1(zbdd);
 
-    return cache.lookupOrPutIfAbsent(this, SUBSET1, zbdd, var, () -> {
-      __incRef(zbdd);
+    __incRef(zbdd);
 
-      final int p0 = __incRef(__subset1(getP0(zbdd), var));
-      final int p1 = __incRef(__subset1(getP1(zbdd), var));
-      final int r = getNode(top, p0, p1);
+    final int p0 = __incRef(__subset1(getP0(zbdd), var));
+    final int p1 = __incRef(__subset1(getP1(zbdd), var));
+    final int r = getNode(top, p0, p1);
 
-      __decRef(zbdd, p0, p1);
+    __decRef(zbdd, p0, p1);
 
-      return r;
-    });
+    return r;
   }
 
 
@@ -308,20 +287,25 @@ public class Zbdd
     if (top < var)
       return getNode(var, ZBDD_EMPTY, zbdd);
 
+    final int r;
+
+    __incRef(zbdd);
+
     if (top == var)
-      return getNode(var, getP1(zbdd), getP0(zbdd));
-
-    return cache.lookupOrPutIfAbsent(this, CHANGE, zbdd, var, () -> {
-      __incRef(zbdd);
-
+      r = getNode(var, getP1(zbdd), getP0(zbdd));
+    else
+    {
       final int p0 = __incRef(__change(getP0(zbdd), var));
       final int p1 = __incRef(__change(getP1(zbdd), var));
-      final int r = getNode(top, p0, p1);
 
-      __decRef(zbdd, p0, p1);
+      r = getNode(top, p0, p1);
 
-      return r;
-    });
+      __decRef(p0, p1);
+    }
+
+    __decRef(zbdd);
+
+    return r;
   }
 
 
@@ -365,33 +349,31 @@ public class Zbdd
     if (ptop > qtop)
       return __union(q, p);
 
-    return cache.lookupOrPutIfAbsent(this, UNION, p, q, () -> {
-      __incRef(p, q);
+    __incRef(p, q);
 
-      int r;
+    int r;
 
-      if (ptop < qtop)
-      {
-        final int p0 = __incRef(__union(p, getP0(q)));
+    if (ptop < qtop)
+    {
+      final int p0 = __incRef(__union(p, getP0(q)));
 
-        r = getNode(qtop, p0, getP1(q));
+      r = getNode(qtop, p0, getP1(q));
 
-        __decRef(p0);
-      }
-      else
-      {
-        final int p0 = __incRef(__union(getP0(p), getP0(q)));
-        final int p1 = __incRef(__union(getP1(p), getP1(q)));
+      __decRef(p0);
+    }
+    else
+    {
+      final int p0 = __incRef(__union(getP0(p), getP0(q)));
+      final int p1 = __incRef(__union(getP1(p), getP1(q)));
 
-        r = getNode(ptop, p0, p1);
+      r = getNode(ptop, p0, p1);
 
-        __decRef(p0, p1);
-      }
+      __decRef(p0, p1);
+    }
 
-      __decRef(p, q);
+    __decRef(p, q);
 
-      return r;
-    });
+    return r;
   }
 
 
@@ -410,31 +392,29 @@ public class Zbdd
     if (p == q)
       return p;
 
-    return cache.lookupOrPutIfAbsent(this, INTERSECT, p, q, () -> {
-      __incRef(p, q);
+    __incRef(p, q);
 
-      final int ptop = getVar(p);
-      final int qtop = getVar(q);
-      final int r;
+    final int ptop = getVar(p);
+    final int qtop = getVar(q);
+    final int r;
 
-      if (ptop > qtop)
-        r = __intersect(getP0(p), q);
-      else if (ptop < qtop)
-        r = __intersect(p, getP0(q));
-      else
-      {
-        final int p0 = __incRef(__intersect(getP0(p), getP0(q)));
-        final int p1 = __incRef(__intersect(getP1(p), getP1(q)));
+    if (ptop > qtop)
+      r = __intersect(getP0(p), q);
+    else if (ptop < qtop)
+      r = __intersect(p, getP0(q));
+    else
+    {
+      final int p0 = __incRef(__intersect(getP0(p), getP0(q)));
+      final int p1 = __incRef(__intersect(getP1(p), getP1(q)));
 
-        r = getNode(ptop, p0, p1);
+      r = getNode(ptop, p0, p1);
 
-        __decRef(p0, p1);
-      }
+      __decRef(p0, p1);
+    }
 
-      __decRef(p, q);
+    __decRef(p, q);
 
-      return r;
-    });
+    return r;
   }
 
 
@@ -453,37 +433,35 @@ public class Zbdd
     if (q == ZBDD_EMPTY)
       return p;
 
-    return cache.lookupOrPutIfAbsent(this, DIFF, p, q, () -> {
-      __incRef(p, q);
+    __incRef(p, q);
 
-      final int ptop = getVar(p);
-      final int qtop = getVar(q);
-      final int r;
+    final int ptop = getVar(p);
+    final int qtop = getVar(q);
+    final int r;
 
-      if (ptop < qtop)
-        r = __difference(p, getP0(q));
-      else if (ptop > qtop)
-      {
-        final int p0 = __incRef(__difference(getP0(p), getP0(q)));
+    if (ptop < qtop)
+      r = __difference(p, getP0(q));
+    else if (ptop > qtop)
+    {
+      final int p0 = __incRef(__difference(getP0(p), getP0(q)));
 
-        r = getNode(ptop, p0, getP1(p));
+      r = getNode(ptop, p0, getP1(p));
 
-        __decRef(p0);
-      }
-      else
-      {
-        final int p0 = __incRef(__difference(getP0(p), getP0(q)));
-        final int p1 = __incRef(__difference(getP1(p), getP1(q)));
+      __decRef(p0);
+    }
+    else
+    {
+      final int p0 = __incRef(__difference(getP0(p), getP0(q)));
+      final int p1 = __incRef(__difference(getP1(p), getP1(q)));
 
-        r = getNode(ptop, p0, p1);
+      r = getNode(ptop, p0, p1);
 
-        __decRef(p0, p1);
-      }
+      __decRef(p0, p1);
+    }
 
-      __decRef(p, q);
+    __decRef(p, q);
 
-      return r;
-    });
+    return r;
   }
 
 
@@ -510,33 +488,31 @@ public class Zbdd
     if (ptop > qtop)
       return __multiply(q, p);
 
-    return cache.lookupOrPutIfAbsent(this, MUL, p, q, () -> {
-      __incRef(p, q);
+    __incRef(p, q);
 
-      // factor P = p0 + v * p1
-      final int p0 = __incRef(__subset0(p, ptop));
-      final int p1 = __incRef(__subset1(p, ptop));
+    // factor P = p0 + v * p1
+    final int p0 = __incRef(__subset0(p, ptop));
+    final int p1 = __incRef(__subset1(p, ptop));
 
-      // factor Q = q0 + v * q1
-      final int q0 = __incRef(__subset0(q, ptop));
-      final int q1 = __incRef(__subset1(q, ptop));
+    // factor Q = q0 + v * q1
+    final int q0 = __incRef(__subset0(q, ptop));
+    final int q1 = __incRef(__subset1(q, ptop));
 
-      // r = (p0 + v * q1) * (q0 + v * q1) = p0q0 + v * (p0q1 + p1q0 + p1q1)
-      final int p0q0 = __incRef(__multiply(p0, q0));
-      final int p0q1 = __incRef(__multiply(p0, q1));
-      final int p1q0 = __incRef(__multiply(p1, q0));
-      final int p1q1 = __incRef(__multiply(p1, q1));
+    // r = (p0 + v * q1) * (q0 + v * q1) = p0q0 + v * (p0q1 + p1q0 + p1q1)
+    final int p0q0 = __incRef(__multiply(p0, q0));
+    final int p0q1 = __incRef(__multiply(p0, q1));
+    final int p1q0 = __incRef(__multiply(p1, q0));
+    final int p1q1 = __incRef(__multiply(p1, q1));
 
-      final int p0q1_p1q0 = __incRef(__union(p0q1, p1q0));
-      final int p0p1_p1q0_p1q1 = __incRef(__union(p0q1_p1q0, p1q1));
-      final int v_p0q1_p1q0_p1q1 = __incRef(__change(p0p1_p1q0_p1q1, ptop));
+    final int p0q1_p1q0 = __incRef(__union(p0q1, p1q0));
+    final int p0p1_p1q0_p1q1 = __incRef(__union(p0q1_p1q0, p1q1));
+    final int v_p0q1_p1q0_p1q1 = __incRef(__change(p0p1_p1q0_p1q1, ptop));
 
-      final int r = __union(p0q0, v_p0q1_p1q0_p1q1);
+    final int r = __union(p0q0, v_p0q1_p1q0_p1q1);
 
-      __decRef(p, q, p0, p1, q0, q1, p0q0, p0q1, p1q0, p1q1, p0q1_p1q0, p0p1_p1q0_p1q1, v_p0q1_p1q0_p1q1);
+    __decRef(p, q, p0, p1, q0, q1, p0q0, p0q1, p1q0, p1q1, p0q1_p1q0, p0p1_p1q0_p1q1, v_p0q1_p1q0_p1q1);
 
-      return r;
-    });
+    return r;
   }
 
 
@@ -560,37 +536,35 @@ public class Zbdd
     if (q == ZBDD_BASE)
       return p;
 
-    return cache.lookupOrPutIfAbsent(this, DIV, p, q, () -> {
-      __incRef(p, q);
+    __incRef(p, q);
 
-      final int v = getVar(q);
+    final int v = getVar(q);
 
-      // factor P = p0 + v * p1
-      final int p0 = __incRef(__subset0(p, v));
-      final int p1 = __incRef(__subset1(p, v));
+    // factor P = p0 + v * p1
+    final int p0 = __incRef(__subset0(p, v));
+    final int p1 = __incRef(__subset1(p, v));
 
-      // factor Q = q0 + v * q1
-      final int q0 = __incRef(__subset0(q, v));
-      final int q1 = __incRef(__subset1(q, v));
+    // factor Q = q0 + v * q1
+    final int q0 = __incRef(__subset0(q, v));
+    final int q1 = __incRef(__subset1(q, v));
 
-      final int r1 = __divide(p1, q1);
-      final int r;
+    final int r1 = __divide(p1, q1);
+    final int r;
 
-      if (r1 != ZBDD_EMPTY && q0 != ZBDD_EMPTY)
-      {
-        final int r0 = __incRef(__divide(p0, q0));
+    if (r1 != ZBDD_EMPTY && q0 != ZBDD_EMPTY)
+    {
+      final int r0 = __incRef(__divide(p0, q0));
 
-        r = __intersect(__incRef(r1), r0);
+      r = __intersect(__incRef(r1), r0);
 
-        __decRef(r0, r1);
-      }
-      else
-        r = r1;
+      __decRef(r0, r1);
+    }
+    else
+      r = r1;
 
-      __decRef(p, q, p0, p1, q0, q1);
+    __decRef(p, q, p0, p1, q0, q1);
 
-      return r;
-    });
+    return r;
   }
 
 
@@ -607,17 +581,15 @@ public class Zbdd
     checkZbdd(p, "p");
     checkZbdd(q, "q");
 
-    return cache.lookupOrPutIfAbsent(this, MOD, p, q, () -> {
-      __incRef(p, q);
+    __incRef(p, q);
 
-      final int p_div_q = __incRef(__divide(p, q));
-      final int q_mul_p_div_q = __incRef(multiply(q, p_div_q));
-      final int r = __difference(p, q_mul_p_div_q);
+    final int p_div_q = __incRef(__divide(p, q));
+    final int q_mul_p_div_q = __incRef(multiply(q, p_div_q));
+    final int r = __difference(p, q_mul_p_div_q);
 
-      __decRef(p, q, p_div_q, q_mul_p_div_q);
+    __decRef(p, q, p_div_q, q_mul_p_div_q);
 
-      return r;
-    });
+    return r;
   }
 
 
@@ -718,6 +690,16 @@ public class Zbdd
   @Range(from = 0, to = MAX_NODES)
   protected int getP1(int zbdd) {
     return nodes[zbdd * NODE_WIDTH + _P1];
+  }
+
+
+  @Contract(pure = true)
+  @Range(from = 0, to = MAX_VALUE)
+  public int getRefCount(int zbdd)
+  {
+    final int offset = checkZbdd(zbdd, "zbdd") * NODE_WIDTH;
+
+    return nodes[offset + _VAR] == -1 ? 0 : nodes[offset + _REFCOUNT];
   }
 
 
