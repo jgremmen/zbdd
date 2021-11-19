@@ -743,6 +743,7 @@ public class Zbdd
       {
         // garbage collect node
         nodes[offset + _VAR] = -1;
+        nodes[offset + _REFCOUNT] = 0;
         nodes[offset + _NEXT] = firstFreeNode;
 
         firstFreeNode = i;
@@ -815,6 +816,8 @@ public class Zbdd
       else
       {
         nodes[offset + _NEXT] = firstFreeNode;
+        nodes[offset + _REFCOUNT] = 0;
+
         firstFreeNode = i;
         freeNodesCount++;
       }
