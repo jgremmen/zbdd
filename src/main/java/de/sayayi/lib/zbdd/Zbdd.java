@@ -59,12 +59,12 @@ public class Zbdd
 
   public static final int MAX_NODES = MAX_VALUE / NODE_WIDTH;
 
-  private static final int IDX_VAR = 0;
-  private static final int IDX_P0 = 1;
-  private static final int IDX_P1 = 2;
-  private static final int IDX_PREV = 3;
-  private static final int IDX_NEXT = 4;
-  private static final int IDX_REFCOUNT = 5;
+  private static final int _VAR = 0;
+  private static final int _P0 = 1;
+  private static final int _P1 = 2;
+  private static final int _PREV = 3;
+  private static final int _NEXT = 4;
+  private static final int _REFCOUNT = 5;
 
   protected static final int ZBDD_EMPTY = 0;
   protected static final int ZBDD_BASE = 1;
@@ -113,9 +113,9 @@ public class Zbdd
   {
     final int offset = zbdd * NODE_WIDTH;
 
-    nodes[offset + IDX_VAR] = -1;
-    nodes[offset + IDX_P0] = zbdd;
-    nodes[offset + IDX_P1] = zbdd;
+    nodes[offset + _VAR] = -1;
+    nodes[offset + _P0] = zbdd;
+    nodes[offset + _P1] = zbdd;
   }
 
 
@@ -142,9 +142,9 @@ public class Zbdd
     {
       final int offset = i * NODE_WIDTH;
 
-      nodes[offset + IDX_VAR] = -1;
-      nodes[offset + IDX_PREV] = 0;
-      nodes[offset + IDX_NEXT] = (i + 1) % nodesTableSize;
+      nodes[offset + _VAR] = -1;
+      nodes[offset + _PREV] = 0;
+      nodes[offset + _NEXT] = (i + 1) % nodesTableSize;
     }
 
     statistics.nodeLookupHitCount = 0;
@@ -340,7 +340,7 @@ public class Zbdd
 
     final int offset = zbdd * NODE_WIDTH;
 
-    return __count(nodes[offset + IDX_P0]) + __count(nodes[offset + IDX_P1]);
+    return __count(nodes[offset + _P0]) + __count(nodes[offset + _P1]);
   }
 
 
@@ -529,11 +529,11 @@ public class Zbdd
 
       final int p0q1_p1q0 = __incRef(__union(p0q1, p1q0));
       final int p0p1_p1q0_p1q1 = __incRef(__union(p0q1_p1q0, p1q1));
-      final int v_p0p1_p1q0_p1q1 = __incRef(__change(p0p1_p1q0_p1q1, ptop));
+      final int v_p0q1_p1q0_p1q1 = __incRef(__change(p0p1_p1q0_p1q1, ptop));
 
-      final int r = __union(p0q0, v_p0p1_p1q0_p1q1);
+      final int r = __union(p0q0, v_p0q1_p1q0_p1q1);
 
-      __decRef(p, q, p0, p1, q0, q1, p0q0, p0q1, p1q0, p1q1, p0q1_p1q0, p0p1_p1q0_p1q1, v_p0p1_p1q0_p1q1);
+      __decRef(p, q, p0, p1, q0, q1, p0q0, p0q1, p1q0, p1q1, p0q1_p1q0, p0p1_p1q0_p1q1, v_p0q1_p1q0_p1q1);
 
       return r;
     });
@@ -665,17 +665,17 @@ public class Zbdd
     int hash = hash(var, p0, p1);
 
     // find node in chain...
-    for(int r = nodes[hash * NODE_WIDTH + IDX_PREV]; r != 0;)
+    for(int r = nodes[hash * NODE_WIDTH + _PREV]; r != 0;)
     {
       final int offset = r * NODE_WIDTH;
 
-      if (nodes[offset + IDX_VAR] == var && nodes[offset + IDX_P0] == p0 && nodes[offset + IDX_P1] == p1)
+      if (nodes[offset + _VAR] == var && nodes[offset + _P0] == p0 && nodes[offset + _P1] == p1)
       {
         statistics.nodeLookupHitCount++;
         return r;
       }
 
-      r = nodes[offset + IDX_NEXT];
+      r = nodes[offset + _NEXT];
     }
 
     if (freeNodesCount < 2)
@@ -686,14 +686,14 @@ public class Zbdd
 
     final int r = firstFreeNode;
     final int offset = r * NODE_WIDTH;
-    firstFreeNode = nodes[offset + IDX_NEXT];
+    firstFreeNode = nodes[offset + _NEXT];
     freeNodesCount--;
 
     // set new node
-    nodes[offset + IDX_VAR] = var;
-    nodes[offset + IDX_P0] = p0;
-    nodes[offset + IDX_P1] = p1;
-    nodes[offset + IDX_REFCOUNT] = -1;
+    nodes[offset + _VAR] = var;
+    nodes[offset + _P0] = p0;
+    nodes[offset + _P1] = p1;
+    nodes[offset + _REFCOUNT] = -1;
 
     chainBeforeHash(r, hash);
 
@@ -703,21 +703,21 @@ public class Zbdd
 
   @Contract(pure = true)
   protected int getVar(int zbdd) {
-    return zbdd < 2 ? -1 : (nodes[zbdd * NODE_WIDTH + IDX_VAR] & ~NODE_MARK);
+    return zbdd < 2 ? -1 : (nodes[zbdd * NODE_WIDTH + _VAR] & ~NODE_MARK);
   }
 
 
   @Contract(pure = true)
   @Range(from = 0, to = MAX_NODES)
   protected int getP0(int zbdd) {
-    return nodes[zbdd * NODE_WIDTH + IDX_P0];
+    return nodes[zbdd * NODE_WIDTH + _P0];
   }
 
 
   @Contract(pure = true)
   @Range(from = 0, to = MAX_NODES)
   protected int getP1(int zbdd) {
-    return nodes[zbdd * NODE_WIDTH + IDX_P1];
+    return nodes[zbdd * NODE_WIDTH + _P1];
   }
 
 
@@ -738,10 +738,10 @@ public class Zbdd
     {
       final int offset = i * NODE_WIDTH;
 
-      if (nodes[offset + IDX_VAR] != -1 && nodes[offset + IDX_REFCOUNT] > 0)
+      if (nodes[offset + _VAR] != -1 && nodes[offset + _REFCOUNT] > 0)
         gc_markTree(i);
 
-      nodes[offset + IDX_PREV] = 0;
+      nodes[offset + _PREV] = 0;
     }
 
     final int oldFreeNodesCount = freeNodesCount;
@@ -751,17 +751,17 @@ public class Zbdd
     {
       final int offset = i * NODE_WIDTH;
 
-      if ((nodes[offset + IDX_VAR] & NODE_MARK) != 0 && nodes[offset + IDX_VAR] != -1)
+      if ((nodes[offset + _VAR] & NODE_MARK) != 0 && nodes[offset + _VAR] != -1)
       {
         // remove mark and chain valid node
         chainBeforeHash(i,
-            hash(nodes[offset + IDX_VAR] &= ~NODE_MARK, nodes[offset + IDX_P0], nodes[offset + IDX_P1]));
+            hash(nodes[offset + _VAR] &= ~NODE_MARK, nodes[offset + _P0], nodes[offset + _P1]));
       }
       else
       {
         // garbage collect node
-        nodes[offset + IDX_VAR] = -1;
-        nodes[offset + IDX_NEXT] = firstFreeNode;
+        nodes[offset + _VAR] = -1;
+        nodes[offset + _NEXT] = firstFreeNode;
 
         firstFreeNode = i;
         freeNodesCount++;
@@ -783,12 +783,12 @@ public class Zbdd
     {
       final int offset = zbdd * NODE_WIDTH;
 
-      if ((nodes[offset + IDX_VAR] & NODE_MARK) == 0)
+      if ((nodes[offset + _VAR] & NODE_MARK) == 0)
       {
-        nodes[offset + IDX_VAR] |= NODE_MARK;
+        nodes[offset + _VAR] |= NODE_MARK;
 
-        gc_markTree(nodes[offset + IDX_P0]);
-        gc_markTree(nodes[offset + IDX_P1]);
+        gc_markTree(nodes[offset + _P0]);
+        gc_markTree(nodes[offset + _P1]);
       }
     }
   }
@@ -812,8 +812,8 @@ public class Zbdd
     {
       final int offset = i * NODE_WIDTH;
 
-      nodes[offset + IDX_VAR] = -1;
-      nodes[offset + IDX_NEXT] = firstFreeNode;
+      nodes[offset + _VAR] = -1;
+      nodes[offset + _NEXT] = firstFreeNode;
 
       firstFreeNode = i;
       freeNodesCount++;
@@ -821,18 +821,18 @@ public class Zbdd
 
     // unchain old nodes
     for(int i = 0, end = oldTableSize * NODE_WIDTH; i < end; i += NODE_WIDTH)
-      nodes[i + IDX_PREV] = 0;
+      nodes[i + _PREV] = 0;
 
     // re-chain old nodes
     for(int i = oldTableSize; i-- > 2;)
     {
       final int offset = i * NODE_WIDTH;
 
-      if (nodes[offset + IDX_VAR] != -1)
-        chainBeforeHash(i, hash(nodes[offset + IDX_VAR], nodes[offset + IDX_P0], nodes[offset + IDX_P1]));
+      if (nodes[offset + _VAR] != -1)
+        chainBeforeHash(i, hash(nodes[offset + _VAR], nodes[offset + _P0], nodes[offset + _P1]));
       else
       {
-        nodes[offset + IDX_NEXT] = firstFreeNode;
+        nodes[offset + _NEXT] = firstFreeNode;
         firstFreeNode = i;
         freeNodesCount++;
       }
@@ -842,9 +842,9 @@ public class Zbdd
 
   private void chainBeforeHash(int zbdd, int hash)
   {
-    final int hashPrevious = hash * NODE_WIDTH + IDX_PREV;
+    final int hashPrevious = hash * NODE_WIDTH + _PREV;
 
-    nodes[zbdd * NODE_WIDTH + IDX_NEXT] = nodes[hashPrevious];
+    nodes[zbdd * NODE_WIDTH + _NEXT] = nodes[hashPrevious];
     nodes[hashPrevious] = zbdd;
   }
 
@@ -865,9 +865,11 @@ public class Zbdd
   @Contract(value = "_ -> param1", mutates = "this")
   protected int __incRef(int zbdd)
   {
-    if (zbdd >= 2)
+    final int offset;
+
+    if (zbdd >= 2 && nodes[(offset = zbdd * NODE_WIDTH) + _VAR] != -1)
     {
-      final int refCountOffset = zbdd * NODE_WIDTH + IDX_REFCOUNT;
+      final int refCountOffset = offset + _REFCOUNT;
       final int ref = nodes[refCountOffset];
 
       if (ref == -1)  // new node
@@ -902,9 +904,11 @@ public class Zbdd
   @Contract(value = "_ -> param1", mutates = "this")
   protected int __decRef(int zbdd)
   {
-    if (zbdd >= 2)
+    final int offset;
+
+    if (zbdd >= 2 && nodes[(offset = zbdd * NODE_WIDTH) + _VAR] != -1)
     {
-      final int refCountOffset = zbdd * NODE_WIDTH + IDX_REFCOUNT;
+      final int refCountOffset = offset + _REFCOUNT;
       final int ref = nodes[refCountOffset];
 
       if (ref > 0)
@@ -926,7 +930,7 @@ public class Zbdd
     if (zbdd < 0 || zbdd >= nodesTableSize)
       throw new ZbddException(param + " must be in range 0.." + (nodesTableSize - 1));
 
-    if (zbdd >= 2 && nodes[zbdd * NODE_WIDTH + IDX_VAR] == -1)
+    if (zbdd >= 2 && nodes[zbdd * NODE_WIDTH + _VAR] == -1)
       throw new ZbddException("invalid " + param + " node " + zbdd);
 
     return zbdd;
