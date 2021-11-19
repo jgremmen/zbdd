@@ -65,7 +65,7 @@ public class Zbdd
   private final @NotNull ZbddNodesAdvisor nodesAdvisor;
   private final @NotNull Statistics statistics;
 
-  private int lastVar;
+  private int lastVarNumber;
 
   private int nodesTableSize;
   private int[] nodes;
@@ -118,7 +118,7 @@ public class Zbdd
   @Contract(mutates = "this")
   public void clear()
   {
-    lastVar = 0;
+    lastVarNumber = 0;
     deadNodesCount = 0;
     firstFreeNode = 2;
     freeNodesCount = nodesTableSize - 2;
@@ -130,18 +130,16 @@ public class Zbdd
       nodes[offset + _VAR] = -1;
       nodes[offset + _PREV] = 0;
       nodes[offset + _NEXT] = (i + 1) % nodesTableSize;
+      nodes[offset + _REFCOUNT] = 0;
     }
 
-    statistics.nodeLookupHitCount = 0;
-    statistics.nodeLookups = 0;
-    statistics.gcFreedNodes = 0;
-    statistics.gcCount = 0;
+    statistics.clear();
   }
 
 
   @Contract(mutates = "this")
   public @Range(from = 1, to = MAX_VALUE) int createVar() {
-    return ++lastVar;
+    return ++lastVarNumber;
   }
 
 
@@ -196,14 +194,8 @@ public class Zbdd
   {
     int r = ZBDD_BASE;
 
-    for(int var = 1; var <= lastVar; var++)
-    {
-      final int p = r;
-
-      __incRef(p);
-      r = getNode(var, p, p);
-      __decRef(p);
-    }
+    for(int var = 1; var <= lastVarNumber; var++)
+      r = getNode(var, r, r);
 
     return r;
   }
@@ -526,9 +518,6 @@ public class Zbdd
   @Contract(mutates = "this")
   protected int __divide(int p, int q)
   {
-    checkZbdd(p, "p");
-    checkZbdd(q, "q");
-
     if (p < 2)
       return ZBDD_EMPTY;
     if (p == q)
@@ -578,9 +567,6 @@ public class Zbdd
   @Contract(mutates = "this")
   protected int __modulo(int p, int q)
   {
-    checkZbdd(p, "p");
-    checkZbdd(q, "q");
-
     __incRef(p, q);
 
     final int p_div_q = __incRef(__divide(p, q));
@@ -603,18 +589,16 @@ public class Zbdd
   @Contract(mutates = "this")
   protected int __atomize(int zbdd)
   {
-    if (zbdd == ZBDD_EMPTY || zbdd == ZBDD_BASE)
+    if (zbdd < 2)
       return ZBDD_EMPTY;
 
     __incRef(zbdd);
 
-    final int p0 = __incRef(atomize(getP0(zbdd)));
-    final int p1 = __incRef(atomize(getP1(zbdd)));
-    final int p0_p1 = __incRef(__union(p0, p1));
+    final int p0 = __incRef(__atomize(getP0(zbdd)));
+    final int p1 = __incRef(__atomize(getP1(zbdd)));
+    final int r = getNode(getVar(zbdd), __union(p0, p1), ZBDD_BASE);
 
-    final int r = getNode(getVar(zbdd), p0_p1, ZBDD_BASE);
-
-    __decRef(zbdd, p0, p1, p0_p1);
+    __decRef(zbdd, p0, p1);
 
     return r;
   }
@@ -652,8 +636,13 @@ public class Zbdd
 
     if (freeNodesCount < 2)
     {
+      __incRef(p0, p1);
+
       ensureCapacity();
       hash = hash(var, p0, p1);  // may have changed due to grow
+
+      __decRef(p0);
+      __decRef(p1);
     }
 
     final int r = firstFreeNode;
@@ -690,16 +679,6 @@ public class Zbdd
   @Range(from = 0, to = MAX_NODES)
   protected int getP1(int zbdd) {
     return nodes[zbdd * NODE_WIDTH + _P1];
-  }
-
-
-  @Contract(pure = true)
-  @Range(from = 0, to = MAX_VALUE)
-  public int getRefCount(int zbdd)
-  {
-    final int offset = checkZbdd(zbdd, "zbdd") * NODE_WIDTH;
-
-    return nodes[offset + _VAR] == -1 ? 0 : nodes[offset + _REFCOUNT];
   }
 
 
@@ -925,7 +904,7 @@ public class Zbdd
   @Contract(value = "_ -> param1")
   private int checkVar(int var)
   {
-    if (var <= 0 || var > lastVar)
+    if (var <= 0 || var > lastVarNumber)
       throw new ZbddException("var must be in range 1.." + var);
 
     return var;
@@ -953,7 +932,7 @@ public class Zbdd
 
     final List<int[]> cubes = new ArrayList<>(count(zbdd));
 
-    getCubes0(cubes, new IntStack(lastVar), zbdd);
+    getCubes0(cubes, new IntStack(lastVarNumber), zbdd);
 
     return unmodifiableList(cubes);
   }
@@ -1076,6 +1055,15 @@ public class Zbdd
     private long gcFreedNodes;
 
 
+    private void clear()
+    {
+      nodeLookups = 0;
+      nodeLookupHitCount = 0;
+      gcCount = 0;
+      gcFreedNodes = 0;
+    }
+
+
     @Override
     public int getNodeTableSize() {
       return nodesTableSize;
@@ -1126,7 +1114,7 @@ public class Zbdd
 
     @Override
     public int getRegisteredVars() {
-      return lastVar;
+      return lastVarNumber;
     }
 
 
@@ -1155,7 +1143,7 @@ public class Zbdd
 
     @Override
     public @Range(from = 1, to = MAX_NODES) int getMinimumFreeNodes(@NotNull ZbddStatistics statistics) {
-      return statistics.getNodeTableSize() * 2 / 10;  // 20%
+      return statistics.getNodeTableSize() / 10;  // 10%
     }
 
 
@@ -1177,7 +1165,7 @@ public class Zbdd
 
       // size > 250000
       // dead nodes > 20% of table size
-      return tableSize > 250000 || statistics.getDeadNodes() > (tableSize / 5);
+      return tableSize > 250000 || statistics.getDeadNodes() > (tableSize / 10);
     }
   }
 }
