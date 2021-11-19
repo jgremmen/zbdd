@@ -20,25 +20,27 @@ import org.jetbrains.annotations.Range;
 
 import java.util.function.IntSupplier;
 
+import static de.sayayi.lib.zbdd.Zbdd.MAX_NODES;
+
 
 /**
  * @author Jeroen Gremmen
  */
 public interface ZbddCache
 {
-  @Range(from = 0, to = Zbdd.MAX_NODES)
+  @Range(from = 0, to = MAX_NODES)
   int lookupOrPutIfAbsent(@NotNull Zbdd zbdd,
                           @NotNull UnaryOperation operation,
-                          @Range(from = 0, to = Zbdd.MAX_NODES) int p,
+                          @Range(from = 0, to = MAX_NODES) int p,
                           @Range(from = 1, to = Integer.MAX_VALUE) int var,
                           @NotNull IntSupplier resultSupplier);
 
 
-  @Range(from = 0, to = Zbdd.MAX_NODES)
+  @Range(from = 0, to = MAX_NODES)
   int lookupOrPutIfAbsent(@NotNull Zbdd zbdd,
                           @NotNull BinaryOperation operation,
-                          @Range(from = 0, to = Zbdd.MAX_NODES) int p,
-                          @Range(from = 0, to = Zbdd.MAX_NODES) int q,
+                          @Range(from = 0, to = MAX_NODES) int p,
+                          @Range(from = 0, to = MAX_NODES) int q,
                           @NotNull IntSupplier resultSupplier);
 
 

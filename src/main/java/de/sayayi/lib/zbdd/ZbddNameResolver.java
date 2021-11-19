@@ -15,6 +15,7 @@
  */
 package de.sayayi.lib.zbdd;
 
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Range;
 
@@ -29,19 +30,23 @@ import static java.util.stream.Collectors.joining;
  */
 public interface ZbddNameResolver
 {
+  @Contract(pure = true)
   default @NotNull String getEmptyName() {
     return "{}";
   }
 
 
+  @Contract(pure = true)
   default @NotNull String getBaseName() {
-    return "{{}}";
+    return "{ {} }";
   }
 
 
+  @Contract(pure = true)
   @NotNull String getVariable(@Range(from = 1, to = MAX_VALUE) int var);
 
 
+  @Contract(pure = true)
   default @NotNull String getCube(int @NotNull [] vars)
   {
     return vars.length == 0

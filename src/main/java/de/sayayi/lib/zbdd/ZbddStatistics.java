@@ -15,55 +15,70 @@
  */
 package de.sayayi.lib.zbdd;
 
+import org.jetbrains.annotations.Contract;
+
 
 /**
  * @author Jeroen Gremmen
  */
 public interface ZbddStatistics
 {
+  @Contract(pure = true)
   int getNodeTableSize();
 
 
+  @Contract(pure = true)
   int getFreeNodes();
 
 
+  @Contract(pure = true)
   int getDeadNodes();
 
 
+  @Contract(pure = true)
   default int getAvailableNodes() {
     return getFreeNodes() + getDeadNodes();
   }
 
 
+  @Contract(pure = true)
   default int getOccupiedNodes() {
     return getNodeTableSize() - getAvailableNodes();
   }
 
 
+  @Contract(pure = true)
   int getNodeLookups();
 
 
+  @Contract(pure = true)
   int getNodeLookupHitCount();
 
 
+  @Contract(pure = true)
   default double getNodeLookupHitRatio() {
     return getNodeLookupHitCount() / (double)getNodeLookups();
   }
 
 
+  @Contract(pure = true)
   default double getNodeLookupMissRatio() {
     return 1.0 - getNodeLookupHitRatio();
   }
 
 
+  @Contract(pure = true)
   int getGCCount();
 
 
+  @Contract(pure = true)
   long getGCFreedNodes();
 
 
+  @Contract(pure = true)
   long getMemoryUsage();
 
 
+  @Contract(pure = true)
   int getRegisteredVars();
 }

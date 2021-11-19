@@ -16,9 +16,12 @@
 package de.sayayi.lib.zbdd;
 
 import de.sayayi.lib.zbdd.ZbddCache.NoCache;
+import lombok.AllArgsConstructor;
+import lombok.Setter;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Range;
+import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,8 +42,10 @@ import static java.lang.Integer.MAX_VALUE;
 import static java.util.Arrays.copyOf;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.stream.Collectors.joining;
+import static lombok.AccessLevel.PACKAGE;
 
 
 /**
@@ -63,8 +68,8 @@ public class Zbdd
   protected static final int ZBDD_EMPTY = 0;
   protected static final int ZBDD_BASE = 1;
 
-  private final ZbddNodesAdvisor nodesAdvisor;
-  private final Statistics statistics;
+  private final @NotNull ZbddNodesAdvisor nodesAdvisor;
+  private final @NotNull Statistics statistics;
 
   private int lastVar;
 
@@ -75,8 +80,8 @@ public class Zbdd
   private int freeNodesCount;
   private int deadNodesCount;
 
-  private ZbddNameResolver nameResolver = var -> "v" + var;
-  private ZbddCache cache = NoCache.INSTANCE;
+  @Setter private @NotNull ZbddNameResolver nameResolver = var -> "v" + var;
+  private @NotNull ZbddCache cache = NoCache.INSTANCE;
 
 
   public Zbdd() {
@@ -112,11 +117,6 @@ public class Zbdd
 
   public void setCache(@NotNull ZbddCache cache) {
     (this.cache = cache).clear();
-  }
-
-
-  public void setNameResolver(@NotNull ZbddNameResolver nameResolver) {
-    this.nameResolver = nameResolver;
   }
 
 
@@ -322,6 +322,7 @@ public class Zbdd
 
 
   @Contract(pure = true)
+  @Range(from = 0, to = MAX_VALUE)
   public int count(@Range(from = 0, to = MAX_NODES) int zbdd) {
     return __count(checkZbdd(zbdd, "zbdd"));
   }
@@ -643,6 +644,8 @@ public class Zbdd
   }
 
 
+  @Contract(mutates = "this")
+  @Range(from = 0, to = MAX_NODES)
   protected int getNode(@Range(from = 1, to = MAX_VALUE) int var,
                         @Range(from = 0, to = MAX_NODES) int p0,
                         @Range(from = 0, to = MAX_NODES) int p1)
@@ -701,23 +704,27 @@ public class Zbdd
 
 
   @Contract(pure = true)
+  @Range(from = 0, to = MAX_NODES)
   protected int getP0(int zbdd) {
     return nodes[zbdd * NODE_WIDTH + IDX_P0];
   }
 
 
   @Contract(pure = true)
+  @Range(from = 0, to = MAX_NODES)
   protected int getP1(int zbdd) {
     return nodes[zbdd * NODE_WIDTH + IDX_P1];
   }
 
 
   @Contract(pure = true)
+  @Range(from = 0, to = MAX_NODES)
   protected int hash(int var, int p0, int p1) {
     return ((var * 12582917 + p0 * 4256249 + p1 * 741457) & 0x7fffffff) % nodesTableSize;
   }
 
 
+  @Range(from = 0, to = MAX_NODES)
   public int gc()
   {
     statistics.gcCount++;
@@ -783,6 +790,7 @@ public class Zbdd
   }
 
 
+  @Contract(mutates = "this")
   protected void ensureCapacity()
   {
     if (deadNodesCount > 0 && nodesAdvisor.isGCRequired(statistics) &&
@@ -828,7 +836,7 @@ public class Zbdd
   }
 
 
-  protected void chainBeforeHash(int zbdd, int hash)
+  private void chainBeforeHash(int zbdd, int hash)
   {
     final int hashPrevious = hash * NODE_WIDTH + IDX_PREV;
 
@@ -844,12 +852,13 @@ public class Zbdd
   }
 
 
-  @Contract(mutates = "this")
+  @Contract(value = "_ -> param1", mutates = "this")
   public int incRef(@Range(from = 0, to = MAX_NODES) int zbdd) {
     return __incRef(checkZbdd(zbdd, "zbdd"));
   }
 
 
+  @Contract(value = "_ -> param1", mutates = "this")
   protected int __incRef(int zbdd)
   {
     if (zbdd >= 2)
@@ -879,12 +888,14 @@ public class Zbdd
   }
 
 
+  @Contract(value = "_ -> param1", mutates = "this")
   @SuppressWarnings("UnusedReturnValue")
   public int decRef(@Range(from = 0, to = MAX_NODES) int zbdd) {
     return __decRef(checkZbdd(zbdd, "zbdd"));
   }
 
 
+  @Contract(value = "_ -> param1", mutates = "this")
   protected int __decRef(int zbdd)
   {
     if (zbdd >= 2)
@@ -906,7 +917,7 @@ public class Zbdd
 
 
   @Contract(value = "_, _ -> param1")
-  private int checkZbdd(int zbdd, String param)
+  private int checkZbdd(int zbdd, @NotNull String param)
   {
     if (zbdd < 0 || zbdd >= nodesTableSize)
       throw new ZbddException(param + " must be in range 0.." + (nodesTableSize - 1));
@@ -928,6 +939,7 @@ public class Zbdd
   }
 
 
+  @Contract(value = "_ -> new", pure = true)
   public @NotNull String toString(@Range(from = 0, to = MAX_NODES) int zbdd)
   {
     return getCubes(zbdd).stream()
@@ -937,6 +949,8 @@ public class Zbdd
   }
 
 
+  @Contract(pure = true)
+  @Unmodifiable
   public @NotNull List<int[]> getCubes(@Range(from = 0, to = MAX_NODES) int zbdd)
   {
     if (zbdd == ZBDD_EMPTY)
@@ -948,11 +962,11 @@ public class Zbdd
 
     getCubes0(cubes, new IntStack(lastVar), zbdd);
 
-    return cubes;
+    return unmodifiableList(cubes);
   }
 
 
-  private void getCubes0(List<int[]> set, IntStack vars, int zbdd)
+  private void getCubes0(@NotNull List<int[]> set, @NotNull IntStack vars, int zbdd)
   {
     if (zbdd == ZBDD_BASE)
       set.add(vars.getStack());
@@ -969,6 +983,8 @@ public class Zbdd
   }
 
 
+  @Contract(value = "_ -> new", pure = true)
+  @Unmodifiable
   public @NotNull Map<Integer,Node> getNodes(@Range(from = 0, to = MAX_NODES) int zbdd)
   {
     final Map<Integer,Node> nodeMap = new TreeMap<>((n1,n2) -> n2 - n1);
@@ -1028,14 +1044,10 @@ public class Zbdd
 
 
 
+  @AllArgsConstructor(access = PACKAGE)
   public final class Node
   {
     private final int zbdd;
-
-
-    Node(int zbdd) {
-      this.zbdd = zbdd;
-    }
 
 
     public int getVar() {
@@ -1174,5 +1186,5 @@ public class Zbdd
       // dead nodes > 20% of table size
       return tableSize > 250000 || statistics.getDeadNodes() > (tableSize / 5);
     }
-  };
+  }
 }
