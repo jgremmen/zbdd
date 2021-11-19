@@ -204,6 +204,12 @@ class ZbddTest
     }
 
     assertEquals(solutionsExpected, zbdd.count(solution));
+
+    ZbddNameResolver nameResolver = zbdd.getNameResolver();
+    System.out.println("Queens " + n + "x" + n + "  (" + zbdd.count(solution) + ")");
+    for(int[] cube: zbdd.getCubes(solution))
+      System.out.println("  " + nameResolver.getCube(cube));
+    System.out.println();
   }
 
 
@@ -211,11 +217,11 @@ class ZbddTest
   {
     final int[][] vars = new int[n][n];
     final Map<Integer,String> varNames = new HashMap<>();
-    final String format = n < 10 ? "r%dc%d" : "r%02dc%02d";
+    final String format = n < 10 ? "%c%d" : "%c%02d";
 
     for(int r = 0; r < n; r++)
       for(int c = 0; c < n; c++)
-        varNames.put(vars[r][c] = zbdd.createVar(), String.format(format, r + 1, c + 1));
+        varNames.put(vars[r][c] = zbdd.createVar(), String.format(format, 'a' + c, n - r));
 
     //noinspection NullableProblems
     zbdd.setNameResolver(varNames::get);

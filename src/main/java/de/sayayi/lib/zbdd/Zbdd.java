@@ -17,6 +17,7 @@ package de.sayayi.lib.zbdd;
 
 import de.sayayi.lib.zbdd.ZbddCache.NoCache;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -80,7 +81,10 @@ public class Zbdd
   private int freeNodesCount;
   private int deadNodesCount;
 
-  @Setter private @NotNull ZbddNameResolver nameResolver = var -> "v" + var;
+  @Getter @Setter
+  private @NotNull ZbddNameResolver nameResolver = var -> "v" + var;
+
+  @Getter
   private @NotNull ZbddCache cache = NoCache.INSTANCE;
 
 
