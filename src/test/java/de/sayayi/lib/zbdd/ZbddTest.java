@@ -130,15 +130,15 @@ class ZbddTest
   }
 
 
-  @Test void queens1() { checkSolution(1, 1); }
-  @Test void queens2() { checkSolution(2, 0); }
-  @Test void queens3() { checkSolution(3, 0); }
-  @Test void queens4() { checkSolution(4, 2); }
-  @Test void queens5() { checkSolution(5, 10); }
-  @Test void queens6() { checkSolution(6, 4); }
-  @Test void queens7() { checkSolution(7, 40); }
-  @Test void queens8() { checkSolution(8, 92); }
-  @Test void queens9() { checkSolution(9, 352); }
+  @Test void queens01() { checkSolution(1, 1); }
+  @Test void queens02() { checkSolution(2, 0); }
+  @Test void queens03() { checkSolution(3, 0); }
+  @Test void queens04() { checkSolution(4, 2); }
+  @Test void queens05() { checkSolution(5, 10); }
+  @Test void queens06() { checkSolution(6, 4); }
+  @Test void queens07() { checkSolution(7, 40); }
+  @Test void queens08() { checkSolution(8, 92); }
+  @Test void queens09() { checkSolution(9, 352); }
   @Test void queens10() { checkSolution(10, 724); }
   @Test void queens11() { checkSolution(11, 2680); }
   @Test void queens12() { checkSolution(12, 14200); }
