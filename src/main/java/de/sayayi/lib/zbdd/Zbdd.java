@@ -18,6 +18,7 @@ package de.sayayi.lib.zbdd;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.MustBeInvokedByOverriders;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Range;
 import org.jetbrains.annotations.Unmodifiable;
@@ -49,14 +50,15 @@ public class Zbdd
   private static final int VAR_MARK_MASK = 0x80000000;
   private static final int NODE_RECORD_SIZE = 6;
 
+  /** Maximum number of nodes. */
   public static final int MAX_NODES = MAX_VALUE / NODE_RECORD_SIZE;
 
-  private static final int _VAR = 0;
-  private static final int _P0 = 1;
-  private static final int _P1 = 2;
-  private static final int _PREV = 3;
-  private static final int _NEXT = 4;
-  private static final int _REFCOUNT = 5;
+  private static final int _VAR = 0;       // variable number
+  private static final int _P0 = 1;        // 0-branch
+  private static final int _P1 = 2;        // 1-branch
+  private static final int _NEXT = 3;      // next node
+  private static final int _CHAIN = 4;     // start of hash chain
+  private static final int _REFCOUNT = 5;  // reference count
 
   protected static final int ZBDD_EMPTY = 0;
   protected static final int ZBDD_BASE = 1;
@@ -150,8 +152,8 @@ public class Zbdd
       final int offset = i * NODE_RECORD_SIZE;
 
       nodes[offset + _VAR] = -1;
-      nodes[offset + _PREV] = 0;
       nodes[offset + _NEXT] = (i + 1) % nodesCapacity;
+      nodes[offset + _CHAIN] = 0;
       nodes[offset + _REFCOUNT] = 0;
     }
 
@@ -660,7 +662,7 @@ public class Zbdd
     int hash = hash(var, p0, p1);
 
     // find node in chain...
-    for(int r = nodes[hash * NODE_RECORD_SIZE + _PREV]; r != 0;)
+    for(int r = nodes[hash * NODE_RECORD_SIZE + _CHAIN]; r != 0;)
     {
       final int offset = r * NODE_RECORD_SIZE;
 
@@ -678,7 +680,9 @@ public class Zbdd
       __incRef(p0, p1);
 
       ensureCapacity();
-      hash = hash(var, p0, p1);  // may have changed due to grow
+
+      // may have changed due to nodes capacity increase
+      hash = hash(var, p0, p1);
 
       __decRef(p0, p1);
     }
@@ -727,7 +731,7 @@ public class Zbdd
   }
 
 
-  @Range(from = 0, to = MAX_NODES)
+  @Range(from = 0, to = MAX_NODES - 2)
   public int gc()
   {
     statistics.gcCount++;
@@ -740,7 +744,7 @@ public class Zbdd
       if (nodes[offset + _VAR] != -1 && nodes[offset + _REFCOUNT] > 0)
         gc_markTree(i);
 
-      nodes[offset + _PREV] = 0;
+      nodes[offset + _CHAIN] = 0;
     }
 
     final int oldFreeNodesCount = nodesFree;
@@ -760,8 +764,8 @@ public class Zbdd
       {
         // garbage collect node
         nodes[offset + _VAR] = -1;
-        nodes[offset + _REFCOUNT] = 0;
         nodes[offset + _NEXT] = nextFreeNode;
+        nodes[offset + _REFCOUNT] = 0;
 
         nextFreeNode = i;
         nodesFree++;
@@ -802,7 +806,7 @@ public class Zbdd
         gc() >= nodesAdvisor.getMinimumFreeNodes(statistics))
       return;
 
-    final int oldTableSize = nodesCapacity;
+    final int oldNodesCapacity = nodesCapacity;
 
     nodesCapacity = Math.min(nodesCapacity + nodesAdvisor.adviseIncrement(statistics), MAX_NODES);
     nodes = copyOf(nodes, nodesCapacity * NODE_RECORD_SIZE);
@@ -810,7 +814,7 @@ public class Zbdd
     nextFreeNode = 0;
     nodesFree = 0;
 
-    for(int i = nodesCapacity; i-- > oldTableSize;)
+    for(int i = nodesCapacity; i-- > oldNodesCapacity;)
     {
       final int offset = i * NODE_RECORD_SIZE;
 
@@ -822,11 +826,11 @@ public class Zbdd
     }
 
     // unchain old nodes
-    for(int i = 0, end = oldTableSize * NODE_RECORD_SIZE; i < end; i += NODE_RECORD_SIZE)
-      nodes[i + _PREV] = 0;
+    for(int i = 0, end = oldNodesCapacity * NODE_RECORD_SIZE; i < end; i += NODE_RECORD_SIZE)
+      nodes[i + _CHAIN] = 0;
 
     // re-chain old nodes
-    for(int i = oldTableSize; i-- > 2;)
+    for(int i = oldNodesCapacity; i-- > 2;)
     {
       final int offset = i * NODE_RECORD_SIZE;
 
@@ -846,10 +850,10 @@ public class Zbdd
 
   private void chainBeforeHash(int zbdd, int hash)
   {
-    final int hashPrevious = hash * NODE_RECORD_SIZE + _PREV;
+    final int hashChain = hash * NODE_RECORD_SIZE + _CHAIN;
 
-    nodes[zbdd * NODE_RECORD_SIZE + _NEXT] = nodes[hashPrevious];
-    nodes[hashPrevious] = zbdd;
+    nodes[zbdd * NODE_RECORD_SIZE + _NEXT] = nodes[hashChain];
+    nodes[hashChain] = zbdd;
   }
 
 
@@ -931,7 +935,8 @@ public class Zbdd
 
 
   @Contract(value = "_, _ -> param1")
-  private int checkZbdd(int zbdd, @NotNull String param)
+  @MustBeInvokedByOverriders
+  protected int checkZbdd(int zbdd, @NotNull String param)
   {
     if (zbdd < 0 || zbdd >= nodesCapacity)
       throw new ZbddException(param + " must be in range 0.." + (nodesCapacity - 1));
@@ -944,7 +949,8 @@ public class Zbdd
 
 
   @Contract(value = "_ -> param1")
-  private int checkVar(int var)
+  @MustBeInvokedByOverriders
+  protected int checkVar(int var)
   {
     if (var <= 0 || var > lastVarNumber)
       throw new ZbddException("var must be in range 1.." + var);
@@ -980,6 +986,7 @@ public class Zbdd
   }
 
 
+  @Contract(mutates = "param1,param2")
   private void getCubes0(@NotNull List<int[]> set, @NotNull IntStack vars, int zbdd)
   {
     if (zbdd == ZBDD_BASE)
@@ -1009,6 +1016,7 @@ public class Zbdd
   }
 
 
+  @Contract(mutates = "param1")
   private void getNodes0(@NotNull Map<Integer,Node> nodeMap, int zbdd)
   {
     nodeMap.computeIfAbsent(zbdd, Node::new);
@@ -1195,22 +1203,22 @@ public class Zbdd
     @Override
     public int adviseIncrement(@NotNull ZbddStatistics statistics)
     {
-      final int tableSize = statistics.getNodesCapacity();
+      final int capacity = statistics.getNodesCapacity();
 
       // size < 500000 -> increase by 150%
       // size > 500000 -> increase by 30%
-      return tableSize < 500000 ? (tableSize / 2) * 3 : (tableSize / 10) * 3;
+      return capacity < 500000 ? (capacity / 2) * 3 : (capacity / 10) * 3;
     }
 
 
     @Override
     public boolean isGCRequired(@NotNull ZbddStatistics statistics)
     {
-      final int tableSize = statistics.getNodesCapacity();
+      final int capacity = statistics.getNodesCapacity();
 
-      // size > 250000
-      // dead nodes > 20% of table size
-      return tableSize > 250000 || statistics.getDeadNodes() > (tableSize / 10);
+      // capacity > 250000
+      // dead nodes > 10% of total capacity
+      return capacity > 250000 || statistics.getDeadNodes() > (capacity / 10);
     }
   }
 }
