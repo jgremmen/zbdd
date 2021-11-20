@@ -243,7 +243,7 @@ class ZbddTest
 
 
     @Override
-    public @Range(from = 4, to = MAX_NODES) int getInitialNodes() {
+    public @Range(from = 4, to = MAX_NODES) int getInitialCapacity() {
       return initialSize;
     }
 
@@ -255,7 +255,7 @@ class ZbddTest
 
 
     @Override
-    public @Range(from = 1, to = MAX_NODES) int adviseNodesGrowth(@NotNull ZbddStatistics statistics) {
+    public @Range(from = 1, to = MAX_NODES) int adviseIncrement(@NotNull ZbddStatistics statistics) {
       return statistics.getNodesCapacity() / 5;  // +20%
     }
 

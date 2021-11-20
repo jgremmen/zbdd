@@ -29,7 +29,7 @@ public interface ZbddNodesAdvisor
 {
   @Contract(pure = true)
   @Range(from = 4, to = MAX_NODES)
-  int getInitialNodes();
+  int getInitialCapacity();
 
 
   @Contract(pure = true)
@@ -39,7 +39,7 @@ public interface ZbddNodesAdvisor
 
   @Contract(pure = true)
   @Range(from = 1, to = MAX_NODES)
-  int adviseNodesGrowth(@NotNull ZbddStatistics statistics);
+  int adviseIncrement(@NotNull ZbddStatistics statistics);
 
 
   /**
