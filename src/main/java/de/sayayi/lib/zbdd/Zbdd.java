@@ -67,11 +67,11 @@ public class Zbdd
   private int lastVarNumber;
 
   private int nodesCapacity;
-  private int[] nodes;
+  private int nodesFree;
+  private int nodesDead;
 
-  private int firstFreeNode;
-  private int freeNodesCount;
-  private int deadNodesCount;
+  private int @NotNull [] nodes;
+  private int nextFreeNode;
 
   private @NotNull ZbddLiteralResolver literalResolver = var -> "v" + var;
 
@@ -141,9 +141,9 @@ public class Zbdd
   public void clear()
   {
     lastVarNumber = 0;
-    deadNodesCount = 0;
-    firstFreeNode = 2;
-    freeNodesCount = nodesCapacity - 2;
+    nodesDead = 0;
+    nextFreeNode = 2;
+    nodesFree = nodesCapacity - 2;
 
     for(int i = 2; i < nodesCapacity; i++)
     {
@@ -673,7 +673,7 @@ public class Zbdd
       r = nodes[offset + _NEXT];
     }
 
-    if (freeNodesCount < 2)
+    if (nodesFree < 2)
     {
       __incRef(p0, p1);
 
@@ -683,10 +683,10 @@ public class Zbdd
       __decRef(p0, p1);
     }
 
-    final int r = firstFreeNode;
+    final int r = nextFreeNode;
     final int offset = r * NODE_RECORD_SIZE;
-    firstFreeNode = nodes[offset + _NEXT];
-    freeNodesCount--;
+    nextFreeNode = nodes[offset + _NEXT];
+    nodesFree--;
 
     // set new node
     nodes[offset + _VAR] = var;
@@ -743,8 +743,8 @@ public class Zbdd
       nodes[offset + _PREV] = 0;
     }
 
-    final int oldFreeNodesCount = freeNodesCount;
-    firstFreeNode = freeNodesCount = 0;
+    final int oldFreeNodesCount = nodesFree;
+    nextFreeNode = nodesFree = 0;
 
     for(int i = nodesCapacity; i-- > 2;)
     {
@@ -761,16 +761,16 @@ public class Zbdd
         // garbage collect node
         nodes[offset + _VAR] = -1;
         nodes[offset + _REFCOUNT] = 0;
-        nodes[offset + _NEXT] = firstFreeNode;
+        nodes[offset + _NEXT] = nextFreeNode;
 
-        firstFreeNode = i;
-        freeNodesCount++;
+        nextFreeNode = i;
+        nodesFree++;
       }
     }
 
-    deadNodesCount = 0;
+    nodesDead = 0;
 
-    final int gcFreedNodesCount = freeNodesCount - oldFreeNodesCount;
+    final int gcFreedNodesCount = nodesFree - oldFreeNodesCount;
     statistics.gcFreedNodes += gcFreedNodesCount;
 
     return gcFreedNodesCount;
@@ -797,7 +797,7 @@ public class Zbdd
   @Contract(mutates = "this")
   protected void ensureCapacity()
   {
-    if (deadNodesCount > 0 &&
+    if (nodesDead > 0 &&
         nodesAdvisor.isGCRequired(statistics) &&
         gc() >= nodesAdvisor.getMinimumFreeNodes(statistics))
       return;
@@ -807,17 +807,18 @@ public class Zbdd
     nodesCapacity = Math.min(nodesCapacity + nodesAdvisor.adviseIncrement(statistics), MAX_NODES);
     nodes = copyOf(nodes, nodesCapacity * NODE_RECORD_SIZE);
 
-    firstFreeNode = freeNodesCount = 0;
+    nextFreeNode = 0;
+    nodesFree = 0;
 
     for(int i = nodesCapacity; i-- > oldTableSize;)
     {
       final int offset = i * NODE_RECORD_SIZE;
 
       nodes[offset + _VAR] = -1;
-      nodes[offset + _NEXT] = firstFreeNode;
+      nodes[offset + _NEXT] = nextFreeNode;
 
-      firstFreeNode = i;
-      freeNodesCount++;
+      nextFreeNode = i;
+      nodesFree++;
     }
 
     // unchain old nodes
@@ -833,11 +834,11 @@ public class Zbdd
         chainBeforeHash(i, hash(nodes[offset + _VAR], nodes[offset + _P0], nodes[offset + _P1]));
       else
       {
-        nodes[offset + _NEXT] = firstFreeNode;
+        nodes[offset + _NEXT] = nextFreeNode;
         nodes[offset + _REFCOUNT] = 0;
 
-        firstFreeNode = i;
-        freeNodesCount++;
+        nextFreeNode = i;
+        nodesFree++;
       }
     }
   }
@@ -881,7 +882,7 @@ public class Zbdd
       else
       {
         if (ref == 0)
-          deadNodesCount--;
+          nodesDead--;
 
         nodes[refCountOffset]++;
       }
@@ -919,7 +920,7 @@ public class Zbdd
       if (ref > 0)
       {
         if (ref == 1)
-          deadNodesCount++;
+          nodesDead++;
 
         nodes[refCountOffset]--;
       }
@@ -1114,13 +1115,13 @@ public class Zbdd
 
     @Override
     public int getFreeNodes() {
-      return freeNodesCount;
+      return nodesFree;
     }
 
 
     @Override
     public int getDeadNodes() {
-      return deadNodesCount;
+      return nodesDead;
     }
 
 
