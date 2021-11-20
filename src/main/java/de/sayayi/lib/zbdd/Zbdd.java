@@ -1176,7 +1176,7 @@ public class Zbdd
       return "Statistics(node={capacity=" + getNodesCapacity() + ", occupied=" + getOccupiedNodes() +
           ", free=" + getFreeNodes() + ", dead=" + getDeadNodes() + "}, hitRatio=" +
           round(getNodeLookupHitRatio() * 1000) / 10.0 + "%, gcCount=" + getGCCount() +
-          ", mem=" + String.format(ROOT, "%.1fMB", getMemoryUsage() / 1024.0 / 1024.0) +
+          ", mem=" + String.format(ROOT, "%.1fKB", getMemoryUsage() / 1024.0) +
           ")";
     }
   }
