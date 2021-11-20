@@ -30,11 +30,13 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import static java.lang.Integer.MAX_VALUE;
+import static java.lang.Math.round;
 import static java.util.Arrays.copyOf;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableMap;
+import static java.util.Locale.ROOT;
 import static java.util.stream.Collectors.joining;
 import static lombok.AccessLevel.PACKAGE;
 
@@ -1127,7 +1129,9 @@ public class Zbdd
     {
       return "Statistics(node={capacity=" + getNodesCapacity() + ", occupied=" + getOccupiedNodes() +
           ", free=" + getFreeNodes() + ", dead=" + getDeadNodes() + "}, hitRatio=" +
-          Math.round(getNodeLookupHitRatio() * 1000) / 10.0 + "%, gcCount=" + getGCCount() + ")";
+          round(getNodeLookupHitRatio() * 1000) / 10.0 + "%, gcCount=" + getGCCount() +
+          ", mem=" + String.format(ROOT, "%.1fMB", getMemoryUsage() / 1024.0 / 1024.0) +
+          ")";
     }
   }
 
