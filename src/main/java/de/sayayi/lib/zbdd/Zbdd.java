@@ -678,13 +678,14 @@ public class Zbdd
     if (nodesFree < 2)
     {
       __incRef(p0, p1);
-
       ensureCapacity();
+      __decRef(p0, p1);
+
+      if (nodesFree == 0)
+        throw new ZbddException("nodes capacity exhausted");
 
       // may have changed due to nodes capacity increase
       hash = hash(var, p0, p1);
-
-      __decRef(p0, p1);
     }
 
     final int r = nextFreeNode;
