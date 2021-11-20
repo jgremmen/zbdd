@@ -24,7 +24,7 @@ import org.jetbrains.annotations.Contract;
 public interface ZbddStatistics
 {
   @Contract(pure = true)
-  int getNodeTableSize();
+  int getNodesCapacity();
 
 
   @Contract(pure = true)
@@ -43,7 +43,7 @@ public interface ZbddStatistics
 
   @Contract(pure = true)
   default int getOccupiedNodes() {
-    return getNodeTableSize() - getAvailableNodes();
+    return getNodesCapacity() - getAvailableNodes();
   }
 
 

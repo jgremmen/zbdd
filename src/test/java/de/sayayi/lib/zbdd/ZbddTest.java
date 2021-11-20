@@ -250,19 +250,19 @@ class ZbddTest
 
     @Override
     public @Range(from = 1, to = MAX_NODES) int getMinimumFreeNodes(@NotNull ZbddStatistics statistics) {
-      return statistics.getNodeTableSize() / 20;
+      return statistics.getNodesCapacity() / 20;
     }
 
 
     @Override
     public @Range(from = 1, to = MAX_NODES) int adviseNodesGrowth(@NotNull ZbddStatistics statistics) {
-      return statistics.getNodeTableSize() / 5;  // +20%
+      return statistics.getNodesCapacity() / 5;  // +20%
     }
 
 
     @Override
     public boolean isGCRequired(@NotNull ZbddStatistics statistics) {
-      return statistics.getDeadNodes() > (statistics.getNodeTableSize() / 10);
+      return statistics.getDeadNodes() > (statistics.getNodesCapacity() / 10);
     }
   }
 }

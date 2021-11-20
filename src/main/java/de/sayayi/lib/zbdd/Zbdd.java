@@ -64,7 +64,7 @@ public class Zbdd
 
   private int lastVarNumber;
 
-  private int nodesTableSize;
+  private int nodesCapacity;
   private int[] nodes;
 
   private int firstFreeNode;
@@ -84,8 +84,8 @@ public class Zbdd
   {
     this.nodesAdvisor = nodesAdvisor;
 
-    nodesTableSize = nodesAdvisor.getInitialNodes();
-    nodes = new int[nodesTableSize * NODE_WIDTH];
+    nodesCapacity = nodesAdvisor.getInitialNodes();
+    nodes = new int[nodesCapacity * NODE_WIDTH];
 
     initLeafNode(ZBDD_EMPTY);
     initLeafNode(ZBDD_BASE);
@@ -118,15 +118,15 @@ public class Zbdd
     lastVarNumber = 0;
     deadNodesCount = 0;
     firstFreeNode = 2;
-    freeNodesCount = nodesTableSize - 2;
+    freeNodesCount = nodesCapacity - 2;
 
-    for(int i = 2; i < nodesTableSize; i++)
+    for(int i = 2; i < nodesCapacity; i++)
     {
       final int offset = i * NODE_WIDTH;
 
       nodes[offset + _VAR] = -1;
       nodes[offset + _PREV] = 0;
-      nodes[offset + _NEXT] = (i + 1) % nodesTableSize;
+      nodes[offset + _NEXT] = (i + 1) % nodesCapacity;
       nodes[offset + _REFCOUNT] = 0;
     }
 
@@ -223,7 +223,8 @@ public class Zbdd
     final int p1 = __incRef(__subset0(getP1(zbdd), var));
     final int r = getNode(top, p0, p1);
 
-    __decRef(zbdd, p0, p1);
+    __decRef(p0, p1);
+    __decRef(zbdd);
 
     return r;
   }
@@ -254,7 +255,8 @@ public class Zbdd
     final int p1 = __incRef(__subset1(getP1(zbdd), var));
     final int r = getNode(top, p0, p1);
 
-    __decRef(zbdd, p0, p1);
+    __decRef(p0, p1);
+    __decRef(zbdd);
 
     return r;
   }
@@ -499,7 +501,8 @@ public class Zbdd
 
     final int r = __union(p0q0, v_p0q1_p1q0_p1q1);
 
-    __decRef(p, q, p0, p1, q0, q1, p0q0, p0q1, p1q0, p1q1, p0q1_p1q0, p0p1_p1q0_p1q1, v_p0q1_p1q0_p1q1);
+    for(int n: new int[] { p, q, p0, p1, q0, q1, p0q0, p0q1, p1q0, p1q1, p0q1_p1q0, p0p1_p1q0_p1q1, v_p0q1_p1q0_p1q1 })
+      __decRef(n);
 
     return r;
   }
@@ -548,7 +551,8 @@ public class Zbdd
     else
       r = r1;
 
-    __decRef(p, q, p0, p1, q0, q1);
+    for(int n: new int[] { p, q, p0, p1, q0, q1 })
+      __decRef(n);
 
     return r;
   }
@@ -570,7 +574,8 @@ public class Zbdd
     final int q_mul_p_div_q = __incRef(multiply(q, p_div_q));
     final int r = __difference(p, q_mul_p_div_q);
 
-    __decRef(p, q, p_div_q, q_mul_p_div_q);
+    for(int n: new int[] { p, q, p_div_q, q_mul_p_div_q })
+      __decRef(n);
 
     return r;
   }
@@ -595,7 +600,8 @@ public class Zbdd
     final int p1 = __incRef(__atomize(getP1(zbdd)));
     final int r = getNode(getVar(zbdd), __union(p0, p1), ZBDD_BASE);
 
-    __decRef(zbdd, p0, p1);
+    __decRef(p0, p1);
+    __decRef(zbdd);
 
     return r;
   }
@@ -682,7 +688,7 @@ public class Zbdd
   @Contract(pure = true)
   @Range(from = 0, to = MAX_NODES)
   protected int hash(int var, int p0, int p1) {
-    return ((var * 12582917 + p0 * 4256249 + p1 * 741457) & 0x7fffffff) % nodesTableSize;
+    return ((var * 12582917 + p0 * 4256249 + p1 * 741457) & 0x7fffffff) % nodesCapacity;
   }
 
 
@@ -692,7 +698,7 @@ public class Zbdd
     statistics.gcCount++;
 
     // mark referenced nodes...
-    for(int i = nodesTableSize; i-- > 0;)
+    for(int i = nodesCapacity; i-- > 0;)
     {
       final int offset = i * NODE_WIDTH;
 
@@ -705,7 +711,7 @@ public class Zbdd
     final int oldFreeNodesCount = freeNodesCount;
     firstFreeNode = freeNodesCount = 0;
 
-    for(int i = nodesTableSize; i-- > 2;)
+    for(int i = nodesCapacity; i-- > 2;)
     {
       final int offset = i * NODE_WIDTH;
 
@@ -756,18 +762,19 @@ public class Zbdd
   @Contract(mutates = "this")
   protected void ensureCapacity()
   {
-    if (deadNodesCount > 0 && nodesAdvisor.isGCRequired(statistics) &&
+    if (deadNodesCount > 0 &&
+        nodesAdvisor.isGCRequired(statistics) &&
         gc() >= nodesAdvisor.getMinimumFreeNodes(statistics))
       return;
 
-    final int oldTableSize = nodesTableSize;
+    final int oldTableSize = nodesCapacity;
 
-    nodesTableSize = Math.min(nodesTableSize + nodesAdvisor.adviseNodesGrowth(statistics), MAX_NODES);
-    nodes = copyOf(nodes, nodesTableSize * NODE_WIDTH);
+    nodesCapacity = Math.min(nodesCapacity + nodesAdvisor.adviseNodesGrowth(statistics), MAX_NODES);
+    nodes = copyOf(nodes, nodesCapacity * NODE_WIDTH);
 
     firstFreeNode = freeNodesCount = 0;
 
-    for(int i = nodesTableSize; i-- > oldTableSize;)
+    for(int i = nodesCapacity; i-- > oldTableSize;)
     {
       final int offset = i * NODE_WIDTH;
 
@@ -848,10 +855,10 @@ public class Zbdd
   }
 
 
-  private void __decRef(int... zbdds)
+  private void __decRef(int zbdd1, int zbdd2)
   {
-    for(int zbdd: zbdds)
-      __decRef(zbdd);
+    __decRef(zbdd1);
+    __decRef(zbdd2);
   }
 
 
@@ -888,8 +895,8 @@ public class Zbdd
   @Contract(value = "_, _ -> param1")
   private int checkZbdd(int zbdd, @NotNull String param)
   {
-    if (zbdd < 0 || zbdd >= nodesTableSize)
-      throw new ZbddException(param + " must be in range 0.." + (nodesTableSize - 1));
+    if (zbdd < 0 || zbdd >= nodesCapacity)
+      throw new ZbddException(param + " must be in range 0.." + (nodesCapacity - 1));
 
     if (zbdd >= 2 && nodes[zbdd * NODE_WIDTH + _VAR] == -1)
       throw new ZbddException("invalid " + param + " node " + zbdd);
@@ -1062,8 +1069,8 @@ public class Zbdd
 
 
     @Override
-    public int getNodeTableSize() {
-      return nodesTableSize;
+    public int getNodesCapacity() {
+      return nodesCapacity;
     }
 
 
@@ -1118,9 +1125,9 @@ public class Zbdd
     @Override
     public String toString()
     {
-      return "Statistics(nodesOccupied=" + getOccupiedNodes() + ", nodesFree=" + getFreeNodes() +
-          ", nodesDead=" + getDeadNodes() +
-          ", lookupHitRatio=" + Math.round(getNodeLookupHitRatio() * 1000) / 10.0 + "%)";
+      return "Statistics(node={capacity=" + getNodesCapacity() + ", occupied=" + getOccupiedNodes() +
+          ", free=" + getFreeNodes() + ", dead=" + getDeadNodes() + "}, hitRatio=" +
+          Math.round(getNodeLookupHitRatio() * 1000) / 10.0 + "%, gcCount=" + getGCCount() + ")";
     }
   }
 
@@ -1140,14 +1147,14 @@ public class Zbdd
 
     @Override
     public @Range(from = 1, to = MAX_NODES) int getMinimumFreeNodes(@NotNull ZbddStatistics statistics) {
-      return statistics.getNodeTableSize() / 10;  // 10%
+      return statistics.getNodesCapacity() / 10;  // 10%
     }
 
 
     @Override
     public int adviseNodesGrowth(@NotNull ZbddStatistics statistics)
     {
-      final int tableSize = statistics.getNodeTableSize();
+      final int tableSize = statistics.getNodesCapacity();
 
       // size < 500000 -> increase by 150%
       // size > 500000 -> increase by 30%
@@ -1158,7 +1165,7 @@ public class Zbdd
     @Override
     public boolean isGCRequired(@NotNull ZbddStatistics statistics)
     {
-      final int tableSize = statistics.getNodeTableSize();
+      final int tableSize = statistics.getNodesCapacity();
 
       // size > 250000
       // dead nodes > 20% of table size
