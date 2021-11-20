@@ -173,13 +173,7 @@ public class Zbdd
 
         for(int var: cubeVars)
           if (checkVar(var) != getVar(r))
-          {
-            final int p1 = r;
-
-            __incRef(p1);
-            r = getNode(var, ZBDD_EMPTY, p1);
-            __decRef(p1);
-          }
+            r = getNode(var, ZBDD_EMPTY, r);
       }
     }
 
