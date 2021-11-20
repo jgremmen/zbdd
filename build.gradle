@@ -1,9 +1,12 @@
 plugins {
   id 'java-library'
+  id 'maven-publish'
+  id 'jacoco'
+  id 'signing'
 }
 
 
-description 'Java ZBDD Implementation'
+description 'Java ZBDD Library'
 group 'de.sayayi.lib'
 version '0.1.0'
 
@@ -27,6 +30,11 @@ java {
 test {
   useJUnitPlatform()
 }
+
+
+apply from: file('gradle/javadoc.gradle')
+apply from: file('gradle/quality.gradle')
+apply from: file('gradle/publishing.gradle')
 
 
 repositories {
