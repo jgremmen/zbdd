@@ -25,7 +25,7 @@ import static de.sayayi.lib.zbdd.Zbdd.MAX_NODES;
 /**
  * @author Jeroen Gremmen
  */
-public interface ZbddNodesAdvisor
+public interface ZbddCapacityAdvisor
 {
   @Contract(pure = true)
   @Range(from = 4, to = MAX_NODES)

@@ -63,7 +63,7 @@ public class Zbdd
   protected static final int ZBDD_EMPTY = 0;
   protected static final int ZBDD_BASE = 1;
 
-  private final @NotNull ZbddNodesAdvisor nodesAdvisor;
+  private final @NotNull ZbddCapacityAdvisor capacityAdvisor;
   private final @NotNull Statistics statistics;
 
   private int lastVarNumber;
@@ -79,15 +79,15 @@ public class Zbdd
 
 
   public Zbdd() {
-    this(NodesAdvisor.INSTANCE);
+    this(DefaultCapacityAdvisor.INSTANCE);
   }
 
 
-  public Zbdd(@NotNull ZbddNodesAdvisor nodesAdvisor)
+  public Zbdd(@NotNull ZbddCapacityAdvisor capacityAdvisor)
   {
-    this.nodesAdvisor = nodesAdvisor;
+    this.capacityAdvisor = capacityAdvisor;
 
-    nodesCapacity = nodesAdvisor.getInitialCapacity();
+    nodesCapacity = capacityAdvisor.getInitialCapacity();
     nodes = new int[nodesCapacity * NODE_RECORD_SIZE];
 
     initLeafNode(ZBDD_EMPTY);
@@ -803,13 +803,13 @@ public class Zbdd
   protected void ensureCapacity()
   {
     if (nodesDead > 0 &&
-        nodesAdvisor.isGCRequired(statistics) &&
-        gc() >= nodesAdvisor.getMinimumFreeNodes(statistics))
+        capacityAdvisor.isGCRequired(statistics) &&
+        gc() >= capacityAdvisor.getMinimumFreeNodes(statistics))
       return;
 
     final int oldNodesCapacity = nodesCapacity;
 
-    nodesCapacity = Math.min(nodesCapacity + nodesAdvisor.adviseIncrement(statistics), MAX_NODES);
+    nodesCapacity = Math.min(nodesCapacity + capacityAdvisor.adviseIncrement(statistics), MAX_NODES);
     nodes = copyOf(nodes, nodesCapacity * NODE_RECORD_SIZE);
 
     nextFreeNode = 0;
@@ -1184,7 +1184,7 @@ public class Zbdd
 
 
 
-  private enum NodesAdvisor implements ZbddNodesAdvisor
+  private enum DefaultCapacityAdvisor implements ZbddCapacityAdvisor
   {
     INSTANCE;
 
@@ -1197,7 +1197,7 @@ public class Zbdd
 
     @Override
     public @Range(from = 1, to = MAX_NODES) int getMinimumFreeNodes(@NotNull ZbddStatistics statistics) {
-      return statistics.getNodesCapacity() / 10;  // 10%
+      return statistics.getNodesCapacity() / 20;  // 5%
     }
 
 
@@ -1208,7 +1208,7 @@ public class Zbdd
 
       // size < 500000 -> increase by 150%
       // size > 500000 -> increase by 30%
-      return capacity < 500000 ? (capacity / 2) * 3 : (capacity / 10) * 3;
+      return capacity < 500000 ? capacity * 3 / 2 : (capacity / 10) * 3;
     }
 
 

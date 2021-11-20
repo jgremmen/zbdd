@@ -166,7 +166,7 @@ class ZbddTest
 
   private void checkSolution(int n, int solutionsExpected, int tableSize)
   {
-    final Zbdd zbdd = new Zbdd(new SimpleNodesAdvisor(tableSize));
+    final Zbdd zbdd = new Zbdd(new SimpleCapacityAdvisor(tableSize));
     final int[][] vars = getVars(zbdd, n);
 
     int solution = ZBDD_BASE;
@@ -233,12 +233,12 @@ class ZbddTest
 
 
 
-  private static final class SimpleNodesAdvisor implements ZbddNodesAdvisor
+  private static final class SimpleCapacityAdvisor implements ZbddCapacityAdvisor
   {
     private final int initialSize;
 
 
-    private SimpleNodesAdvisor(int initialSize) {
+    private SimpleCapacityAdvisor(int initialSize) {
       this.initialSize = initialSize;
     }
 
