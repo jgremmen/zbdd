@@ -74,7 +74,7 @@ class ZbddTest
     int b = zbdd.createVar();
     int c = zbdd.createVar();
 
-    zbdd.setNameResolver(var -> var == a ? "a" : var == b ? "b" : "c");
+    zbdd.setLiteralResolver(var -> var == a ? "a" : var == b ? "b" : "c");
 
     int ab = zbdd.cube(a, b);
     int ac = zbdd.cube(a, c);
@@ -92,7 +92,7 @@ class ZbddTest
     int x1 = zbdd.createVar();
     int x2 = zbdd.createVar();
 
-    zbdd.setNameResolver(var -> var == c ? "container" : var == x1 ? "x1" : "x2");
+    zbdd.setLiteralResolver(var -> var == c ? "container" : var == x1 ? "x1" : "x2");
 
     int dependency = zbdd.cube(c, x1, x2);
     int containerSubset = zbdd.subset1(dependency, c);
@@ -110,7 +110,7 @@ class ZbddTest
     int x1 = zbdd.createVar();
     int x2 = zbdd.createVar();
 
-    zbdd.setNameResolver(var -> var == c ? "container" : var == x1 ? "x1" : "x2");
+    zbdd.setLiteralResolver(var -> var == c ? "container" : var == x1 ? "x1" : "x2");
 
     int dependency1 = zbdd.cube(c, x1, x2);
     int dependency2 = zbdd.cube(c, x2);
@@ -137,7 +137,7 @@ class ZbddTest
     int b = zbdd.createVar();
     int c = zbdd.createVar();
 
-    zbdd.setNameResolver(var -> var == a ? "a" : var == b ? "b" : "c");
+    zbdd.setLiteralResolver(var -> var == a ? "a" : var == b ? "b" : "c");
 
     int ab = zbdd.cube(a, b);
     int p = zbdd.union(zbdd.union(ab, zbdd.cube(b)), zbdd.cube(c));
@@ -205,7 +205,7 @@ class ZbddTest
     int solutions = zbdd.count(zbdd.incRef(solution));
     assertEquals(solutionsExpected, solutions);
 
-    ZbddNameResolver nameResolver = zbdd.getNameResolver();
+    ZbddLiteralResolver nameResolver = zbdd.getLiteralResolver();
     System.out.println("Queens " + n + "x" + n + "  (" + solutions + ")");
     for(int[] cube: zbdd.getCubes(solution))
       System.out.println("  " + nameResolver.getCubeName(cube));
@@ -224,7 +224,7 @@ class ZbddTest
         varNames.put(vars[r][c] = zbdd.createVar(), String.format(format, 'a' + c, n - r));
 
     //noinspection NullableProblems
-    zbdd.setNameResolver(varNames::get);
+    zbdd.setLiteralResolver(varNames::get);
 
     return vars;
   }

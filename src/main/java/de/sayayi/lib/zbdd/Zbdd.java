@@ -74,7 +74,7 @@ public class Zbdd
   private int deadNodesCount;
 
   @Getter @Setter
-  private @NotNull ZbddNameResolver nameResolver = var -> "v" + var;
+  private @NotNull ZbddLiteralResolver literalResolver = var -> "v" + var;
 
 
   public Zbdd() {
@@ -921,9 +921,9 @@ public class Zbdd
   public @NotNull String toString(@Range(from = 0, to = MAX_NODES) int zbdd)
   {
     return getCubes(zbdd).stream()
-        .map(nameResolver::getCubeName)
+        .map(literalResolver::getCubeName)
         .sorted()
-        .collect(joining(", ", "{", "}"));
+        .collect(joining(", ", "{ ", " }"));
   }
 
 
@@ -1046,7 +1046,7 @@ public class Zbdd
     public String toString()
     {
       return zbdd == 0 ? "Empty" : zbdd == 1 ? "Base"
-          : ("Node(var=" + nameResolver.getLiteralName(getVar()) + ", P0=" + getP0() + ", P1=" + getP1() + ")");
+          : ("Node(var=" + literalResolver.getLiteralName(getVar()) + ", P0=" + getP0() + ", P1=" + getP1() + ")");
     }
   }
 

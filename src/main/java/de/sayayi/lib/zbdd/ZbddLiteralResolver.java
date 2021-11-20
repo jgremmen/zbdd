@@ -19,25 +19,31 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Range;
 
-import java.util.Arrays;
-
 import static java.lang.Integer.MAX_VALUE;
+import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.joining;
 
 
 /**
  * @author Jeroen Gremmen
  */
-public interface ZbddNameResolver
+public interface ZbddLiteralResolver
 {
+  /**
+   * Returns the literal name for variable {@code var}.
+   *
+   * @param var  registered variable
+   *
+   * @return  literal name, never {@code null}
+   */
   @Contract(pure = true)
   @NotNull String getLiteralName(@Range(from = 1, to = MAX_VALUE) int var);
 
 
   @Contract(pure = true)
-  default @NotNull String getCubeName(int @NotNull [] vars)
+  default @NotNull String getCubeName(int @NotNull [] cubeVars)
   {
-    return vars.length == 0
-        ? "{}" : Arrays.stream(vars).sorted().mapToObj(this::getLiteralName).collect(joining("."));
+    return cubeVars.length == 0
+        ? "{}" : stream(cubeVars).sorted().mapToObj(this::getLiteralName).collect(joining("."));
   }
 }
