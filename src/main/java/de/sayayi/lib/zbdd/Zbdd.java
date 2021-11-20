@@ -919,7 +919,7 @@ public class Zbdd
   public @NotNull String toString(@Range(from = 0, to = MAX_NODES) int zbdd)
   {
     return getCubes(zbdd).stream()
-        .map(nameResolver::getCube)
+        .map(nameResolver::getCubeName)
         .sorted()
         .collect(joining(", ", "{", "}"));
   }
@@ -1044,7 +1044,7 @@ public class Zbdd
     public String toString()
     {
       return zbdd == 0 ? "Empty" : zbdd == 1 ? "Base"
-          : ("Node(var=" + nameResolver.getVariable(getVar()) + ", P0=" + getP0() + ", P1=" + getP1() + ")");
+          : ("Node(var=" + nameResolver.getLiteralName(getVar()) + ", P0=" + getP0() + ", P1=" + getP1() + ")");
     }
   }
 

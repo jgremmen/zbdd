@@ -208,7 +208,7 @@ class ZbddTest
     ZbddNameResolver nameResolver = zbdd.getNameResolver();
     System.out.println("Queens " + n + "x" + n + "  (" + solutions + ")");
     for(int[] cube: zbdd.getCubes(solution))
-      System.out.println("  " + nameResolver.getCube(cube));
+      System.out.println("  " + nameResolver.getCubeName(cube));
     System.out.println();
   }
 

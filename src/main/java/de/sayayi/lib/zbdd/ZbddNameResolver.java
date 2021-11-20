@@ -31,26 +31,13 @@ import static java.util.stream.Collectors.joining;
 public interface ZbddNameResolver
 {
   @Contract(pure = true)
-  default @NotNull String getEmptyName() {
-    return "{}";
-  }
+  @NotNull String getLiteralName(@Range(from = 1, to = MAX_VALUE) int var);
 
 
   @Contract(pure = true)
-  default @NotNull String getBaseName() {
-    return "{ {} }";
-  }
-
-
-  @Contract(pure = true)
-  @NotNull String getVariable(@Range(from = 1, to = MAX_VALUE) int var);
-
-
-  @Contract(pure = true)
-  default @NotNull String getCube(int @NotNull [] vars)
+  default @NotNull String getCubeName(int @NotNull [] vars)
   {
     return vars.length == 0
-        ? getEmptyName()
-        : Arrays.stream(vars).sorted().mapToObj(this::getVariable).collect(joining("."));
+        ? "{}" : Arrays.stream(vars).sorted().mapToObj(this::getLiteralName).collect(joining("."));
   }
 }
