@@ -1,123 +1,193 @@
+/*
+ * Copyright 2021 Jeroen Gremmen
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package de.sayayi.lib.zbdd;
 
-import de.sayayi.lib.zbdd.ZbddCache.NoCache;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.MustBeInvokedByOverriders;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Range;
+import org.jetbrains.annotations.Unmodifiable;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.TreeMap;
 
-import static de.sayayi.lib.zbdd.ZbddCache.BinaryOperation.DIFF;
-import static de.sayayi.lib.zbdd.ZbddCache.BinaryOperation.DIV;
-import static de.sayayi.lib.zbdd.ZbddCache.BinaryOperation.INTERSECT;
-import static de.sayayi.lib.zbdd.ZbddCache.BinaryOperation.MOD;
-import static de.sayayi.lib.zbdd.ZbddCache.BinaryOperation.MUL;
-import static de.sayayi.lib.zbdd.ZbddCache.BinaryOperation.UNION;
-import static de.sayayi.lib.zbdd.ZbddCache.UnaryOperation.CHANGE;
-import static de.sayayi.lib.zbdd.ZbddCache.UnaryOperation.SUBSET0;
-import static de.sayayi.lib.zbdd.ZbddCache.UnaryOperation.SUBSET1;
 import static java.lang.Integer.MAX_VALUE;
+import static java.lang.Math.round;
+import static java.util.Arrays.copyOf;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+import static java.util.Collections.unmodifiableList;
+import static java.util.Collections.unmodifiableMap;
+import static java.util.Locale.ROOT;
+import static java.util.stream.Collectors.joining;
+import static lombok.AccessLevel.PRIVATE;
 
 
+/**
+ * @author Jeroen Gremmen
+ */
 public class Zbdd
 {
-  private static final int NODE_MARK = 0x80000000;
+  private static final int VAR_MARK_MASK = 0x80000000;
+  private static final int NODE_RECORD_SIZE = 6;
 
-  public static final int MAX_NODES = MAX_VALUE / 5;
+  /** Maximum number of nodes. */
+  public static final int MAX_NODES = MAX_VALUE / NODE_RECORD_SIZE;
 
-  private static final int IDX_VAR = 0;
-  private static final int IDX_LOW = 1;
-  private static final int IDX_HIGH = 2;
-  private static final int IDX_PREV = 3;
-  private static final int IDX_NEXT = 4;
+  private static final int _VAR = 0;       // variable number
+  private static final int _P0 = 1;        // 0-branch
+  private static final int _P1 = 2;        // 1-branch
+  private static final int _NEXT = 3;      // next node
+  private static final int _CHAIN = 4;     // start of hash chain
+  private static final int _REFCOUNT = 5;  // reference count
 
-  public static final int ZBDD_EMPTY = 0;
-  public static final int ZBDD_BASE = 1;
+  protected static final int ZBDD_EMPTY = 0;
+  protected static final int ZBDD_BASE = 1;
 
-  private int lastVar;
+  private final @NotNull ZbddCapacityAdvisor capacityAdvisor;
+  private final @NotNull Statistics statistics;
 
-  private int nodesTableSize = 128;
-  private short[] referenceCount;
+  private int lastVarNumber;
+
+  private int nodesCapacity;
+  private int nodesFree;
+  private int nodesDead;
+
+  private int @NotNull [] nodes;
+  private int nextFreeNode;
+
+  private @NotNull ZbddLiteralResolver literalResolver = var -> "v" + var;
+
+
+  public Zbdd() {
+    this(DefaultCapacityAdvisor.INSTANCE);
+  }
+
+
+  public Zbdd(@NotNull ZbddCapacityAdvisor capacityAdvisor)
+  {
+    this.capacityAdvisor = capacityAdvisor;
+
+    nodesCapacity = capacityAdvisor.getInitialCapacity();
+    nodes = new int[nodesCapacity * NODE_RECORD_SIZE];
+
+    initLeafNode(ZBDD_EMPTY);
+    initLeafNode(ZBDD_BASE);
+
+    statistics = new Statistics();
+
+    clear();
+  }
+
+
+  private void initLeafNode(int zbdd)
+  {
+    final int offset = zbdd * NODE_RECORD_SIZE;
+
+    nodes[offset + _VAR] = -1;
+    nodes[offset + _P0] = zbdd;
+    nodes[offset + _P1] = zbdd;
+  }
+
 
   /**
-   * 5 * zbdd + 0 = var
-   * 5 * zbdd + 1 = low
-   * 5 * zbdd + 2 = high
-   * 5 * zbdd + 3 = previous
-   * 5 * zbdd + 4 = next
+   * Returns the literal resolver associated with this zbdd instance.
+   *
+   * @return  literal resolver, never {@code null}
    */
-  private int[] nodes;
-
-  private int firstFreeNode;
-  private int freeNodesCount;
-  private int deadNodesCount;
-  private int nodesMinFree;
-
-  private final IntStack stack;
-
-  private ZbddNameResolver nameResolver = var -> "v" + var;
-  private ZbddCache cache = NoCache.INSTANCE;
-
-
-  public Zbdd()
-  {
-    stack = new IntStack(16);
-    referenceCount = new short[nodesTableSize];
-    nodes = new int[nodesTableSize * 5];
-
-    deadNodesCount = 0;
-    firstFreeNode = 2;
-    freeNodesCount = nodesTableSize - 2;
-
-    for(int i = 2; i < nodesTableSize; i++)
-    {
-      nodes[i * 5 + IDX_VAR] = -1;
-      nodes[i * 5 + IDX_NEXT] = (i + 1) % nodesTableSize;
-    }
-
-    initFixedNode(ZBDD_EMPTY);
-    initFixedNode(ZBDD_BASE);
-
-    updateGrowParameters();
+  @Contract(pure = true)
+  public @NotNull ZbddLiteralResolver getLiteralResolver() {
+    return literalResolver;
   }
 
 
-  private void initFixedNode(int zbdd)
-  {
-    final int offset = zbdd * 5;
-
-    nodes[offset + IDX_VAR] = -1;
-    nodes[offset + IDX_LOW] = zbdd;
-    nodes[offset + IDX_HIGH] = zbdd;
-
-    referenceCount[zbdd] = Short.MAX_VALUE;
+  public void setLiteralResolver(@NotNull ZbddLiteralResolver literalResolver) {
+    this.literalResolver = Objects.requireNonNull(literalResolver);
   }
 
 
-  public void setCache(@NotNull ZbddCache cache) {
-    this.cache = cache;
-  }
-
-
-  public void setNameResolver(@NotNull ZbddNameResolver nameResolver) {
-    this.nameResolver = nameResolver;
+  /**
+   * <p>
+   *   Returns the statistics for this zbdd instance. The returned object is a singleton and will reflect the
+   *   actual statistics at any time.
+   * </p>
+   *
+   * @return  statistics, never {@code null}
+   */
+  @Contract(pure = true)
+  public @NotNull ZbddStatistics getStatistics() {
+    return statistics;
   }
 
 
   @Contract(mutates = "this")
-  public @Range(from = 1, to = MAX_VALUE) int createVar() {
-    return ++lastVar;
+  public void clear()
+  {
+    lastVarNumber = 0;
+    nodesDead = 0;
+    nextFreeNode = 2;
+    nodesFree = nodesCapacity - 2;
+
+    for(int i = 2; i < nodesCapacity; i++)
+    {
+      final int offset = i * NODE_RECORD_SIZE;
+
+      nodes[offset + _VAR] = -1;
+      nodes[offset + _NEXT] = (i + 1) % nodesCapacity;
+      nodes[offset + _CHAIN] = 0;
+      nodes[offset + _REFCOUNT] = 0;
+    }
+
+    statistics.clear();
   }
 
 
+  /**
+   * Create a new literal/variable.
+   *
+   * @return  variable number
+   */
+  @Contract(mutates = "this")
+  public @Range(from = 1, to = MAX_VALUE) int createVar() {
+    return ++lastVarNumber;
+  }
+
+
+  /**
+   * Returns the empty zbdd set.
+   *
+   * @return  empty zbdd set
+   */
   @Contract(pure = true)
   public int empty() {
     return ZBDD_EMPTY;
   }
 
 
+  /**
+   * Returns the base zbdd set.
+   *
+   * @return  base zbdd set
+   */
   @Contract(pure = true)
   public int base() {
     return ZBDD_BASE;
@@ -125,191 +195,313 @@ public class Zbdd
 
 
   @Contract(mutates = "this")
-  public int single(@Range(from = 1, to = MAX_VALUE) int var) {
-    return mk(var, ZBDD_EMPTY, ZBDD_BASE);
+  @Range(from = 0, to = MAX_NODES)
+  public int cube(@Range(from = 1, to = MAX_VALUE) int var) {
+    return getNode(checkVar(var), ZBDD_EMPTY, ZBDD_BASE);
   }
 
 
   @Contract(mutates = "this")
-  public int cube(int @NotNull [] cubeVars)
+  @Range(from = 0, to = MAX_NODES)
+  public int cube(int @NotNull ... cubeVars)
   {
-    Arrays.sort(cubeVars = Arrays.copyOf(cubeVars, cubeVars.length));
+    final int n = cubeVars.length;
 
-    int previousVar = -1;
+    if (n == 0)
+      return base();
+    if (n == 1)
+      return cube(cubeVars[0]);
+
+    // var count >= 2
+    Arrays.sort(cubeVars = copyOf(cubeVars, n));
+
     int r = ZBDD_BASE;
 
-    for(int i = cubeVars.length; i-- > 0;)
-    {
-      final int var = cubeVars[i];
-      if (var < 1 || var > lastVar)
-        throw new ZbddException("unknown var " + var);
-
-      if (var != previousVar)
-        r = stackPop(mk(previousVar = var, ZBDD_EMPTY, stackPush(r)), 1);
-    }
+    for(int var: cubeVars)
+      if (checkVar(var) != getVar(r))
+        r = getNode(var, ZBDD_EMPTY, r);
 
     return r;
   }
 
 
   @Contract(mutates = "this")
+  @Range(from = 0, to = MAX_NODES)
   public int universe()
   {
     int r = ZBDD_BASE;
 
-    for(int var = 1; var <= lastVar; var++)
-    {
-      stackPush(r);
-      r = stackPop(mk(var, r, r), 1);
-    }
+    for(int var = 1; var <= lastVarNumber; var++)
+      r = getNode(var, r, r);
 
     return r;
   }
 
 
   @Contract(mutates = "this")
-  public int subset0(int zbdd, @Range(from = 1, to = MAX_VALUE) int var)
+  @Range(from = 0, to = MAX_NODES)
+  public int subset0(@Range(from = 0, to = MAX_NODES) int zbdd,
+                     @Range(from = 1, to = MAX_VALUE) int var) {
+    return __subset0(checkZbdd(zbdd, "zbdd"), checkVar(var));
+  }
+
+
+  @Contract(mutates = "this")
+  protected int __subset0(int zbdd, int var)
   {
-    checkZbdd(zbdd);
-    checkVar(var);
+    final int top = getVar(zbdd);
 
-    final int zbddVar = getVar(zbdd);
-
-    if (zbddVar < var)
+    if (top < var)
       return zbdd;
-    if (zbddVar == var)
-      return getLow(zbdd);
 
-    return cache.lookupOrPutIfAbsent(SUBSET0, zbdd, var, () ->
-        stackPop(mk(zbddVar, stackPush(subset0(getLow(zbdd), var)), stackPush(subset0(getHigh(zbdd), var))), 2)
-    );
+    if (top == var)
+      return getP0(zbdd);
+
+    __incRef(zbdd);
+
+    final int p0 = __incRef(__subset0(getP0(zbdd), var));
+    final int p1 = __incRef(__subset0(getP1(zbdd), var));
+    final int r = getNode(top, p0, p1);
+
+    __decRef(p0, p1);
+    __decRef(zbdd);
+
+    return r;
   }
 
 
   @Contract(mutates = "this")
-  public int subset1(int zbdd, @Range(from = 1, to = MAX_VALUE) int var)
+  @Range(from = 0, to = MAX_NODES)
+  public int subset1(@Range(from = 0, to = MAX_NODES) int zbdd,
+                     @Range(from = 1, to = MAX_VALUE) int var) {
+    return __subset1(checkZbdd(zbdd, "zbdd"), checkVar(var));
+  }
+
+
+  @Contract(mutates = "this")
+  protected int __subset1(int zbdd, int var)
   {
-    checkZbdd(zbdd);
-    checkVar(var);
+    final int top = getVar(zbdd);
 
-    final int zbddVar = getVar(zbdd);
-
-    if (zbddVar < var)
+    if (top < var)
       return ZBDD_EMPTY;
-    if (zbddVar == var)
-      return getHigh(zbdd);
 
-    return cache.lookupOrPutIfAbsent(SUBSET1, zbdd, var, () ->
-        stackPop(mk(zbddVar, stackPush(subset1(getLow(zbdd), var)), stackPush(subset1(getHigh(zbdd), var))), 2)
-    );
+    if (top == var)
+      return getP1(zbdd);
+
+    __incRef(zbdd);
+
+    final int p0 = __incRef(__subset1(getP0(zbdd), var));
+    final int p1 = __incRef(__subset1(getP1(zbdd), var));
+    final int r = getNode(top, p0, p1);
+
+    __decRef(p0, p1);
+    __decRef(zbdd);
+
+    return r;
   }
 
 
   @Contract(mutates = "this")
-  public int change(int zbdd, @Range(from = 1, to = MAX_VALUE) int var)
+  @Range(from = 0, to = MAX_NODES)
+  public int change(@Range(from = 0, to = MAX_NODES) int zbdd,
+                    @Range(from = 1, to = MAX_VALUE) int var) {
+    return __change(checkZbdd(zbdd, "zbdd"), checkVar(var));
+  }
+
+
+  @Contract(mutates = "this")
+  protected int __change(int zbdd, int var)
   {
-    checkZbdd(zbdd);
-    checkVar(var);
+    final int top = getVar(zbdd);
 
-    final int zbddVar = getVar(zbdd);
+    if (top < var)
+      return getNode(var, ZBDD_EMPTY, zbdd);
 
-    if (zbddVar < var)
-      return mk(var, ZBDD_EMPTY, zbdd);
-    if (zbddVar == var)
-      return mk(var, getHigh(zbdd), getLow(zbdd));
+    final int r;
 
-    return cache.lookupOrPutIfAbsent(CHANGE, zbdd, var, () ->
-        stackPop(mk(zbddVar, stackPush(change(getLow(zbdd), var)), stackPush(change(getHigh(zbdd), var))), 2)
-    );
+    __incRef(zbdd);
+
+    if (top == var)
+      r = getNode(var, getP1(zbdd), getP0(zbdd));
+    else
+    {
+      final int p0 = __incRef(__change(getP0(zbdd), var));
+      final int p1 = __incRef(__change(getP1(zbdd), var));
+
+      r = getNode(top, p0, p1);
+
+      __decRef(p0, p1);
+    }
+
+    __decRef(zbdd);
+
+    return r;
   }
 
 
   @Contract(pure = true)
-  public int count(int zbdd)
-  {
-    checkZbdd(zbdd);
+  @Range(from = 0, to = MAX_VALUE)
+  public int count(@Range(from = 0, to = MAX_NODES) int zbdd) {
+    return __count(checkZbdd(zbdd, "zbdd"));
+  }
 
-    return zbdd < 2 ? zbdd : count(getLow(zbdd)) + count(getHigh(zbdd));
+
+  @Contract(pure = true)
+  protected int __count(int zbdd)
+  {
+    if (zbdd < 2)
+      return zbdd;
+
+    final int offset = zbdd * NODE_RECORD_SIZE;
+
+    return __count(nodes[offset + _P0]) + __count(nodes[offset + _P1]);
   }
 
 
   @Contract(mutates = "this")
-  public int union(int p, int q)
+  @Range(from = 0, to = MAX_NODES)
+  public int union(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q) {
+    return __union(checkZbdd(p, "p"), checkZbdd(q, "q"));
+  }
+
+
+  @Contract(mutates = "this")
+  protected int __union(int p, int q)
   {
     if (p == ZBDD_EMPTY)
       return q;
     if (q == ZBDD_EMPTY || q == p)
       return p;
 
-    final int pvar = getVar(p);
-    final int qvar = getVar(q);
+    int ptop = getVar(p);
+    int qtop = getVar(q);
 
-    if (pvar > qvar)
-      return union(q, p);
+    if (ptop > qtop)
+    {
+      // swap p <-> q, ptop <-> qtop
+      int tmp = p; p = q; q = tmp; tmp = ptop; ptop = qtop; qtop = tmp;
+    }
 
-    return cache.lookupOrPutIfAbsent(UNION, p, q, () -> pvar < qvar
-        ? stackPop(mk(qvar, stackPush(union(p, getLow(q))), getHigh(q)), 1)
-        : stackPop(mk(pvar, stackPush(union(getLow(p), getLow(q))), stackPush(union(getHigh(p), getHigh(q)))), 2)
-    );
+    __incRef(p, q);
+
+    int r;
+
+    if (ptop < qtop)
+      r = getNode(qtop, __union(p, getP0(q)), getP1(q));
+    else
+    {
+      final int p0 = __incRef(__union(getP0(p), getP0(q)));
+      final int p1 = __incRef(__union(getP1(p), getP1(q)));
+
+      r = getNode(ptop, p0, p1);
+
+      __decRef(p0, p1);
+    }
+
+    __decRef(p, q);
+
+    return r;
   }
 
 
   @Contract(mutates = "this")
-  public int intersect(int p, int q)
+  @Range(from = 0, to = MAX_NODES)
+  public int intersect(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q) {
+    return __intersect(checkZbdd(p, "p"), checkZbdd(q, "q"));
+  }
+
+
+  @Contract(mutates = "this")
+  protected int __intersect(int p, int q)
   {
     if (p == ZBDD_EMPTY || q == ZBDD_EMPTY)
       return ZBDD_EMPTY;
     if (p == q)
       return p;
 
-    return cache.lookupOrPutIfAbsent(INTERSECT, p, q, () -> {
-      final int pvar = getVar(p);
-      final int qvar = getVar(q);
-      final int r;
+    final int ptop = getVar(p);
+    final int qtop = getVar(q);
+    final int r;
 
-      if (pvar > qvar)
-        r = intersect(getLow(p), q);
-      else if (pvar < qvar)
-        r = intersect(p, getLow(q));
-      else
-      {
-        r = stackPop(mk(pvar,
-            stackPush(intersect(getLow(p), getLow(q))),
-            stackPush(intersect(getHigh(p), getHigh(q)))), 2);
-      }
+    __incRef(p, q);
 
-      return r;
-    });
+    if (ptop > qtop)
+      r = __intersect(getP0(p), q);
+    else if (ptop < qtop)
+      r = __intersect(p, getP0(q));
+    else
+    {
+      final int p0 = __incRef(__intersect(getP0(p), getP0(q)));
+      final int p1 = __incRef(__intersect(getP1(p), getP1(q)));
+
+      r = getNode(ptop, p0, p1);
+
+      __decRef(p0, p1);
+    }
+
+    __decRef(p, q);
+
+    return r;
   }
 
 
   @Contract(mutates = "this")
-  public int diff(int p, int q)
+  @Range(from = 0, to = MAX_NODES)
+  public int difference(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q) {
+    return __difference(checkZbdd(p, "p"), checkZbdd(q, "q"));
+  }
+
+
+  @Contract(mutates = "this")
+  protected int __difference(int p, int q)
   {
     if (p == ZBDD_EMPTY || p == q)
       return ZBDD_EMPTY;
     if (q == ZBDD_EMPTY)
       return p;
 
-    return cache.lookupOrPutIfAbsent(DIFF, p, q, () -> {
-      final int pvar = getVar(p);
-      final int qvar = getVar(q);
-      final int r;
+    final int ptop = getVar(p);
+    final int qtop = getVar(q);
+    final int r;
 
-      if (pvar < qvar)
-        r = diff(p, getLow(q));
-      else if (pvar > qvar)
-        r = stackPop(mk(pvar, stackPush(diff(getLow(p), getLow(q))), getHigh(p)), 1);
-      else
-        r = stackPop(mk(pvar, stackPush(diff(getLow(p), getLow(q))), stackPush(diff(getHigh(p), getHigh(q)))), 2);
+    __incRef(p, q);
 
-      return r;
-    });
+    if (ptop < qtop)
+      r = __difference(p, getP0(q));
+    else if (ptop > qtop)
+    {
+      final int p0 = __incRef(__difference(getP0(p), getP0(q)));
+
+      r = getNode(ptop, p0, getP1(p));
+
+      __decRef(p0);
+    }
+    else
+    {
+      final int p0 = __incRef(__difference(getP0(p), getP0(q)));
+      final int p1 = __incRef(__difference(getP1(p), getP1(q)));
+
+      r = getNode(ptop, p0, p1);
+
+      __decRef(p0, p1);
+    }
+
+    __decRef(p, q);
+
+    return r;
   }
 
 
   @Contract(mutates = "this")
-  public int mul(int p, int q)
+  @Range(from = 0, to = MAX_NODES)
+  public int multiply(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q) {
+    return __multiply(checkZbdd(p, "p"), checkZbdd(q, "q"));
+  }
+
+
+  @Contract(mutates = "this")
+  protected int __multiply(int p, int q)
   {
     if (p == ZBDD_EMPTY || q == ZBDD_EMPTY)
       return ZBDD_EMPTY;
@@ -318,36 +510,50 @@ public class Zbdd
     if (q == ZBDD_BASE)
       return p;
 
-    final int pvar = getVar(p);
-    final int qvar = getVar(q);
+    final int ptop = getVar(p);
+    final int qtop = getVar(q);
 
-    if (pvar > qvar)
-      return mul(q, p);
+    if (ptop > qtop)
+      return __multiply(q, p);
 
-    return cache.lookupOrPutIfAbsent(MUL, p, q, () -> {
-      final int r;
+    __incRef(p, q);
 
-      if (pvar < qvar)
-        r = stackPop(mk(qvar, stackPush(mul(p, getLow(q))), stackPush(mul(p, getHigh(q)))), 2);
-      else
-      {
-        int tmp = stackPush(mul(getHigh(p), getHigh(q)));
-        final int r0 = stackPop(union(tmp, stackPush(mul(getHigh(p), getLow(q)))), 2);
+    // factor P = p0 + v * p1
+    final int p0 = __incRef(__subset0(p, ptop));
+    final int p1 = __incRef(__subset1(p, ptop));
 
-        stackPush(tmp);
-        tmp = stackPop(union(r0, stackPush(mul(getLow(p), getHigh(q)))), 2);
+    // factor Q = q0 + v * q1
+    final int q0 = __incRef(__subset0(q, ptop));
+    final int q1 = __incRef(__subset1(q, ptop));
 
-        stackPush(tmp);
-        r = stackPop(mk(pvar, stackPush(mul(getLow(p), getLow(q))), tmp), 2);
-      }
+    // r = (p0 + v * q1) * (q0 + v * q1) = p0q0 + v * (p0q1 + p1q0 + p1q1)
+    final int p0q0 = __incRef(__multiply(p0, q0));
+    final int p0q1 = __incRef(__multiply(p0, q1));
+    final int p1q0 = __incRef(__multiply(p1, q0));
+    final int p1q1 = __incRef(__multiply(p1, q1));
 
-      return r;
-    });
+    final int p0q1_p1q0 = __incRef(__union(p0q1, p1q0));
+    final int p0p1_p1q0_p1q1 = __incRef(__union(p0q1_p1q0, p1q1));
+    final int v_p0q1_p1q0_p1q1 = __incRef(__change(p0p1_p1q0_p1q1, ptop));
+
+    final int r = __union(p0q0, v_p0q1_p1q0_p1q1);
+
+    for(int n: new int[] { p, q, p0, p1, q0, q1, p0q0, p0q1, p1q0, p1q1, p0q1_p1q0, p0p1_p1q0_p1q1, v_p0q1_p1q0_p1q1 })
+      __decRef(n);
+
+    return r;
   }
 
 
   @Contract(mutates = "this")
-  public int div(int p, int q)
+  @Range(from = 0, to = MAX_NODES)
+  public int divide(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q) {
+    return __divide(checkZbdd(p, "p"), checkZbdd(q, "q"));
+  }
+
+
+  @Contract(mutates = "this")
+  protected int __divide(int p, int q)
   {
     if (p < 2)
       return ZBDD_EMPTY;
@@ -356,76 +562,142 @@ public class Zbdd
     if (q == ZBDD_BASE)
       return p;
 
-    return cache.lookupOrPutIfAbsent(DIV, p, q, () -> {
-      final int pvar = getVar(p);
-      final int qvar = getVar(q);
-      final int r;
+    __incRef(p, q);
 
-      if (pvar > qvar)
-        r = stackPop(mk(pvar, stackPush(div(getLow(p), q)), stackPush(div(getHigh(p), q))), 2);
-      else
-      {
-        int r0 = div(getHigh(p), getHigh(q));
-        int tmp = getLow(p);
+    final int v = getVar(q);
 
-        if (tmp != ZBDD_EMPTY && r0 != ZBDD_EMPTY)
-        {
-          stackPush(r0);
-          r0 = stackPop(intersect(stackPush(div(getLow(p), tmp)), r0), 2);
-        }
+    // factor P = p0 + v * p1
+    final int p0 = __incRef(__subset0(p, v));
+    final int p1 = __incRef(__subset1(p, v));
 
-        r = r0;
-      }
+    // factor Q = q0 + v * q1
+    final int q0 = __incRef(__subset0(q, v));
+    final int q1 = __incRef(__subset1(q, v));
 
-      return r;
-    });
+    final int r1 = __divide(p1, q1);
+    final int r;
+
+    if (r1 != ZBDD_EMPTY && q0 != ZBDD_EMPTY)
+    {
+      final int r0 = __incRef(__divide(p0, q0));
+
+      r = __intersect(__incRef(r1), r0);
+
+      __decRef(r0, r1);
+    }
+    else
+      r = r1;
+
+    __decRef(p0, p1);
+    __decRef(q0, q1);
+    __decRef(p, q);
+
+    return r;
   }
 
 
   @Contract(mutates = "this")
-  public int mod(int p, int q)
-  {
-    return cache.lookupOrPutIfAbsent(MOD, p, q, () ->
-        stackPop(diff(p, stackPush(mul(q, stackPush(div(p, q))))), 2)
-    );
+  @Range(from = 0, to = MAX_NODES)
+  public int modulo(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q) {
+    return __modulo(checkZbdd(p, "p"), checkZbdd(q, "q"));
   }
 
 
-  protected int mk(@Range(from = 1, to = MAX_VALUE) int var, int low, int high)
+  @Contract(mutates = "this")
+  protected int __modulo(int p, int q)
   {
-    if (high == ZBDD_EMPTY)
-      return low;
+    __incRef(p, q);
 
-    int hash = hash(var, low, high);
-    int r = nodes[hash * 5 + IDX_PREV];
+    final int p_div_q = __incRef(__divide(p, q));
+    final int q_mul_p_div_q = __incRef(multiply(q, p_div_q));
+    final int r = __difference(p, q_mul_p_div_q);
+
+    __decRef(p_div_q, q_mul_p_div_q);
+    __decRef(p, q);
+
+    return r;
+  }
+
+
+  @Contract(mutates = "this")
+  @Range(from = 0, to = MAX_NODES)
+  public int atomize(@Range(from = 0, to = MAX_NODES) int zbdd) {
+    return __atomize(checkZbdd(zbdd, "zbdd"));
+  }
+
+
+  @Contract(mutates = "this")
+  protected int __atomize(int zbdd)
+  {
+    if (zbdd < 2)
+      return ZBDD_EMPTY;
+
+    __incRef(zbdd);
+
+    final int p0 = __incRef(__atomize(getP0(zbdd)));
+    final int p1 = __incRef(__atomize(getP1(zbdd)));
+    final int r = getNode(getVar(zbdd), __union(p0, p1), ZBDD_BASE);
+
+    __decRef(p0, p1);
+    __decRef(zbdd);
+
+    return r;
+  }
+
+
+  @Contract(mutates = "this")
+  @Range(from = 0, to = MAX_NODES)
+  protected int getNode(@Range(from = 1, to = MAX_VALUE) int var,
+                        @Range(from = 0, to = MAX_NODES) int p0,
+                        @Range(from = 0, to = MAX_NODES) int p1)
+  {
+    statistics.nodeLookups++;
+
+    if (p1 == ZBDD_EMPTY)
+    {
+      statistics.nodeLookupHitCount++;
+      return p0;
+    }
+
+    int hash = hash(var, p0, p1);
 
     // find node in chain...
-    while(r != 0)
+    for(int r = nodes[hash * NODE_RECORD_SIZE + _CHAIN]; r != 0;)
     {
-      final int offset = r * 5;
+      final int offset = r * NODE_RECORD_SIZE;
 
-      if (nodes[offset + IDX_VAR] == var && nodes[offset + IDX_LOW] == low && nodes[offset + IDX_HIGH] == high)
+      if (nodes[offset + _VAR] == var && nodes[offset + _P0] == p0 && nodes[offset + _P1] == p1)
+      {
+        statistics.nodeLookupHitCount++;
         return r;
+      }
 
-      r = nodes[offset + IDX_NEXT];
+      r = nodes[offset + _NEXT];
     }
 
-    if (freeNodesCount < 2)
+    if (nodesFree < 2)
     {
-      ensureMinFreeCapacity();
-      hash = hash(var, low, high);  // may have changed due to grow
+      __incRef(p0, p1);
+      ensureCapacity();
+      __decRef(p0, p1);
+
+      if (nodesFree == 0)
+        throw new ZbddException("nodes capacity exhausted");
+
+      // may have changed due to nodes capacity increase
+      hash = hash(var, p0, p1);
     }
 
-    r = firstFreeNode;
-    final int offset = r * 5;
-    firstFreeNode = nodes[offset + IDX_NEXT];
-    freeNodesCount--;
+    final int r = nextFreeNode;
+    final int offset = r * NODE_RECORD_SIZE;
+    nextFreeNode = nodes[offset + _NEXT];
+    nodesFree--;
 
     // set new node
-    nodes[offset + IDX_VAR] = var;
-    nodes[offset + IDX_LOW] = low;
-    nodes[offset + IDX_HIGH] = high;
-    referenceCount[r] = -1;
+    nodes[offset + _VAR] = var;
+    nodes[offset + _P0] = p0;
+    nodes[offset + _P1] = p1;
+    nodes[offset + _REFCOUNT] = -1;
 
     chainBeforeHash(r, hash);
 
@@ -433,75 +705,80 @@ public class Zbdd
   }
 
 
-  protected void updateGrowParameters() {
-    nodesMinFree = Math.min(nodesTableSize * 20 / 100, 99999);
-  }
-
-
+  @Contract(pure = true)
   protected int getVar(int zbdd) {
-    return zbdd < 2 ? -1 : (nodes[zbdd * 5 + IDX_VAR] & ~NODE_MARK);
-  }
-
-
-  protected int getLow(int zbdd) {
-    return nodes[zbdd * 5 + IDX_LOW];
-  }
-
-
-  protected int getHigh(int zbdd) {
-    return nodes[zbdd * 5 + IDX_HIGH];
+    return zbdd < 2 ? -1 : (nodes[zbdd * NODE_RECORD_SIZE + _VAR] & ~VAR_MARK_MASK);
   }
 
 
   @Contract(pure = true)
-  protected int hash(int var, int low, int high) {
-    return ((var * 12582917 + low * 4256249 + high * 741457) & 0x7fffffff) % nodesTableSize;
+  @Range(from = 0, to = MAX_NODES)
+  protected int getP0(int zbdd) {
+    return nodes[zbdd * NODE_RECORD_SIZE + _P0];
   }
 
 
-  protected int gc()
+  @Contract(pure = true)
+  @Range(from = 0, to = MAX_NODES)
+  protected int getP1(int zbdd) {
+    return nodes[zbdd * NODE_RECORD_SIZE + _P1];
+  }
+
+
+  @Contract(pure = true)
+  @Range(from = 0, to = MAX_NODES)
+  protected int hash(int var, int p0, int p1) {
+    return ((var * 12582917 + p0 * 4256249 + p1 * 741457) & 0x7fffffff) % nodesCapacity;
+  }
+
+
+  @Range(from = 0, to = MAX_NODES - 2)
+  public int gc()
   {
-    // mark stack nodes...
-    stack.forEach(this::gc_markTree);
+    statistics.gcCount++;
 
     // mark referenced nodes...
-    for(int i = nodesTableSize; i-- > 0;)
+    for(int i = nodesCapacity; i-- > 0;)
     {
-      final int offset = i * 5;
+      final int offset = i * NODE_RECORD_SIZE;
 
-      if (nodes[offset + IDX_VAR] != -1 && referenceCount[i] > 0)
+      if (nodes[offset + _VAR] != -1 && nodes[offset + _REFCOUNT] > 0)
         gc_markTree(i);
 
-      nodes[offset + IDX_PREV] = 0;
+      nodes[offset + _CHAIN] = 0;
     }
 
-    final int oldFree = freeNodesCount;
-    firstFreeNode = freeNodesCount = 0;
+    final int oldFreeNodesCount = nodesFree;
+    nextFreeNode = nodesFree = 0;
 
-    for(int i = nodesTableSize; i-- > 2;)
+    for(int i = nodesCapacity; i-- > 2;)
     {
-      final int offset = i * 5;
+      final int offset = i * NODE_RECORD_SIZE;
 
-      if ((nodes[offset + IDX_VAR] & NODE_MARK) != 0 && nodes[offset + IDX_VAR] != -1)
+      if ((nodes[offset + _VAR] & VAR_MARK_MASK) != 0 && nodes[offset + _VAR] != -1)
       {
         // remove mark and chain valid node
         chainBeforeHash(i,
-            hash(nodes[offset + IDX_VAR] &= ~NODE_MARK, nodes[offset + IDX_LOW], nodes[offset + IDX_HIGH]));
+            hash(nodes[offset + _VAR] &= ~VAR_MARK_MASK, nodes[offset + _P0], nodes[offset + _P1]));
       }
       else
       {
         // garbage collect node
-        nodes[offset + IDX_VAR] = -1;
-        nodes[offset + IDX_NEXT] = firstFreeNode;
+        nodes[offset + _VAR] = -1;
+        nodes[offset + _NEXT] = nextFreeNode;
+        nodes[offset + _REFCOUNT] = 0;
 
-        firstFreeNode = i;
-        freeNodesCount++;
+        nextFreeNode = i;
+        nodesFree++;
       }
     }
 
-    deadNodesCount = 0;
+    nodesDead = 0;
 
-    return freeNodesCount - oldFree;
+    final int gcFreedNodesCount = nodesFree - oldFreeNodesCount;
+    statistics.gcFreedNodes += gcFreedNodesCount;
+
+    return gcFreedNodesCount;
   }
 
 
@@ -509,192 +786,440 @@ public class Zbdd
   {
     if (zbdd >= 2)
     {
-      final int offset = zbdd * 5;
+      final int offset = zbdd * NODE_RECORD_SIZE;
 
-      if ((nodes[offset + IDX_VAR] & NODE_MARK) == 0)
+      if ((nodes[offset + _VAR] & VAR_MARK_MASK) == 0)
       {
-        nodes[offset + IDX_VAR] |= NODE_MARK;
+        nodes[offset + _VAR] |= VAR_MARK_MASK;
 
-        gc_markTree(nodes[offset + IDX_LOW]);
-        gc_markTree(nodes[offset + IDX_HIGH]);
+        gc_markTree(nodes[offset + _P0]);
+        gc_markTree(nodes[offset + _P1]);
       }
     }
   }
 
 
-  protected void ensureMinFreeCapacity()
+  @Contract(mutates = "this")
+  protected void ensureCapacity()
   {
-    if (deadNodesCount > 0 || nodesTableSize > 20000)
+    if (nodesDead > 0 &&
+        capacityAdvisor.isGCRequired(statistics) &&
+        gc() >= capacityAdvisor.getMinimumFreeNodes(statistics))
+      return;
+
+    final int oldNodesCapacity = nodesCapacity;
+
+    nodesCapacity = Math.min(nodesCapacity + capacityAdvisor.adviseIncrement(statistics), MAX_NODES);
+    nodes = copyOf(nodes, nodesCapacity * NODE_RECORD_SIZE);
+
+    nextFreeNode = 0;
+    nodesFree = 0;
+
+    for(int i = nodesCapacity; i-- > oldNodesCapacity;)
     {
-      if (gc() >= nodesMinFree)
-        return;
-    }
+      final int offset = i * NODE_RECORD_SIZE;
 
-    final int oldTableSize = nodesTableSize;
+      nodes[offset + _VAR] = -1;
+      nodes[offset + _NEXT] = nextFreeNode;
 
-    nodesTableSize += computeIncreaseLimit(nodesMinFree);
-
-    nodes = Arrays.copyOf(nodes, nodesTableSize * 5);
-    referenceCount = Arrays.copyOf(referenceCount, nodesTableSize);
-
-    firstFreeNode = freeNodesCount = 0;
-
-    for(int i = nodesTableSize; i-- > oldTableSize;)
-    {
-      final int offset = i * 5;
-
-      nodes[offset + IDX_VAR] = -1;
-      nodes[offset + IDX_NEXT] = firstFreeNode;
-
-      firstFreeNode = i;
-      freeNodesCount++;
+      nextFreeNode = i;
+      nodesFree++;
     }
 
     // unchain old nodes
-    for(int i = 0, end = oldTableSize * 5; i < end; i += 5)
-      nodes[i + IDX_PREV] = 0;
+    for(int i = 0, end = oldNodesCapacity * NODE_RECORD_SIZE; i < end; i += NODE_RECORD_SIZE)
+      nodes[i + _CHAIN] = 0;
 
     // re-chain old nodes
-    for(int i = oldTableSize; i-- > 2;)
+    for(int i = oldNodesCapacity; i-- > 2;)
     {
-      final int offset = i * 5;
+      final int offset = i * NODE_RECORD_SIZE;
 
-      if (nodes[offset + IDX_VAR] != -1)
-        chainBeforeHash(i, hash(nodes[offset + IDX_VAR], nodes[offset + IDX_LOW], nodes[offset + IDX_HIGH]));
+      if (nodes[offset + _VAR] != -1)
+        chainBeforeHash(i, hash(nodes[offset + _VAR], nodes[offset + _P0], nodes[offset + _P1]));
       else
       {
-        nodes[offset + IDX_NEXT] = firstFreeNode;
-        firstFreeNode = i;
-        freeNodesCount++;
+        nodes[offset + _NEXT] = nextFreeNode;
+        nodes[offset + _REFCOUNT] = 0;
+
+        nextFreeNode = i;
+        nodesFree++;
+      }
+    }
+  }
+
+
+  private void chainBeforeHash(int zbdd, int hash)
+  {
+    final int hashChain = hash * NODE_RECORD_SIZE + _CHAIN;
+
+    nodes[zbdd * NODE_RECORD_SIZE + _NEXT] = nodes[hashChain];
+    nodes[hashChain] = zbdd;
+  }
+
+
+  @Contract(value = "_ -> param1", mutates = "this")
+  public int incRef(@Range(from = 0, to = MAX_NODES) int zbdd) {
+    return __incRef(checkZbdd(zbdd, "zbdd"));
+  }
+
+
+  @Contract(mutates = "this")
+  protected void __incRef(int zbdd1, int zbdd2)
+  {
+    __incRef(zbdd1);
+    __incRef(zbdd2);
+  }
+
+
+  @Contract(value = "_ -> param1", mutates = "this")
+  protected int __incRef(int zbdd)
+  {
+    final int offset;
+
+    if (zbdd >= 2 && nodes[(offset = zbdd * NODE_RECORD_SIZE) + _VAR] != -1)
+    {
+      final int refCountOffset = offset + _REFCOUNT;
+      final int ref = nodes[refCountOffset];
+
+      if (ref == -1)  // new node
+        nodes[refCountOffset] = 1;
+      else
+      {
+        if (ref == 0)
+          nodesDead--;
+
+        nodes[refCountOffset]++;
       }
     }
 
-    updateGrowParameters();
+    return zbdd;
   }
 
 
-  protected int computeIncreaseLimit(int currentSize)
-  {
-    if (currentSize <= 200000)
-      return 300000;
-    if (currentSize >= 4000000)
-      return 50000;
-
-    return 300000 - ((currentSize - 200000) * (300000 - 50000)) / (4000000 - 200000);
+  @Contract(value = "_ -> param1", mutates = "this")
+  @SuppressWarnings("UnusedReturnValue")
+  public int decRef(@Range(from = 0, to = MAX_NODES) int zbdd) {
+    return __decRef(checkZbdd(zbdd, "zbdd"));
   }
 
 
-  protected void chainBeforeHash(int zbdd, int hash)
+  @Contract(mutates = "this")
+  protected void __decRef(int zbdd1, int zbdd2)
   {
-    final int hashPrevious = hash * 5 + IDX_PREV;
-
-    nodes[zbdd * 5 + IDX_NEXT] = nodes[hashPrevious];
-    nodes[hashPrevious] = zbdd;
+    __decRef(zbdd1);
+    __decRef(zbdd2);
   }
 
 
-  public int incReference(int zbdd)
+  @Contract(value = "_ -> param1", mutates = "this")
+  protected int __decRef(int zbdd)
   {
-    checkZbdd(zbdd);
+    final int offset;
 
-    short ref = referenceCount[zbdd];
-    if (ref == -1)
-      ref = 1;
-    else if (ref == 0)
+    if (zbdd >= 2 && nodes[(offset = zbdd * NODE_RECORD_SIZE) + _VAR] != -1)
     {
-      ref = 1;
-      deadNodesCount--;
+      final int refCountOffset = offset + _REFCOUNT;
+      final int ref = nodes[refCountOffset];
+
+      if (ref > 0)
+      {
+        if (ref == 1)
+          nodesDead++;
+
+        nodes[refCountOffset]--;
+      }
     }
-    else if (ref < Short.MAX_VALUE)
-      ref++;
-
-    referenceCount[zbdd] = ref;
 
     return zbdd;
   }
 
 
-  public int decReference(int zbdd)
+  @Contract(value = "_, _ -> param1")
+  @MustBeInvokedByOverriders
+  protected int checkZbdd(int zbdd, @NotNull String param)
   {
-    checkZbdd(zbdd);
+    if (zbdd < 0 || zbdd >= nodesCapacity)
+      throw new ZbddException(param + " must be in range 0.." + (nodesCapacity - 1));
 
-    short ref = referenceCount[zbdd];
-    if (ref == 1)
-    {
-      ref = 0;
-      deadNodesCount++;
-    }
-    else if (ref > 0 && ref < Short.MAX_VALUE)
-      ref--;
-
-    referenceCount[zbdd] = ref;
+    if (zbdd >= 2 && nodes[zbdd * NODE_RECORD_SIZE + _VAR] == -1)
+      throw new ZbddException("invalid " + param + " node " + zbdd);
 
     return zbdd;
   }
 
 
-  public int getReferenceCount(int zbdd)
+  @Contract(value = "_ -> param1")
+  @MustBeInvokedByOverriders
+  protected int checkVar(int var)
   {
-    checkZbdd(zbdd);
+    if (var <= 0 || var > lastVarNumber)
+      throw new ZbddException("var must be in range 1.." + var);
 
-    final short ref = referenceCount[zbdd];
-    return ref == -1 ? 0 : ref;
+    return var;
   }
 
 
-  private int stackPush(int zbdd)
+  @Contract(value = "_ -> new", pure = true)
+  public @NotNull String toString(@Range(from = 0, to = MAX_NODES) int zbdd)
   {
-    stack.push(zbdd);
-    return zbdd;
+    return getCubes(zbdd).stream()
+        .map(literalResolver::getCubeName)
+        .sorted()
+        .collect(joining(", ", "{ ", " }"));
   }
 
 
-  private int stackPop(int result, int n)
-  {
-    stack.drop(n);
-    return result;
-  }
-
-
-  private void checkZbdd(int zbdd)
-  {
-    if (zbdd < 0 || zbdd >= nodesTableSize)
-      throw new IllegalArgumentException("zbdd must be in range 0.." + (nodesTableSize - 1));
-  }
-
-
-  private void checkVar(int var)
-  {
-    if (var <= 0 || var > lastVar)
-      throw new IllegalArgumentException("var must be in range 1.." + var);
-  }
-
-
-  public String printSet(int zbdd)
+  @Contract(pure = true)
+  @Unmodifiable
+  public @NotNull List<int[]> getCubes(@Range(from = 0, to = MAX_NODES) int zbdd)
   {
     if (zbdd == ZBDD_EMPTY)
-      return nameResolver.getEmptyName();
+      return emptyList();
     else if (zbdd == ZBDD_BASE)
-      return nameResolver.getBaseName();
+      return singletonList(new int[0]);
 
-    Set<String> set = new LinkedHashSet<>();
+    final List<int[]> cubes = new ArrayList<>(count(zbdd));
 
-    printSet_cubes(set, new IntStack(lastVar), zbdd);
+    getCubes0(cubes, new IntStack(lastVarNumber), zbdd);
 
-    return set.toString();
+    return unmodifiableList(cubes);
   }
 
 
-  private void printSet_cubes(Set<String> set, IntStack vars, int zbdd)
+  @Contract(mutates = "param1,param2")
+  private void getCubes0(@NotNull List<int[]> set, @NotNull IntStack vars, int zbdd)
   {
     if (zbdd == ZBDD_BASE)
-      set.add(nameResolver.getCube(vars.getStack()));
+      set.add(vars.getStack());
     else if (zbdd != ZBDD_EMPTY)
     {
+      // walk 1-branch
       vars.push(getVar(zbdd));
-      printSet_cubes(set, vars, getHigh(zbdd));
+      getCubes0(set, vars, getP1(zbdd));
       vars.pop();
-      printSet_cubes(set, vars, getLow(zbdd));
+
+      // walk 0-branch
+      getCubes0(set, vars, getP0(zbdd));
+    }
+  }
+
+
+  @Contract(value = "_ -> new", pure = true)
+  @Unmodifiable
+  public @NotNull Map<Integer,Node> getNodes(@Range(from = 0, to = MAX_NODES) int zbdd)
+  {
+    final Map<Integer,Node> nodeMap = new TreeMap<>((n1,n2) -> n2 - n1);
+
+    getNodes0(nodeMap, zbdd);
+
+    return unmodifiableMap(nodeMap);
+  }
+
+
+  @Contract(mutates = "param1")
+  private void getNodes0(@NotNull Map<Integer,Node> nodeMap, int zbdd)
+  {
+    nodeMap.computeIfAbsent(zbdd, Node::new);
+
+    if (zbdd >= 2)
+    {
+      getNodes0(nodeMap, getP1(zbdd));
+      getNodes0(nodeMap, getP0(zbdd));
+    }
+  }
+
+
+
+
+  private static class IntStack
+  {
+    private int stackSize;
+    private int[] stack;
+
+
+    private IntStack(int size) {
+      stack = new int[Math.max(size, 4)];
+    }
+
+
+    private void push(int value)
+    {
+      if (stackSize >= stack.length)
+        stack = copyOf(stack, stackSize + 4);
+
+      stack[stackSize++] = value;
+    }
+
+
+    private void pop()
+    {
+      if (stackSize > 0)
+        stackSize--;
+    }
+
+
+    private int[] getStack() {
+      return copyOf(stack, stackSize);
+    }
+  }
+
+
+
+
+  @AllArgsConstructor(access = PRIVATE)
+  public final class Node
+  {
+    private final int zbdd;
+
+
+    public int getVar() {
+      return Zbdd.this.getVar(zbdd);
+    }
+
+
+    public int getP0() {
+      return Zbdd.this.getP0(zbdd);
+    }
+
+
+    public int getP1() {
+      return Zbdd.this.getP1(zbdd);
+    }
+
+
+    public String toString()
+    {
+      return zbdd == 0 ? "Empty" : zbdd == 1 ? "Base"
+          : ("Node(var=" + literalResolver.getLiteralName(getVar()) + ", P0=" + getP0() + ", P1=" + getP1() + ")");
+    }
+  }
+
+
+
+
+  @NoArgsConstructor(access = PRIVATE)
+  private final class Statistics implements ZbddStatistics
+  {
+    private int nodeLookups;
+    private int nodeLookupHitCount;
+    private int gcCount;
+    private long gcFreedNodes;
+
+
+    private void clear()
+    {
+      nodeLookups = 0;
+      nodeLookupHitCount = 0;
+      gcCount = 0;
+      gcFreedNodes = 0;
+    }
+
+
+    @Override
+    public int getNodesCapacity() {
+      return nodesCapacity;
+    }
+
+
+    @Override
+    public int getFreeNodes() {
+      return nodesFree;
+    }
+
+
+    @Override
+    public int getDeadNodes() {
+      return nodesDead;
+    }
+
+
+    @Override
+    public int getNodeLookups() {
+      return nodeLookups;
+    }
+
+
+    @Override
+    public int getNodeLookupHitCount() {
+      return nodeLookupHitCount;
+    }
+
+
+    @Override
+    public int getGCCount() {
+      return gcCount;
+    }
+
+
+    @Override
+    public long getGCFreedNodes() {
+      return gcFreedNodes;
+    }
+
+
+    @Override
+    public long getMemoryUsage() {
+      return nodes.length * 4L;
+    }
+
+
+    @Override
+    public int getRegisteredVars() {
+      return lastVarNumber;
+    }
+
+
+    @Override
+    public String toString()
+    {
+      return "Statistics(node={capacity=" + getNodesCapacity() + ", occupied=" + getOccupiedNodes() +
+          ", free=" + getFreeNodes() + ", dead=" + getDeadNodes() + "}, hitRatio=" +
+          round(getNodeLookupHitRatio() * 1000) / 10.0 + "%, gcCount=" + getGCCount() +
+          ", mem=" + String.format(ROOT, "%.1fKB", getMemoryUsage() / 1024.0) +
+          ")";
+    }
+  }
+
+
+
+
+  private enum DefaultCapacityAdvisor implements ZbddCapacityAdvisor
+  {
+    INSTANCE;
+
+
+    @Override
+    public @Range(from = 4, to = MAX_NODES) int getInitialCapacity() {
+      return 128;
+    }
+
+
+    @Override
+    public @Range(from = 1, to = MAX_NODES) int getMinimumFreeNodes(@NotNull ZbddStatistics statistics) {
+      return statistics.getNodesCapacity() / 20;  // 5%
+    }
+
+
+    @Override
+    public int adviseIncrement(@NotNull ZbddStatistics statistics)
+    {
+      final int capacity = statistics.getNodesCapacity();
+
+      // size < 500000 -> increase by 150%
+      // size > 500000 -> increase by 30%
+      return capacity < 500000 ? capacity * 3 / 2 : (capacity / 10) * 3;
+    }
+
+
+    @Override
+    public boolean isGCRequired(@NotNull ZbddStatistics statistics)
+    {
+      final int capacity = statistics.getNodesCapacity();
+
+      // capacity > 250000
+      // dead nodes > 10% of total capacity
+      return capacity > 250000 || statistics.getDeadNodes() > (capacity / 10);
     }
   }
 }

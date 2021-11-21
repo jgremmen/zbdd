@@ -1,11 +1,14 @@
 plugins {
   id 'java-library'
+  id 'maven-publish'
+  id 'jacoco'
+  id 'signing'
 }
 
 
-description 'Java ZBDD Implementation'
+description 'Java ZBDD Library'
 group 'de.sayayi.lib'
-version '1.0-SNAPSHOT'
+version '0.1.0'
 
 buildDir = ".build"
 
@@ -13,6 +16,7 @@ buildDir = ".build"
 ext {
   jetbrainsAnnotationsVersion = "22.0.0"
   junitVersion = "5.8.1"
+  lombokVersion = "1.18.22"
 }
 
 
@@ -28,14 +32,24 @@ test {
 }
 
 
+apply from: file('gradle/javadoc.gradle')
+apply from: file('gradle/quality.gradle')
+apply from: file('gradle/publishing.gradle')
+
+
 repositories {
   mavenCentral()
 }
 
 
 dependencies {
+  // java
+  annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+
+  compileOnlyApi "org.projectlombok:lombok:${lombokVersion}"
   compileOnlyApi "org.jetbrains:annotations:${jetbrainsAnnotationsVersion}"
 
+  // test
   testImplementation "org.junit.jupiter:junit-jupiter-api:${junitVersion}"
   testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${junitVersion}"
 }

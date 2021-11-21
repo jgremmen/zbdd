@@ -13,15 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.sayayi.lib.zbdd;
 
 
-/**
- * @author Jeroen Gremmen
- */
-public class ZbddException extends RuntimeException
-{
-  public ZbddException(String message) {
-    super(message);
+jacocoTestReport {
+  reports {
+    xml.enabled true
+    html.enabled true
   }
 }

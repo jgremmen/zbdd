@@ -13,15 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.sayayi.lib.zbdd;
 
 
-/**
- * @author Jeroen Gremmen
- */
-public class ZbddException extends RuntimeException
-{
-  public ZbddException(String message) {
-    super(message);
+javadoc {
+  title "Java ZBDD Library ${version}"
+
+  (options as StandardJavadocDocletOptions).with {
+    linksOffline 'https://javadoc.io/doc/org.jetbrains/annotations/20.0.0/', 'gradle/javadocs/jetbrains-annotations'
+
+    encoding 'UTF-8'
+
+    group("ZBDD Core API", ["de.sayayi.lib.zbdd"])
+
+    noQualifiers 'java.util', 'java.lang'
   }
+
+  failOnError false
 }
