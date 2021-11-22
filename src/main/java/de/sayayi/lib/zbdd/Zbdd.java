@@ -967,12 +967,8 @@ public class Zbdd
 
 
   @Contract(pure = true)
-  public void visitCubes(@Range(from = 0, to = MAX_NODES) int zbdd, @NotNull CubeVisitor cubeVisitor)
-  {
-    if (zbdd == ZBDD_BASE)
-      cubeVisitor.visitCube(new int[0]);
-    else if (zbdd >= 2)
-      visitCubes0(cubeVisitor, new IntStack(lastVarNumber), zbdd);
+  public void visitCubes(@Range(from = 0, to = MAX_NODES) int zbdd, @NotNull CubeVisitor visitor) {
+    visitCubes0(visitor, new IntStack(lastVarNumber), zbdd);
   }
 
 
@@ -1023,6 +1019,20 @@ public class Zbdd
 
   public interface CubeVisitor
   {
+    /**
+     * <p>
+     *   This method is invoked for each cube in the zbdd set.
+     *   The variables in array {@code vars} are sorted in descendant order.
+     * </p>
+     * <p>
+     *   If vars is an empty array, it represents the base node.
+     * </p>
+     *
+     * @param vars  cube variables or empty array, never {@code null}
+     *
+     * @see #visitCubes(int, CubeVisitor)
+     * @see #base()
+     */
     void visitCube(int @NotNull [] vars);
   }
 
