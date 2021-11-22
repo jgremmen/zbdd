@@ -23,22 +23,17 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Range;
 import org.jetbrains.annotations.Unmodifiable;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.StringJoiner;
 import java.util.TreeMap;
 
 import static java.lang.Integer.MAX_VALUE;
 import static java.lang.Math.round;
 import static java.util.Arrays.copyOf;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
-import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Locale.ROOT;
-import static java.util.stream.Collectors.joining;
 import static lombok.AccessLevel.PRIVATE;
 
 
@@ -963,44 +958,38 @@ public class Zbdd
   @Contract(value = "_ -> new", pure = true)
   public @NotNull String toString(@Range(from = 0, to = MAX_NODES) int zbdd)
   {
-    return getCubes(zbdd).stream()
-        .map(literalResolver::getCubeName)
-        .sorted()
-        .collect(joining(", ", "{ ", " }"));
+    final StringJoiner s = new StringJoiner(", ", "{ ", " }");
+
+    visitCubes(zbdd, cube -> s.add(literalResolver.getCubeName(cube)));
+
+    return s.toString();
   }
 
 
   @Contract(pure = true)
-  @Unmodifiable
-  public @NotNull List<int[]> getCubes(@Range(from = 0, to = MAX_NODES) int zbdd)
+  public void visitCubes(@Range(from = 0, to = MAX_NODES) int zbdd, @NotNull CubeVisitor cubeVisitor)
   {
-    if (zbdd == ZBDD_EMPTY)
-      return emptyList();
-    else if (zbdd == ZBDD_BASE)
-      return singletonList(new int[0]);
-
-    final List<int[]> cubes = new ArrayList<>(count(zbdd));
-
-    getCubes0(cubes, new IntStack(lastVarNumber), zbdd);
-
-    return unmodifiableList(cubes);
+    if (zbdd == ZBDD_BASE)
+      cubeVisitor.visitCube(new int[0]);
+    else if (zbdd >= 2)
+      visitCubes0(cubeVisitor, new IntStack(lastVarNumber), zbdd);
   }
 
 
-  @Contract(mutates = "param1,param2")
-  private void getCubes0(@NotNull List<int[]> set, @NotNull IntStack vars, int zbdd)
+  @Contract(mutates = "param2")
+  private void visitCubes0(@NotNull CubeVisitor visitor, @NotNull IntStack vars, int zbdd)
   {
     if (zbdd == ZBDD_BASE)
-      set.add(vars.getStack());
+      visitor.visitCube(vars.getStack());
     else if (zbdd != ZBDD_EMPTY)
     {
       // walk 1-branch
       vars.push(getVar(zbdd));
-      getCubes0(set, vars, getP1(zbdd));
+      visitCubes0(visitor, vars, getP1(zbdd));
       vars.pop();
 
       // walk 0-branch
-      getCubes0(set, vars, getP0(zbdd));
+      visitCubes0(visitor, vars, getP0(zbdd));
     }
   }
 
@@ -1027,6 +1016,14 @@ public class Zbdd
       getNodes0(nodeMap, getP1(zbdd));
       getNodes0(nodeMap, getP0(zbdd));
     }
+  }
+
+
+
+
+  public interface CubeVisitor
+  {
+    void visitCube(int @NotNull [] vars);
   }
 
 
