@@ -28,7 +28,7 @@ import static de.sayayi.lib.zbdd.Zbdd.MAX_NODES;
 public interface ZbddCapacityAdvisor
 {
   @Contract(pure = true)
-  @Range(from = 4, to = MAX_NODES)
+  @Range(from = 8, to = MAX_NODES)
   int getInitialCapacity();
 
 
@@ -50,7 +50,7 @@ public interface ZbddCapacityAdvisor
    * <p>
    *   Garbage collection is an expensive operation and only useful if a substantial number of nodes are
    *   exopected to be freed in the process. The current number of dead nodes may be a good indicator but is not
-   *   a guarantee that those nodes are invalidated..
+   *   a guarantee that those nodes are invalidated.
    * </p>
    *
    * @param statistics  current zbdd statistics, not {@code null}

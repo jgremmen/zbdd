@@ -82,7 +82,8 @@ public class Zbdd
   {
     this.capacityAdvisor = capacityAdvisor;
 
-    nodesCapacity = capacityAdvisor.getInitialCapacity();
+    //noinspection ConstantConditions
+    nodesCapacity = Math.max(capacityAdvisor.getInitialCapacity(), 8);
     nodes = new int[nodesCapacity * NODE_RECORD_SIZE];
 
     initLeafNode(ZBDD_EMPTY);
@@ -1017,6 +1018,9 @@ public class Zbdd
 
 
 
+  /**
+   * Cube visitor interface to be used with {@link #visitCubes(int, CubeVisitor)}.
+   */
   public interface CubeVisitor
   {
     /**
