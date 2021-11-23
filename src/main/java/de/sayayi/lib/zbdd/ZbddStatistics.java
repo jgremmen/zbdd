@@ -23,14 +23,29 @@ import org.jetbrains.annotations.Contract;
  */
 public interface ZbddStatistics
 {
+  /**
+   * Returns the current node capacity.
+   *
+   * @return  node capacity
+   */
   @Contract(pure = true)
   int getNodesCapacity();
 
 
+  /**
+   * Returns the number of free nodes.
+   *
+   * @return  free node count
+   */
   @Contract(pure = true)
   int getFreeNodes();
 
 
+  /**
+   * Returns the current number of dead nodes.
+   *
+   * @return  dead node count
+   */
   @Contract(pure = true)
   int getDeadNodes();
 
@@ -67,18 +82,38 @@ public interface ZbddStatistics
   }
 
 
+  /**
+   * Returns the total number of garbage collection calls.
+   *
+   * @return  garbage collection count
+   */
   @Contract(pure = true)
   int getGCCount();
 
 
+  /**
+   * Returns the cumulative number of nodes freed by grabage collection.
+   *
+   * @return  cumulative number of freed nodes
+   */
   @Contract(pure = true)
   long getGCFreedNodes();
 
 
+  /**
+   * Returns a rough estimation of the number of bytes used by the zbdd.
+   *
+   * @return  memory usage in bytes
+   */
   @Contract(pure = true)
   long getMemoryUsage();
 
 
+  /**
+   * Returns the number of registered variables.
+   *
+   * @return  registered variable count
+   */
   @Contract(pure = true)
   int getRegisteredVars();
 }
