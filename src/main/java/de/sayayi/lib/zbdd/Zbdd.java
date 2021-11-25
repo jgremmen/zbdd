@@ -190,6 +190,24 @@ public class Zbdd
   }
 
 
+  /**
+   * <p>
+   *   Returns a zbdd set with the given {@code var} as its only element.
+   * </p>
+   * <p>
+   *   Example:
+   * </p>
+   * <pre>
+   *   Zbdd zbdd = new Zbdd();
+   *   int v1 = zbdd.createVar();
+   *   int singleton = zbdd.cube(v1);
+   *   String s = zbdd.toString(singleton);  // = "{ v1 }"
+   * </pre>
+   *
+   * @param var  valid variable
+   *
+   * @return  zbdd set with {@code var} as its only element
+   */
   @Contract(mutates = "this")
   @Range(from = 0, to = MAX_NODES)
   public int cube(@Range(from = 1, to = MAX_VALUE) int var) {
@@ -197,6 +215,26 @@ public class Zbdd
   }
 
 
+  /**
+   * <p>
+   *   Returns a zbdd set with the given {@code vars} combined as its only element.
+   * </p>
+   * <p>
+   *   Example:
+   * </p>
+   * <pre>
+   *   Zbdd zbdd = new Zbdd();
+   *   int v1 = zbdd.createVar();
+   *   int v2 = zbdd.createVar();
+   *   int v3 = zbdd.createVar();
+   *   int singleton = zbdd.cube(v1, v3);
+   *   String s = zbdd.toString(singleton);  // = "{ v1.v3 }"
+   * </pre>
+   *
+   * @param cubeVars  valid variables
+   *
+   * @return  zbdd set with {@code cubeVars} as its only element
+   */
   @Contract(mutates = "this")
   @Range(from = 0, to = MAX_NODES)
   public int cube(int @NotNull ... cubeVars)
@@ -216,19 +254,6 @@ public class Zbdd
     for(int var: cubeVars)
       if (checkVar(var) != getVar(r))
         r = getNode(var, ZBDD_EMPTY, r);
-
-    return r;
-  }
-
-
-  @Contract(mutates = "this")
-  @Range(from = 0, to = MAX_NODES)
-  public int universe()
-  {
-    int r = ZBDD_BASE;
-
-    for(int var = 1; var <= lastVarNumber; var++)
-      r = getNode(var, r, r);
 
     return r;
   }
