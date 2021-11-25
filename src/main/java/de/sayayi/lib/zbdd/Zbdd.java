@@ -256,10 +256,9 @@ public class Zbdd
     __incRef(zbdd);
 
     final int p0 = __incRef(__subset0(getP0(zbdd), var));
-    final int p1 = __incRef(__subset0(getP1(zbdd), var));
-    final int r = getNode(top, p0, p1);
+    final int p1 = __subset0(getP1(zbdd), var);
+    final int r = getNode(top, __decRef(p0), p1);
 
-    __decRef(p0, p1);
     __decRef(zbdd);
 
     return r;
@@ -288,10 +287,9 @@ public class Zbdd
     __incRef(zbdd);
 
     final int p0 = __incRef(__subset1(getP0(zbdd), var));
-    final int p1 = __incRef(__subset1(getP1(zbdd), var));
-    final int r = getNode(top, p0, p1);
+    final int p1 = __subset1(getP1(zbdd), var);
+    final int r = getNode(top, __decRef(p0), p1);
 
-    __decRef(p0, p1);
     __decRef(zbdd);
 
     return r;
@@ -323,11 +321,9 @@ public class Zbdd
     else
     {
       final int p0 = __incRef(__change(getP0(zbdd), var));
-      final int p1 = __incRef(__change(getP1(zbdd), var));
+      final int p1 = __change(getP1(zbdd), var);
 
-      r = getNode(top, p0, p1);
-
-      __decRef(p0, p1);
+      r = getNode(top, __decRef(p0), p1);
     }
 
     __decRef(zbdd);
@@ -365,10 +361,10 @@ public class Zbdd
   @Contract(mutates = "this")
   protected int __union(int p, int q)
   {
+    if (q == ZBDD_EMPTY || p == q)
+      return p;
     if (p == ZBDD_EMPTY)
       return q;
-    if (q == ZBDD_EMPTY || q == p)
-      return p;
 
     int ptop = getVar(p);
     int qtop = getVar(q);
@@ -379,7 +375,8 @@ public class Zbdd
       int tmp = p; p = q; q = tmp; tmp = ptop; ptop = qtop; qtop = tmp;
     }
 
-    __incRef(p, q);
+    __incRef(p);
+    __incRef(q);
 
     int r;
 
@@ -388,14 +385,13 @@ public class Zbdd
     else
     {
       final int p0 = __incRef(__union(getP0(p), getP0(q)));
-      final int p1 = __incRef(__union(getP1(p), getP1(q)));
+      final int p1 = __union(getP1(p), getP1(q));
 
-      r = getNode(ptop, p0, p1);
-
-      __decRef(p0, p1);
+      r = getNode(ptop, __decRef(p0), p1);
     }
 
-    __decRef(p, q);
+    __decRef(q);
+    __decRef(p);
 
     return r;
   }
@@ -420,7 +416,8 @@ public class Zbdd
     final int qtop = getVar(q);
     final int r;
 
-    __incRef(p, q);
+    __incRef(p);
+    __incRef(q);
 
     if (ptop > qtop)
       r = __intersect(getP0(p), q);
@@ -429,14 +426,13 @@ public class Zbdd
     else
     {
       final int p0 = __incRef(__intersect(getP0(p), getP0(q)));
-      final int p1 = __incRef(__intersect(getP1(p), getP1(q)));
+      final int p1 = __intersect(getP1(p), getP1(q));
 
-      r = getNode(ptop, p0, p1);
-
-      __decRef(p0, p1);
+      r = getNode(ptop, __decRef(p0), p1);
     }
 
-    __decRef(p, q);
+    __decRef(q);
+    __decRef(p);
 
     return r;
   }
@@ -461,29 +457,23 @@ public class Zbdd
     final int qtop = getVar(q);
     final int r;
 
-    __incRef(p, q);
+    __incRef(p);
+    __incRef(q);
 
     if (ptop < qtop)
       r = __difference(p, getP0(q));
     else if (ptop > qtop)
-    {
-      final int p0 = __incRef(__difference(getP0(p), getP0(q)));
-
-      r = getNode(ptop, p0, getP1(p));
-
-      __decRef(p0);
-    }
+      r = getNode(ptop, __difference(getP0(p), getP0(q)), getP1(p));
     else
     {
       final int p0 = __incRef(__difference(getP0(p), getP0(q)));
-      final int p1 = __incRef(__difference(getP1(p), getP1(q)));
+      final int p1 = __difference(getP1(p), getP1(q));
 
-      r = getNode(ptop, p0, p1);
-
-      __decRef(p0, p1);
+      r = getNode(ptop, __decRef(p0), p1);
     }
 
-    __decRef(p, q);
+    __decRef(q);
+    __decRef(p);
 
     return r;
   }
@@ -512,7 +502,8 @@ public class Zbdd
     if (ptop > qtop)
       return __multiply(q, p);
 
-    __incRef(p, q);
+    __incRef(p);
+    __incRef(q);
 
     // factor P = p0 + v * p1
     final int p0 = __incRef(__subset0(p, ptop));
@@ -558,7 +549,8 @@ public class Zbdd
     if (q == ZBDD_BASE)
       return p;
 
-    __incRef(p, q);
+    __incRef(p);
+    __incRef(q);
 
     final int v = getVar(q);
 
@@ -568,25 +560,26 @@ public class Zbdd
 
     // factor Q = q0 + v * q1
     final int q0 = __incRef(__subset0(q, v));
-    final int q1 = __incRef(__subset1(q, v));
+    final int q1 = __subset1(q, v);
 
-    final int r1 = __divide(p1, q1);
+    final int r1 = __divide(__decRef(p1), q1);
     final int r;
 
     if (r1 != ZBDD_EMPTY && q0 != ZBDD_EMPTY)
     {
-      final int r0 = __incRef(__divide(p0, q0));
+      __incRef(r1);
 
-      r = __intersect(__incRef(r1), r0);
+      final int r0 = __divide(p0, q0);
 
-      __decRef(r0, r1);
+      r = __intersect(__decRef(r1), r0);
     }
     else
       r = r1;
 
-    __decRef(p0, p1);
-    __decRef(q0, q1);
-    __decRef(p, q);
+    __decRef(q0);
+    __decRef(p0);
+    __decRef(q);
+    __decRef(p);
 
     return r;
   }
@@ -602,14 +595,13 @@ public class Zbdd
   @Contract(mutates = "this")
   protected int __modulo(int p, int q)
   {
-    __incRef(p, q);
+    __incRef(p);
+    __incRef(q);
 
-    final int p_div_q = __incRef(__divide(p, q));
-    final int q_mul_p_div_q = __incRef(multiply(q, p_div_q));
-    final int r = __difference(p, q_mul_p_div_q);
+    final int r = __difference(p, __multiply(q, __divide(p, q)));
 
-    __decRef(p_div_q, q_mul_p_div_q);
-    __decRef(p, q);
+    __decRef(q);
+    __decRef(p);
 
     return r;
   }
@@ -631,10 +623,9 @@ public class Zbdd
     __incRef(zbdd);
 
     final int p0 = __incRef(__atomize(getP0(zbdd)));
-    final int p1 = __incRef(__atomize(getP1(zbdd)));
-    final int r = getNode(getVar(zbdd), __union(p0, p1), ZBDD_BASE);
+    final int p1 = __atomize(getP1(zbdd));
+    final int r = getNode(getVar(zbdd), __union(__decRef(p0), p1), ZBDD_BASE);
 
-    __decRef(p0, p1);
     __decRef(zbdd);
 
     return r;
@@ -673,9 +664,13 @@ public class Zbdd
 
     if (nodesFree < 2)
     {
-      __incRef(p0, p1);
+      __incRef(p0);
+      __incRef(p1);
+
       ensureCapacity();
-      __decRef(p0, p1);
+
+      __decRef(p1);
+      __decRef(p0);
 
       if (nodesFree == 0)
         throw new ZbddException("nodes capacity exhausted");
@@ -744,7 +739,7 @@ public class Zbdd
       nodes[offset + _CHAIN] = 0;
     }
 
-    final int oldFreeNodesCount = nodesFree;
+    final int oldNodesFree = nodesFree;
     nextFreeNode = nodesFree = 0;
 
     for(int i = nodesCapacity; i-- > 2;)
@@ -771,7 +766,7 @@ public class Zbdd
 
     nodesDead = 0;
 
-    final int gcFreedNodesCount = nodesFree - oldFreeNodesCount;
+    final int gcFreedNodesCount = nodesFree - oldNodesFree;
     statistics.gcFreedNodes += gcFreedNodesCount;
 
     return gcFreedNodesCount;
@@ -860,14 +855,6 @@ public class Zbdd
   }
 
 
-  @Contract(mutates = "this")
-  protected void __incRef(int zbdd1, int zbdd2)
-  {
-    __incRef(zbdd1);
-    __incRef(zbdd2);
-  }
-
-
   @Contract(value = "_ -> param1", mutates = "this")
   protected int __incRef(int zbdd)
   {
@@ -897,14 +884,6 @@ public class Zbdd
   @SuppressWarnings("UnusedReturnValue")
   public int decRef(@Range(from = 0, to = MAX_NODES) int zbdd) {
     return __decRef(checkZbdd(zbdd, "zbdd"));
-  }
-
-
-  @Contract(mutates = "this")
-  protected void __decRef(int zbdd1, int zbdd2)
-  {
-    __decRef(zbdd1);
-    __decRef(zbdd2);
   }
 
 
