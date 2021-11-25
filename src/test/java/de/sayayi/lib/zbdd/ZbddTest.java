@@ -151,7 +151,7 @@ class ZbddTest
   }
 
 
-  @Test void queens01() { checkSolution(1, 1,16); }
+  @Test void queens01() { checkSolution(1, 1, 16); }
   @Test void queens02() { checkSolution(2, 0, 16); }
   @Test void queens03() { checkSolution(3, 0, 16); }
   @Test void queens04() { checkSolution(4, 2, 32); }
@@ -243,7 +243,7 @@ class ZbddTest
 
 
     @Override
-    public @Range(from = 4, to = MAX_NODES) int getInitialCapacity() {
+    public int getInitialCapacity() {
       return initialSize;
     }
 
