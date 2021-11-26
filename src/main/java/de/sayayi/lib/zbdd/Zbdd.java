@@ -23,22 +23,17 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Range;
 import org.jetbrains.annotations.Unmodifiable;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.StringJoiner;
 import java.util.TreeMap;
 
 import static java.lang.Integer.MAX_VALUE;
 import static java.lang.Math.round;
 import static java.util.Arrays.copyOf;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
-import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Locale.ROOT;
-import static java.util.stream.Collectors.joining;
 import static lombok.AccessLevel.PRIVATE;
 
 
@@ -87,7 +82,8 @@ public class Zbdd
   {
     this.capacityAdvisor = capacityAdvisor;
 
-    nodesCapacity = capacityAdvisor.getInitialCapacity();
+    //noinspection ConstantConditions
+    nodesCapacity = Math.max(capacityAdvisor.getInitialCapacity(), 8);
     nodes = new int[nodesCapacity * NODE_RECORD_SIZE];
 
     initLeafNode(ZBDD_EMPTY);
@@ -194,6 +190,24 @@ public class Zbdd
   }
 
 
+  /**
+   * <p>
+   *   Returns a zbdd set with the given {@code var} as its only element.
+   * </p>
+   * <p>
+   *   Example:
+   * </p>
+   * <pre>
+   *   Zbdd zbdd = new Zbdd();
+   *   int v1 = zbdd.createVar();
+   *   int singleton = zbdd.cube(v1);
+   *   String s = zbdd.toString(singleton);  // = "{ v1 }"
+   * </pre>
+   *
+   * @param var  valid variable
+   *
+   * @return  zbdd set with {@code var} as its only element
+   */
   @Contract(mutates = "this")
   @Range(from = 0, to = MAX_NODES)
   public int cube(@Range(from = 1, to = MAX_VALUE) int var) {
@@ -201,6 +215,26 @@ public class Zbdd
   }
 
 
+  /**
+   * <p>
+   *   Returns a zbdd set with the given {@code vars} combined as its only element.
+   * </p>
+   * <p>
+   *   Example:
+   * </p>
+   * <pre>
+   *   Zbdd zbdd = new Zbdd();
+   *   int v1 = zbdd.createVar();
+   *   int v2 = zbdd.createVar();
+   *   int v3 = zbdd.createVar();
+   *   int singleton = zbdd.cube(v1, v3);
+   *   String s = zbdd.toString(singleton);  // = "{ v1.v3 }"
+   * </pre>
+   *
+   * @param cubeVars  valid variables
+   *
+   * @return  zbdd set with {@code cubeVars} as its only element
+   */
   @Contract(mutates = "this")
   @Range(from = 0, to = MAX_NODES)
   public int cube(int @NotNull ... cubeVars)
@@ -220,19 +254,6 @@ public class Zbdd
     for(int var: cubeVars)
       if (checkVar(var) != getVar(r))
         r = getNode(var, ZBDD_EMPTY, r);
-
-    return r;
-  }
-
-
-  @Contract(mutates = "this")
-  @Range(from = 0, to = MAX_NODES)
-  public int universe()
-  {
-    int r = ZBDD_BASE;
-
-    for(int var = 1; var <= lastVarNumber; var++)
-      r = getNode(var, r, r);
 
     return r;
   }
@@ -260,10 +281,9 @@ public class Zbdd
     __incRef(zbdd);
 
     final int p0 = __incRef(__subset0(getP0(zbdd), var));
-    final int p1 = __incRef(__subset0(getP1(zbdd), var));
-    final int r = getNode(top, p0, p1);
+    final int p1 = __subset0(getP1(zbdd), var);
+    final int r = getNode(top, __decRef(p0), p1);
 
-    __decRef(p0, p1);
     __decRef(zbdd);
 
     return r;
@@ -292,10 +312,9 @@ public class Zbdd
     __incRef(zbdd);
 
     final int p0 = __incRef(__subset1(getP0(zbdd), var));
-    final int p1 = __incRef(__subset1(getP1(zbdd), var));
-    final int r = getNode(top, p0, p1);
+    final int p1 = __subset1(getP1(zbdd), var);
+    final int r = getNode(top, __decRef(p0), p1);
 
-    __decRef(p0, p1);
     __decRef(zbdd);
 
     return r;
@@ -327,11 +346,9 @@ public class Zbdd
     else
     {
       final int p0 = __incRef(__change(getP0(zbdd), var));
-      final int p1 = __incRef(__change(getP1(zbdd), var));
+      final int p1 = __change(getP1(zbdd), var);
 
-      r = getNode(top, p0, p1);
-
-      __decRef(p0, p1);
+      r = getNode(top, __decRef(p0), p1);
     }
 
     __decRef(zbdd);
@@ -369,10 +386,10 @@ public class Zbdd
   @Contract(mutates = "this")
   protected int __union(int p, int q)
   {
+    if (q == ZBDD_EMPTY || p == q)
+      return p;
     if (p == ZBDD_EMPTY)
       return q;
-    if (q == ZBDD_EMPTY || q == p)
-      return p;
 
     int ptop = getVar(p);
     int qtop = getVar(q);
@@ -383,7 +400,8 @@ public class Zbdd
       int tmp = p; p = q; q = tmp; tmp = ptop; ptop = qtop; qtop = tmp;
     }
 
-    __incRef(p, q);
+    __incRef(p);
+    __incRef(q);
 
     int r;
 
@@ -392,14 +410,13 @@ public class Zbdd
     else
     {
       final int p0 = __incRef(__union(getP0(p), getP0(q)));
-      final int p1 = __incRef(__union(getP1(p), getP1(q)));
+      final int p1 = __union(getP1(p), getP1(q));
 
-      r = getNode(ptop, p0, p1);
-
-      __decRef(p0, p1);
+      r = getNode(ptop, __decRef(p0), p1);
     }
 
-    __decRef(p, q);
+    __decRef(q);
+    __decRef(p);
 
     return r;
   }
@@ -424,7 +441,8 @@ public class Zbdd
     final int qtop = getVar(q);
     final int r;
 
-    __incRef(p, q);
+    __incRef(p);
+    __incRef(q);
 
     if (ptop > qtop)
       r = __intersect(getP0(p), q);
@@ -433,14 +451,13 @@ public class Zbdd
     else
     {
       final int p0 = __incRef(__intersect(getP0(p), getP0(q)));
-      final int p1 = __incRef(__intersect(getP1(p), getP1(q)));
+      final int p1 = __intersect(getP1(p), getP1(q));
 
-      r = getNode(ptop, p0, p1);
-
-      __decRef(p0, p1);
+      r = getNode(ptop, __decRef(p0), p1);
     }
 
-    __decRef(p, q);
+    __decRef(q);
+    __decRef(p);
 
     return r;
   }
@@ -465,29 +482,23 @@ public class Zbdd
     final int qtop = getVar(q);
     final int r;
 
-    __incRef(p, q);
+    __incRef(p);
+    __incRef(q);
 
     if (ptop < qtop)
       r = __difference(p, getP0(q));
     else if (ptop > qtop)
-    {
-      final int p0 = __incRef(__difference(getP0(p), getP0(q)));
-
-      r = getNode(ptop, p0, getP1(p));
-
-      __decRef(p0);
-    }
+      r = getNode(ptop, __difference(getP0(p), getP0(q)), getP1(p));
     else
     {
       final int p0 = __incRef(__difference(getP0(p), getP0(q)));
-      final int p1 = __incRef(__difference(getP1(p), getP1(q)));
+      final int p1 = __difference(getP1(p), getP1(q));
 
-      r = getNode(ptop, p0, p1);
-
-      __decRef(p0, p1);
+      r = getNode(ptop, __decRef(p0), p1);
     }
 
-    __decRef(p, q);
+    __decRef(q);
+    __decRef(p);
 
     return r;
   }
@@ -516,7 +527,8 @@ public class Zbdd
     if (ptop > qtop)
       return __multiply(q, p);
 
-    __incRef(p, q);
+    __incRef(p);
+    __incRef(q);
 
     // factor P = p0 + v * p1
     final int p0 = __incRef(__subset0(p, ptop));
@@ -562,7 +574,8 @@ public class Zbdd
     if (q == ZBDD_BASE)
       return p;
 
-    __incRef(p, q);
+    __incRef(p);
+    __incRef(q);
 
     final int v = getVar(q);
 
@@ -572,25 +585,26 @@ public class Zbdd
 
     // factor Q = q0 + v * q1
     final int q0 = __incRef(__subset0(q, v));
-    final int q1 = __incRef(__subset1(q, v));
+    final int q1 = __subset1(q, v);
 
-    final int r1 = __divide(p1, q1);
+    final int r1 = __divide(__decRef(p1), q1);
     final int r;
 
     if (r1 != ZBDD_EMPTY && q0 != ZBDD_EMPTY)
     {
-      final int r0 = __incRef(__divide(p0, q0));
+      __incRef(r1);
 
-      r = __intersect(__incRef(r1), r0);
+      final int r0 = __divide(p0, q0);
 
-      __decRef(r0, r1);
+      r = __intersect(__decRef(r1), r0);
     }
     else
       r = r1;
 
-    __decRef(p0, p1);
-    __decRef(q0, q1);
-    __decRef(p, q);
+    __decRef(q0);
+    __decRef(p0);
+    __decRef(q);
+    __decRef(p);
 
     return r;
   }
@@ -606,14 +620,13 @@ public class Zbdd
   @Contract(mutates = "this")
   protected int __modulo(int p, int q)
   {
-    __incRef(p, q);
+    __incRef(p);
+    __incRef(q);
 
-    final int p_div_q = __incRef(__divide(p, q));
-    final int q_mul_p_div_q = __incRef(multiply(q, p_div_q));
-    final int r = __difference(p, q_mul_p_div_q);
+    final int r = __difference(p, __multiply(q, __divide(p, q)));
 
-    __decRef(p_div_q, q_mul_p_div_q);
-    __decRef(p, q);
+    __decRef(q);
+    __decRef(p);
 
     return r;
   }
@@ -635,10 +648,9 @@ public class Zbdd
     __incRef(zbdd);
 
     final int p0 = __incRef(__atomize(getP0(zbdd)));
-    final int p1 = __incRef(__atomize(getP1(zbdd)));
-    final int r = getNode(getVar(zbdd), __union(p0, p1), ZBDD_BASE);
+    final int p1 = __atomize(getP1(zbdd));
+    final int r = getNode(getVar(zbdd), __union(__decRef(p0), p1), ZBDD_BASE);
 
-    __decRef(p0, p1);
     __decRef(zbdd);
 
     return r;
@@ -677,9 +689,13 @@ public class Zbdd
 
     if (nodesFree < 2)
     {
-      __incRef(p0, p1);
+      __incRef(p0);
+      __incRef(p1);
+
       ensureCapacity();
-      __decRef(p0, p1);
+
+      __decRef(p1);
+      __decRef(p0);
 
       if (nodesFree == 0)
         throw new ZbddException("nodes capacity exhausted");
@@ -748,7 +764,7 @@ public class Zbdd
       nodes[offset + _CHAIN] = 0;
     }
 
-    final int oldFreeNodesCount = nodesFree;
+    final int oldNodesFree = nodesFree;
     nextFreeNode = nodesFree = 0;
 
     for(int i = nodesCapacity; i-- > 2;)
@@ -775,7 +791,7 @@ public class Zbdd
 
     nodesDead = 0;
 
-    final int gcFreedNodesCount = nodesFree - oldFreeNodesCount;
+    final int gcFreedNodesCount = nodesFree - oldNodesFree;
     statistics.gcFreedNodes += gcFreedNodesCount;
 
     return gcFreedNodesCount;
@@ -864,14 +880,6 @@ public class Zbdd
   }
 
 
-  @Contract(mutates = "this")
-  protected void __incRef(int zbdd1, int zbdd2)
-  {
-    __incRef(zbdd1);
-    __incRef(zbdd2);
-  }
-
-
   @Contract(value = "_ -> param1", mutates = "this")
   protected int __incRef(int zbdd)
   {
@@ -901,14 +909,6 @@ public class Zbdd
   @SuppressWarnings("UnusedReturnValue")
   public int decRef(@Range(from = 0, to = MAX_NODES) int zbdd) {
     return __decRef(checkZbdd(zbdd, "zbdd"));
-  }
-
-
-  @Contract(mutates = "this")
-  protected void __decRef(int zbdd1, int zbdd2)
-  {
-    __decRef(zbdd1);
-    __decRef(zbdd2);
   }
 
 
@@ -963,44 +963,34 @@ public class Zbdd
   @Contract(value = "_ -> new", pure = true)
   public @NotNull String toString(@Range(from = 0, to = MAX_NODES) int zbdd)
   {
-    return getCubes(zbdd).stream()
-        .map(literalResolver::getCubeName)
-        .sorted()
-        .collect(joining(", ", "{ ", " }"));
+    final StringJoiner s = new StringJoiner(", ", "{ ", " }");
+
+    visitCubes(zbdd, cube -> s.add(literalResolver.getCubeName(cube)));
+
+    return s.toString();
   }
 
 
   @Contract(pure = true)
-  @Unmodifiable
-  public @NotNull List<int[]> getCubes(@Range(from = 0, to = MAX_NODES) int zbdd)
-  {
-    if (zbdd == ZBDD_EMPTY)
-      return emptyList();
-    else if (zbdd == ZBDD_BASE)
-      return singletonList(new int[0]);
-
-    final List<int[]> cubes = new ArrayList<>(count(zbdd));
-
-    getCubes0(cubes, new IntStack(lastVarNumber), zbdd);
-
-    return unmodifiableList(cubes);
+  public void visitCubes(@Range(from = 0, to = MAX_NODES) int zbdd, @NotNull CubeVisitor visitor) {
+    visitCubes0(visitor, new IntStack(lastVarNumber), zbdd);
   }
 
 
-  @Contract(mutates = "param1,param2")
-  private void getCubes0(@NotNull List<int[]> set, @NotNull IntStack vars, int zbdd)
+  @Contract(mutates = "param2")
+  private void visitCubes0(@NotNull CubeVisitor visitor, @NotNull IntStack vars, int zbdd)
   {
     if (zbdd == ZBDD_BASE)
-      set.add(vars.getStack());
+      visitor.visitCube(vars.getStack());
     else if (zbdd != ZBDD_EMPTY)
     {
       // walk 1-branch
       vars.push(getVar(zbdd));
-      getCubes0(set, vars, getP1(zbdd));
+      visitCubes0(visitor, vars, getP1(zbdd));
       vars.pop();
 
       // walk 0-branch
-      getCubes0(set, vars, getP0(zbdd));
+      visitCubes0(visitor, vars, getP0(zbdd));
     }
   }
 
@@ -1027,6 +1017,31 @@ public class Zbdd
       getNodes0(nodeMap, getP1(zbdd));
       getNodes0(nodeMap, getP0(zbdd));
     }
+  }
+
+
+
+
+  /**
+   * Cube visitor interface to be used with {@link #visitCubes(int, CubeVisitor)}.
+   */
+  public interface CubeVisitor
+  {
+    /**
+     * <p>
+     *   This method is invoked for each cube in the zbdd set.
+     *   The variables in array {@code vars} are sorted in descendant order.
+     * </p>
+     * <p>
+     *   If vars is an empty array, it represents the base node.
+     * </p>
+     *
+     * @param vars  cube variables or empty array, never {@code null}
+     *
+     * @see #visitCubes(int, CubeVisitor)
+     * @see #base()
+     */
+    void visitCube(int @NotNull [] vars);
   }
 
 
