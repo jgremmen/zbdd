@@ -97,6 +97,22 @@ public class Zbdd implements Cloneable
   }
 
 
+  protected Zbdd(@NotNull Zbdd zbdd)
+  {
+    this.capacityAdvisor = zbdd.capacityAdvisor;
+
+    lastVarNumber = zbdd.lastVarNumber;
+    nodesCapacity = zbdd.nodesCapacity;
+    nodesFree = zbdd.nodesFree;
+    nodesDead = zbdd.nodesDead;
+    nodes = Arrays.copyOf(zbdd.nodes, zbdd.nodes.length);
+    nextFreeNode = zbdd.nextFreeNode;
+    literalResolver = zbdd.literalResolver;
+
+    statistics = new Statistics();
+  }
+
+
   private void initLeafNode(int zbdd)
   {
     final int offset = zbdd * NODE_RECORD_SIZE;
@@ -109,19 +125,8 @@ public class Zbdd implements Cloneable
 
   @Override
   @SuppressWarnings("MethodDoesntCallSuperMethod")
-  public Zbdd clone()
-  {
-    final Zbdd zbdd = new Zbdd(capacityAdvisor);
-
-    zbdd.lastVarNumber = lastVarNumber;
-    zbdd.nodesCapacity = nodesCapacity;
-    zbdd.nodesFree = nodesFree;
-    zbdd.nodesDead = nodesDead;
-    zbdd.nodes = Arrays.copyOf(nodes, nodes.length);
-    zbdd.nextFreeNode = nextFreeNode;
-    zbdd.literalResolver = literalResolver;
-
-    return zbdd;
+  public Zbdd clone() {
+    return new Zbdd(this);
   }
 
 
