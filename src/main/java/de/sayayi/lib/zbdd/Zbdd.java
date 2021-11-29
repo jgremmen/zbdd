@@ -38,11 +38,13 @@ import static lombok.AccessLevel.PRIVATE;
 
 
 /**
+ * This class is not thread-safe.
+ *
  * @author Jeroen Gremmen
  */
 public class Zbdd
 {
-  private static final int VAR_MARK_MASK = 0x80000000;
+  private static final int GC_VAR_MARK_MASK = 0x80000000;
   private static final int NODE_RECORD_SIZE = 6;
 
   /** Maximum number of nodes. */
@@ -723,7 +725,7 @@ public class Zbdd
 
   @Contract(pure = true)
   protected int getVar(int zbdd) {
-    return zbdd < 2 ? -1 : (nodes[zbdd * NODE_RECORD_SIZE + _VAR] & ~VAR_MARK_MASK);
+    return zbdd < 2 ? -1 : nodes[zbdd * NODE_RECORD_SIZE + _VAR];
   }
 
 
@@ -771,11 +773,11 @@ public class Zbdd
     {
       final int offset = i * NODE_RECORD_SIZE;
 
-      if ((nodes[offset + _VAR] & VAR_MARK_MASK) != 0 && nodes[offset + _VAR] != -1)
+      if ((nodes[offset + _VAR] & GC_VAR_MARK_MASK) != 0 && nodes[offset + _VAR] != -1)
       {
         // remove mark and chain valid node
         chainBeforeHash(i,
-            hash(nodes[offset + _VAR] &= ~VAR_MARK_MASK, nodes[offset + _P0], nodes[offset + _P1]));
+            hash(nodes[offset + _VAR] &= ~GC_VAR_MARK_MASK, nodes[offset + _P0], nodes[offset + _P1]));
       }
       else
       {
@@ -804,9 +806,9 @@ public class Zbdd
     {
       final int offset = zbdd * NODE_RECORD_SIZE;
 
-      if ((nodes[offset + _VAR] & VAR_MARK_MASK) == 0)
+      if ((nodes[offset + _VAR] & GC_VAR_MARK_MASK) == 0)
       {
-        nodes[offset + _VAR] |= VAR_MARK_MASK;
+        nodes[offset + _VAR] |= GC_VAR_MARK_MASK;
 
         gc_markTree(nodes[offset + _P0]);
         gc_markTree(nodes[offset + _P1]);
@@ -973,24 +975,26 @@ public class Zbdd
 
   @Contract(pure = true)
   public void visitCubes(@Range(from = 0, to = MAX_NODES) int zbdd, @NotNull CubeVisitor visitor) {
-    visitCubes0(visitor, new IntStack(lastVarNumber), zbdd);
+    visitCubes0(visitor, new CubeVisitorStack(lastVarNumber), zbdd);
   }
 
 
   @Contract(mutates = "param2")
-  private void visitCubes0(@NotNull CubeVisitor visitor, @NotNull IntStack vars, int zbdd)
+  private void visitCubes0(@NotNull CubeVisitor visitor, @NotNull CubeVisitorStack vars, int zbdd)
   {
     if (zbdd == ZBDD_BASE)
       visitor.visitCube(vars.getStack());
     else if (zbdd != ZBDD_EMPTY)
     {
+      final int offset = zbdd * NODE_RECORD_SIZE;
+
       // walk 1-branch
-      vars.push(getVar(zbdd));
-      visitCubes0(visitor, vars, getP1(zbdd));
+      vars.push(nodes[offset + _VAR]);
+      visitCubes0(visitor, vars, nodes[offset + _P1]);
       vars.pop();
 
       // walk 0-branch
-      visitCubes0(visitor, vars, getP0(zbdd));
+      visitCubes0(visitor, vars, nodes[offset + _P0]);
     }
   }
 
@@ -1047,22 +1051,18 @@ public class Zbdd
 
 
 
-  private static class IntStack
+  private static final class CubeVisitorStack
   {
+    private final int[] stack;
     private int stackSize;
-    private int[] stack;
 
 
-    private IntStack(int size) {
-      stack = new int[Math.max(size, 4)];
+    private CubeVisitorStack(int size) {
+      stack = new int[size];
     }
 
 
-    private void push(int value)
-    {
-      if (stackSize >= stack.length)
-        stack = copyOf(stack, stackSize + 4);
-
+    private void push(int value) {
       stack[stackSize++] = value;
     }
 
@@ -1074,7 +1074,7 @@ public class Zbdd
     }
 
 
-    private int[] getStack() {
+    private int @NotNull [] getStack() {
       return copyOf(stack, stackSize);
     }
   }
