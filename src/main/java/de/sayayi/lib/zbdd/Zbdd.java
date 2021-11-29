@@ -42,7 +42,7 @@ import static lombok.AccessLevel.PRIVATE;
  *
  * @author Jeroen Gremmen
  */
-public class Zbdd
+public class Zbdd implements Cloneable
 {
   private static final int GC_VAR_MARK_MASK = 0x80000000;
   private static final int NODE_RECORD_SIZE = 6;
@@ -104,6 +104,24 @@ public class Zbdd
     nodes[offset + _VAR] = -1;
     nodes[offset + _P0] = zbdd;
     nodes[offset + _P1] = zbdd;
+  }
+
+
+  @Override
+  @SuppressWarnings("MethodDoesntCallSuperMethod")
+  public Zbdd clone()
+  {
+    final Zbdd zbdd = new Zbdd(capacityAdvisor);
+
+    zbdd.lastVarNumber = lastVarNumber;
+    zbdd.nodesCapacity = nodesCapacity;
+    zbdd.nodesFree = nodesFree;
+    zbdd.nodesDead = nodesDead;
+    zbdd.nodes = Arrays.copyOf(nodes, nodes.length);
+    zbdd.nextFreeNode = nextFreeNode;
+    zbdd.literalResolver = literalResolver;
+
+    return zbdd;
   }
 
 
