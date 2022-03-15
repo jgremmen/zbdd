@@ -17,6 +17,8 @@ package de.sayayi.lib.zbdd;
 
 
 /**
+ * Zbdd related exception.
+ *
  * @author Jeroen Gremmen
  */
 public class ZbddException extends RuntimeException

@@ -19,6 +19,8 @@ import org.jetbrains.annotations.Contract;
 
 
 /**
+ * Zbdd statistics.
+ *
  * @author Jeroen Gremmen
  */
 public interface ZbddStatistics
@@ -62,6 +64,11 @@ public interface ZbddStatistics
   }
 
 
+  /**
+   * Return the number of node lookups.
+   *
+   * @return  number of node lookups
+   */
   @Contract(pure = true)
   int getNodeLookups();
 

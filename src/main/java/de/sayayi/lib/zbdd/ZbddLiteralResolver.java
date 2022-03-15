@@ -25,12 +25,14 @@ import static java.util.stream.Collectors.joining;
 
 
 /**
+ * Resolve zbdd literal and cube names.
+ *
  * @author Jeroen Gremmen
  */
 public interface ZbddLiteralResolver
 {
   /**
-   * Returns the literal name for variable {@code var}.
+   * Returns the literal name for zbdd variable {@code var}.
    *
    * @param var  registered variable
    *
@@ -40,6 +42,13 @@ public interface ZbddLiteralResolver
   @NotNull String getLiteralName(@Range(from = 1, to = MAX_VALUE) int var);
 
 
+  /**
+   * Return the string representation of a cube.
+   *
+   * @param cubeVars  zbdd veriables
+   *
+   * @return  cube name, never {@code null}
+   */
   @Contract(pure = true)
   default @NotNull String getCubeName(int @NotNull [] cubeVars)
   {
