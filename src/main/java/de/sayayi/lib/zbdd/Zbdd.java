@@ -486,6 +486,7 @@ public class Zbdd implements Cloneable
 
 
   @Contract(mutates = "this")
+  @SuppressWarnings("DuplicatedCode")
   protected int __difference(int p, int q)
   {
     if (p == ZBDD_EMPTY || p == q)
@@ -553,19 +554,14 @@ public class Zbdd implements Cloneable
     final int q0 = __incRef(__subset0(q, ptop));
     final int q1 = __incRef(__subset1(q, ptop));
 
-    // r = (p0 + v * q1) * (q0 + v * q1) = p0q0 + v * (p0q1 + p1q0 + p1q1)
+    // r = (p0 + v * p1) * (q0 + v * q1) = p0q0 + v * (p0q1 + p1q0 + p1q1)
     final int p0q0 = __incRef(__multiply(p0, q0));
     final int p0q1 = __incRef(__multiply(p0, q1));
     final int p1q0 = __incRef(__multiply(p1, q0));
     final int p1q1 = __incRef(__multiply(p1, q1));
+    final int r = __union(p0q0, __change(__union(__union(p0q1, p1q0), p1q1), ptop));
 
-    final int p0q1_p1q0 = __incRef(__union(p0q1, p1q0));
-    final int p0p1_p1q0_p1q1 = __incRef(__union(p0q1_p1q0, p1q1));
-    final int v_p0q1_p1q0_p1q1 = __incRef(__change(p0p1_p1q0_p1q1, ptop));
-
-    final int r = __union(p0q0, v_p0q1_p1q0_p1q1);
-
-    for(int n: new int[] { p, q, p0, p1, q0, q1, p0q0, p0q1, p1q0, p1q1, p0q1_p1q0, p0p1_p1q0_p1q1, v_p0q1_p1q0_p1q1 })
+    for(int n: new int[] { p, q, p0, p1, q0, q1, p0q0, p0q1, p1q0, p1q1 })
       __decRef(n);
 
     return r;
@@ -996,7 +992,7 @@ public class Zbdd implements Cloneable
   private void visitCubes0(@NotNull CubeVisitor visitor, @NotNull CubeVisitorStack vars, int zbdd)
   {
     if (zbdd == ZBDD_BASE)
-      visitor.visitCube(vars.getStack());
+      visitor.visitCube(vars.getCube());
     else if (zbdd != ZBDD_EMPTY)
     {
       final int offset = zbdd * NODE_RECORD_SIZE;
@@ -1087,7 +1083,7 @@ public class Zbdd implements Cloneable
     }
 
 
-    private int @NotNull [] getStack() {
+    private int @NotNull [] getCube() {
       return copyOf(stack, stackSize);
     }
   }
