@@ -16,7 +16,6 @@ buildDir = ".build"
 ext {
   jetbrainsAnnotationsVersion = "23.0.0"
   junitVersion = "5.8.1"
-  lombokVersion = "1.18.22"
 }
 
 
@@ -44,9 +43,6 @@ repositories {
 
 dependencies {
   // java
-  annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
-
-  compileOnlyApi "org.projectlombok:lombok:${lombokVersion}"
   compileOnlyApi "org.jetbrains:annotations:${jetbrainsAnnotationsVersion}"
 
   // test

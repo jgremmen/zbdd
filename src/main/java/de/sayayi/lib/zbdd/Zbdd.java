@@ -15,8 +15,6 @@
  */
 package de.sayayi.lib.zbdd;
 
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
 import org.jetbrains.annotations.*;
 
 import java.util.*;
@@ -26,7 +24,6 @@ import static java.lang.Math.round;
 import static java.util.Arrays.copyOf;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Locale.ROOT;
-import static lombok.AccessLevel.PRIVATE;
 
 
 /**
@@ -96,7 +93,7 @@ public class Zbdd implements Cloneable
     nodesCapacity = zbdd.nodesCapacity;
     nodesFree = zbdd.nodesFree;
     nodesDead = zbdd.nodesDead;
-    nodes = Arrays.copyOf(zbdd.nodes, zbdd.nodes.length);
+    nodes = copyOf(zbdd.nodes, zbdd.nodes.length);
     nextFreeNode = zbdd.nextFreeNode;
     literalResolver = zbdd.literalResolver;
 
@@ -191,7 +188,7 @@ public class Zbdd implements Cloneable
    * @return  empty zbdd set
    */
   @Contract(pure = true)
-  public int empty() {
+  public final int empty() {
     return ZBDD_EMPTY;
   }
 
@@ -202,7 +199,7 @@ public class Zbdd implements Cloneable
    * @return  base zbdd set
    */
   @Contract(pure = true)
-  public int base() {
+  public final int base() {
     return ZBDD_BASE;
   }
 
@@ -447,6 +444,7 @@ public class Zbdd implements Cloneable
 
 
   @Contract(mutates = "this")
+  @SuppressWarnings("DuplicatedCode")
   protected int __intersect(int p, int q)
   {
     if (p == ZBDD_EMPTY || q == ZBDD_EMPTY)
@@ -1097,10 +1095,14 @@ public class Zbdd implements Cloneable
 
 
 
-  @AllArgsConstructor(access = PRIVATE)
   public final class Node
   {
     private final int zbdd;
+
+
+    private Node(int zbdd) {
+      this.zbdd = zbdd;
+    }
 
 
     public int getVar() {
@@ -1128,13 +1130,16 @@ public class Zbdd implements Cloneable
 
 
 
-  @NoArgsConstructor(access = PRIVATE)
   private final class Statistics implements ZbddStatistics
   {
     private int nodeLookups;
     private int nodeLookupHitCount;
     private int gcCount;
     private long gcFreedNodes;
+
+
+    private Statistics() {
+    }
 
 
     private void clear()
