@@ -17,17 +17,9 @@ package de.sayayi.lib.zbdd;
 
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
-import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.MustBeInvokedByOverriders;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Range;
-import org.jetbrains.annotations.Unmodifiable;
+import org.jetbrains.annotations.*;
 
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Objects;
-import java.util.StringJoiner;
-import java.util.TreeMap;
+import java.util.*;
 
 import static java.lang.Integer.MAX_VALUE;
 import static java.lang.Math.round;
@@ -99,8 +91,7 @@ public class Zbdd implements Cloneable
 
   protected Zbdd(@NotNull Zbdd zbdd)
   {
-    this.capacityAdvisor = zbdd.capacityAdvisor;
-
+    capacityAdvisor = zbdd.capacityAdvisor;
     lastVarNumber = zbdd.lastVarNumber;
     nodesCapacity = zbdd.nodesCapacity;
     nodesFree = zbdd.nodesFree;
@@ -141,6 +132,7 @@ public class Zbdd implements Cloneable
   }
 
 
+  @Contract(mutates = "this")
   public void setLiteralResolver(@NotNull ZbddLiteralResolver literalResolver) {
     this.literalResolver = Objects.requireNonNull(literalResolver);
   }
