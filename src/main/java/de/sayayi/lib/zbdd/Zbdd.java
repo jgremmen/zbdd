@@ -17,13 +17,17 @@ package de.sayayi.lib.zbdd;
 
 import org.jetbrains.annotations.*;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.StringJoiner;
+import java.util.TreeMap;
 
 import static java.lang.Integer.MAX_VALUE;
 import static java.lang.Math.round;
 import static java.util.Arrays.copyOf;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Locale.ROOT;
+import static java.util.Objects.requireNonNull;
 
 
 /**
@@ -112,6 +116,7 @@ public class Zbdd implements Cloneable
 
 
   @Override
+  @Contract(pure = true)
   @SuppressWarnings("MethodDoesntCallSuperMethod")
   public Zbdd clone() {
     return new Zbdd(this);
@@ -131,7 +136,7 @@ public class Zbdd implements Cloneable
 
   @Contract(mutates = "this")
   public void setLiteralResolver(@NotNull ZbddLiteralResolver literalResolver) {
-    this.literalResolver = Objects.requireNonNull(literalResolver);
+    this.literalResolver = requireNonNull(literalResolver);
   }
 
 
@@ -842,6 +847,7 @@ public class Zbdd implements Cloneable
     nextFreeNode = 0;
     nodesFree = 0;
 
+    // initialize new nodes
     for(int i = nodesCapacity; i-- > oldNodesCapacity;)
     {
       final int offset = i * NODE_RECORD_SIZE;
@@ -1064,6 +1070,13 @@ public class Zbdd implements Cloneable
   {
     private final int[] stack;
     private int stackSize;
+
+
+    private CubeVisitorStack(@NotNull CubeVisitorStack cvs)
+    {
+      stack = copyOf(cvs.stack, cvs.stack.length);
+      stackSize = cvs.stackSize;
+    }
 
 
     private CubeVisitorStack(int size) {
