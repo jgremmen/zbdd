@@ -155,9 +155,9 @@ class ZbddTest
   @Test void queens06() { checkSolution(6, 4, 256); }
   @Test void queens07() { checkSolution(7, 40, 550); }
   @Test void queens08() { checkSolution(8, 92, 1750); }
-  @Test void queens09() { checkSolution(9, 352, 10240); }
-  @Test void queens10() { checkSolution(10, 724, 25000); }
-  @Test void queens11() { checkSolution(11, 2680, 200000); }
+  @Test void queens09() { checkSolution(9, 352, 6400); }
+  @Test void queens10() { checkSolution(10, 724, 20000); }
+  @Test void queens11() { checkSolution(11, 2680, 96000); }
 
 
   private void checkSolution(int n, int solutionsExpected, int tableSize)
@@ -219,7 +219,6 @@ class ZbddTest
       for(int c = n; c-- > 0;)
         varNames.put(vars[r][c] = zbdd.createVar(), String.format(format, 'a' + c, n - r));
 
-    //noinspection NullableProblems
     zbdd.setLiteralResolver(varNames::get);
 
     return vars;

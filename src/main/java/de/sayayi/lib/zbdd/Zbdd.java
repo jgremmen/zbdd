@@ -765,6 +765,7 @@ public class Zbdd implements Cloneable
 
 
   @Range(from = 0, to = MAX_NODES - 2)
+  @SuppressWarnings("UnusedReturnValue")
   public int gc()
   {
     statistics.gcCount++;
@@ -834,10 +835,12 @@ public class Zbdd implements Cloneable
   @Contract(mutates = "this")
   protected void ensureCapacity()
   {
-    if (nodesDead > 0 &&
-        capacityAdvisor.isGCRequired(statistics) &&
-        gc() >= capacityAdvisor.getMinimumFreeNodes(statistics))
-      return;
+    if (nodesDead > 0 && capacityAdvisor.isGCRequired(statistics))
+    {
+      gc();
+      if (nodesFree >= capacityAdvisor.getMinimumFreeNodes(statistics))
+        return;
+    }
 
     final int oldNodesCapacity = nodesCapacity;
 
@@ -1131,7 +1134,7 @@ public class Zbdd implements Cloneable
 
     public String toString()
     {
-      return zbdd == 0 ? "Empty" : zbdd == 1 ? "Base"
+      return zbdd == ZBDD_EMPTY ? "Empty" : zbdd == ZBDD_BASE ? "Base"
           : ("Node(var=" + literalResolver.getLiteralName(getVar()) + ", P0=" + getP0() + ", P1=" + getP1() + ")");
     }
   }
