@@ -27,6 +27,13 @@ import static de.sayayi.lib.zbdd.Zbdd.MAX_NODES;
  */
 public interface ZbddCapacityAdvisor
 {
+  /**
+   * <p>
+   *   Return the initial number of nodes available for zbdd operations.
+   * </p>
+   *
+   * @return  initial capacity, at least 8
+   */
   @Contract(pure = true)
   @Range(from = 8, to = MAX_NODES)
   int getInitialCapacity();
