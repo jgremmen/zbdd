@@ -154,10 +154,10 @@ class ZbddTest
   @Test void queens05() { checkSolution(5, 10, 128); }
   @Test void queens06() { checkSolution(6, 4, 256); }
   @Test void queens07() { checkSolution(7, 40, 550); }
-  @Test void queens08() { checkSolution(8, 92, 1750); }
-  @Test void queens09() { checkSolution(9, 352, 6400); }
+  @Test void queens08() { checkSolution(8, 92, 1700); }
+  @Test void queens09() { checkSolution(9, 352, 5400); }
   @Test void queens10() { checkSolution(10, 724, 20000); }
-  @Test void queens11() { checkSolution(11, 2680, 96000); }
+  @Test void queens11() { checkSolution(11, 2680, 80000); }
 
 
   private void checkSolution(int n, int solutionsExpected, int tableSize)
