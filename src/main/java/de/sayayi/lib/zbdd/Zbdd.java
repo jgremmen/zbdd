@@ -15,17 +15,10 @@
  */
 package de.sayayi.lib.zbdd;
 
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
-import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.MustBeInvokedByOverriders;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Range;
-import org.jetbrains.annotations.Unmodifiable;
+import org.jetbrains.annotations.*;
 
 import java.util.Arrays;
 import java.util.Map;
-import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.TreeMap;
 
@@ -34,15 +27,17 @@ import static java.lang.Math.round;
 import static java.util.Arrays.copyOf;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Locale.ROOT;
-import static lombok.AccessLevel.PRIVATE;
+import static java.util.Objects.requireNonNull;
 
 
 /**
+ * This class is not thread-safe.
+ *
  * @author Jeroen Gremmen
  */
-public class Zbdd
+public class Zbdd implements Cloneable
 {
-  private static final int VAR_MARK_MASK = 0x80000000;
+  private static final int GC_VAR_MARK_MASK = 0x80000000;
   private static final int NODE_RECORD_SIZE = 6;
 
   /** Maximum number of nodes. */
@@ -95,6 +90,21 @@ public class Zbdd
   }
 
 
+  protected Zbdd(@NotNull Zbdd zbdd)
+  {
+    capacityAdvisor = zbdd.capacityAdvisor;
+    lastVarNumber = zbdd.lastVarNumber;
+    nodesCapacity = zbdd.nodesCapacity;
+    nodesFree = zbdd.nodesFree;
+    nodesDead = zbdd.nodesDead;
+    nodes = copyOf(zbdd.nodes, zbdd.nodes.length);
+    nextFreeNode = zbdd.nextFreeNode;
+    literalResolver = zbdd.literalResolver;
+
+    statistics = new Statistics();
+  }
+
+
   private void initLeafNode(int zbdd)
   {
     final int offset = zbdd * NODE_RECORD_SIZE;
@@ -102,6 +112,14 @@ public class Zbdd
     nodes[offset + _VAR] = -1;
     nodes[offset + _P0] = zbdd;
     nodes[offset + _P1] = zbdd;
+  }
+
+
+  @Override
+  @Contract(pure = true)
+  @SuppressWarnings("MethodDoesntCallSuperMethod")
+  public Zbdd clone() {
+    return new Zbdd(this);
   }
 
 
@@ -116,8 +134,9 @@ public class Zbdd
   }
 
 
+  @Contract(mutates = "this")
   public void setLiteralResolver(@NotNull ZbddLiteralResolver literalResolver) {
-    this.literalResolver = Objects.requireNonNull(literalResolver);
+    this.literalResolver = requireNonNull(literalResolver);
   }
 
 
@@ -174,7 +193,7 @@ public class Zbdd
    * @return  empty zbdd set
    */
   @Contract(pure = true)
-  public int empty() {
+  public final int empty() {
     return ZBDD_EMPTY;
   }
 
@@ -185,7 +204,7 @@ public class Zbdd
    * @return  base zbdd set
    */
   @Contract(pure = true)
-  public int base() {
+  public final int base() {
     return ZBDD_BASE;
   }
 
@@ -430,6 +449,7 @@ public class Zbdd
 
 
   @Contract(mutates = "this")
+  @SuppressWarnings("DuplicatedCode")
   protected int __intersect(int p, int q)
   {
     if (p == ZBDD_EMPTY || q == ZBDD_EMPTY)
@@ -471,6 +491,7 @@ public class Zbdd
 
 
   @Contract(mutates = "this")
+  @SuppressWarnings("DuplicatedCode")
   protected int __difference(int p, int q)
   {
     if (p == ZBDD_EMPTY || p == q)
@@ -538,19 +559,14 @@ public class Zbdd
     final int q0 = __incRef(__subset0(q, ptop));
     final int q1 = __incRef(__subset1(q, ptop));
 
-    // r = (p0 + v * q1) * (q0 + v * q1) = p0q0 + v * (p0q1 + p1q0 + p1q1)
+    // r = (p0 + v * p1) * (q0 + v * q1) = p0q0 + v * (p0q1 + p1q0 + p1q1)
     final int p0q0 = __incRef(__multiply(p0, q0));
     final int p0q1 = __incRef(__multiply(p0, q1));
     final int p1q0 = __incRef(__multiply(p1, q0));
     final int p1q1 = __incRef(__multiply(p1, q1));
+    final int r = __union(p0q0, __change(__union(__union(p0q1, p1q0), p1q1), ptop));
 
-    final int p0q1_p1q0 = __incRef(__union(p0q1, p1q0));
-    final int p0p1_p1q0_p1q1 = __incRef(__union(p0q1_p1q0, p1q1));
-    final int v_p0q1_p1q0_p1q1 = __incRef(__change(p0p1_p1q0_p1q1, ptop));
-
-    final int r = __union(p0q0, v_p0q1_p1q0_p1q1);
-
-    for(int n: new int[] { p, q, p0, p1, q0, q1, p0q0, p0q1, p1q0, p1q1, p0q1_p1q0, p0p1_p1q0_p1q1, v_p0q1_p1q0_p1q1 })
+    for(int n: new int[] { p, q, p0, p1, q0, q1, p0q0, p0q1, p1q0, p1q1 })
       __decRef(n);
 
     return r;
@@ -723,7 +739,7 @@ public class Zbdd
 
   @Contract(pure = true)
   protected int getVar(int zbdd) {
-    return zbdd < 2 ? -1 : (nodes[zbdd * NODE_RECORD_SIZE + _VAR] & ~VAR_MARK_MASK);
+    return zbdd < 2 ? -1 : nodes[zbdd * NODE_RECORD_SIZE + _VAR];
   }
 
 
@@ -749,6 +765,7 @@ public class Zbdd
 
 
   @Range(from = 0, to = MAX_NODES - 2)
+  @SuppressWarnings("UnusedReturnValue")
   public int gc()
   {
     statistics.gcCount++;
@@ -771,11 +788,11 @@ public class Zbdd
     {
       final int offset = i * NODE_RECORD_SIZE;
 
-      if ((nodes[offset + _VAR] & VAR_MARK_MASK) != 0 && nodes[offset + _VAR] != -1)
+      if ((nodes[offset + _VAR] & GC_VAR_MARK_MASK) != 0 && nodes[offset + _VAR] != -1)
       {
         // remove mark and chain valid node
         chainBeforeHash(i,
-            hash(nodes[offset + _VAR] &= ~VAR_MARK_MASK, nodes[offset + _P0], nodes[offset + _P1]));
+            hash(nodes[offset + _VAR] &= ~GC_VAR_MARK_MASK, nodes[offset + _P0], nodes[offset + _P1]));
       }
       else
       {
@@ -804,9 +821,9 @@ public class Zbdd
     {
       final int offset = zbdd * NODE_RECORD_SIZE;
 
-      if ((nodes[offset + _VAR] & VAR_MARK_MASK) == 0)
+      if ((nodes[offset + _VAR] & GC_VAR_MARK_MASK) == 0)
       {
-        nodes[offset + _VAR] |= VAR_MARK_MASK;
+        nodes[offset + _VAR] |= GC_VAR_MARK_MASK;
 
         gc_markTree(nodes[offset + _P0]);
         gc_markTree(nodes[offset + _P1]);
@@ -818,10 +835,12 @@ public class Zbdd
   @Contract(mutates = "this")
   protected void ensureCapacity()
   {
-    if (nodesDead > 0 &&
-        capacityAdvisor.isGCRequired(statistics) &&
-        gc() >= capacityAdvisor.getMinimumFreeNodes(statistics))
-      return;
+    if (nodesDead > 0 && capacityAdvisor.isGCRequired(statistics))
+    {
+      gc();
+      if (nodesFree >= capacityAdvisor.getMinimumFreeNodes(statistics))
+        return;
+    }
 
     final int oldNodesCapacity = nodesCapacity;
 
@@ -831,6 +850,7 @@ public class Zbdd
     nextFreeNode = 0;
     nodesFree = 0;
 
+    // initialize new nodes
     for(int i = nodesCapacity; i-- > oldNodesCapacity;)
     {
       final int offset = i * NODE_RECORD_SIZE;
@@ -973,24 +993,26 @@ public class Zbdd
 
   @Contract(pure = true)
   public void visitCubes(@Range(from = 0, to = MAX_NODES) int zbdd, @NotNull CubeVisitor visitor) {
-    visitCubes0(visitor, new IntStack(lastVarNumber), zbdd);
+    visitCubes0(visitor, new CubeVisitorStack(lastVarNumber), zbdd);
   }
 
 
   @Contract(mutates = "param2")
-  private void visitCubes0(@NotNull CubeVisitor visitor, @NotNull IntStack vars, int zbdd)
+  private void visitCubes0(@NotNull CubeVisitor visitor, @NotNull CubeVisitorStack vars, int zbdd)
   {
     if (zbdd == ZBDD_BASE)
-      visitor.visitCube(vars.getStack());
+      visitor.visitCube(vars.getCube());
     else if (zbdd != ZBDD_EMPTY)
     {
+      final int offset = zbdd * NODE_RECORD_SIZE;
+
       // walk 1-branch
-      vars.push(getVar(zbdd));
-      visitCubes0(visitor, vars, getP1(zbdd));
+      vars.push(nodes[offset + _VAR]);
+      visitCubes0(visitor, vars, nodes[offset + _P1]);
       vars.pop();
 
       // walk 0-branch
-      visitCubes0(visitor, vars, getP0(zbdd));
+      visitCubes0(visitor, vars, nodes[offset + _P0]);
     }
   }
 
@@ -1047,22 +1069,25 @@ public class Zbdd
 
 
 
-  private static class IntStack
+  private static final class CubeVisitorStack
   {
+    private final int[] stack;
     private int stackSize;
-    private int[] stack;
 
 
-    private IntStack(int size) {
-      stack = new int[Math.max(size, 4)];
+    private CubeVisitorStack(@NotNull CubeVisitorStack cvs)
+    {
+      stack = copyOf(cvs.stack, cvs.stack.length);
+      stackSize = cvs.stackSize;
     }
 
 
-    private void push(int value)
-    {
-      if (stackSize >= stack.length)
-        stack = copyOf(stack, stackSize + 4);
+    private CubeVisitorStack(int size) {
+      stack = new int[size];
+    }
 
+
+    private void push(int value) {
       stack[stackSize++] = value;
     }
 
@@ -1074,7 +1099,7 @@ public class Zbdd
     }
 
 
-    private int[] getStack() {
+    private int @NotNull [] getCube() {
       return copyOf(stack, stackSize);
     }
   }
@@ -1082,10 +1107,14 @@ public class Zbdd
 
 
 
-  @AllArgsConstructor(access = PRIVATE)
   public final class Node
   {
     private final int zbdd;
+
+
+    private Node(int zbdd) {
+      this.zbdd = zbdd;
+    }
 
 
     public int getVar() {
@@ -1105,7 +1134,7 @@ public class Zbdd
 
     public String toString()
     {
-      return zbdd == 0 ? "Empty" : zbdd == 1 ? "Base"
+      return zbdd == ZBDD_EMPTY ? "Empty" : zbdd == ZBDD_BASE ? "Base"
           : ("Node(var=" + literalResolver.getLiteralName(getVar()) + ", P0=" + getP0() + ", P1=" + getP1() + ")");
     }
   }
@@ -1113,13 +1142,16 @@ public class Zbdd
 
 
 
-  @NoArgsConstructor(access = PRIVATE)
   private final class Statistics implements ZbddStatistics
   {
     private int nodeLookups;
     private int nodeLookupHitCount;
     private int gcCount;
     private long gcFreedNodes;
+
+
+    private Statistics() {
+    }
 
 
     private void clear()

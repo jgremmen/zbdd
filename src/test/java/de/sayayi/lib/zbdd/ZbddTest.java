@@ -22,12 +22,8 @@ import org.junit.jupiter.api.Test;
 import java.util.HashMap;
 import java.util.Map;
 
-import static de.sayayi.lib.zbdd.Zbdd.MAX_NODES;
-import static de.sayayi.lib.zbdd.Zbdd.ZBDD_BASE;
-import static de.sayayi.lib.zbdd.Zbdd.ZBDD_EMPTY;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static de.sayayi.lib.zbdd.Zbdd.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 /**
@@ -157,11 +153,11 @@ class ZbddTest
   @Test void queens04() { checkSolution(4, 2, 32); }
   @Test void queens05() { checkSolution(5, 10, 128); }
   @Test void queens06() { checkSolution(6, 4, 256); }
-  @Test void queens07() { checkSolution(7, 40, 512); }
-  @Test void queens08() { checkSolution(8, 92, 1750); }
-  @Test void queens09() { checkSolution(9, 352, 10240); }
-  @Test void queens10() { checkSolution(10, 724, 30000); }
-  @Test void queens11() { checkSolution(11, 2680, 200000); }
+  @Test void queens07() { checkSolution(7, 40, 550); }
+  @Test void queens08() { checkSolution(8, 92, 1700); }
+  @Test void queens09() { checkSolution(9, 352, 5400); }
+  @Test void queens10() { checkSolution(10, 724, 20000); }
+  @Test void queens11() { checkSolution(11, 2680, 80000); }
 
 
   private void checkSolution(int n, int solutionsExpected, int tableSize)
@@ -219,11 +215,10 @@ class ZbddTest
     final Map<Integer,String> varNames = new HashMap<>();
     final String format = n < 10 ? "%c%d" : "%c%02d";
 
-    for(int r = 0; r < n; r++)
-      for(int c = 0; c < n; c++)
+    for(int r = n; r-- > 0;)
+      for(int c = n; c-- > 0;)
         varNames.put(vars[r][c] = zbdd.createVar(), String.format(format, 'a' + c, n - r));
 
-    //noinspection NullableProblems
     zbdd.setLiteralResolver(varNames::get);
 
     return vars;

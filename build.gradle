@@ -8,15 +8,14 @@ plugins {
 
 description "Java Implementation of Shin Ichi Minato's Zero-Suppressed BDDs"
 group 'de.sayayi.lib'
-version '0.1.1'
+version '0.1.2'
 
 buildDir = ".build"
 
 
 ext {
   jetbrainsAnnotationsVersion = "23.0.0"
-  junitVersion = "5.8.1"
-  lombokVersion = "1.18.22"
+  junitVersion = "5.9.0"
 }
 
 
@@ -44,9 +43,6 @@ repositories {
 
 dependencies {
   // java
-  annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
-
-  compileOnlyApi "org.projectlombok:lombok:${lombokVersion}"
   compileOnlyApi "org.jetbrains:annotations:${jetbrainsAnnotationsVersion}"
 
   // test
