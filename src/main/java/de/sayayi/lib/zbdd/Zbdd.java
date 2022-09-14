@@ -176,6 +176,18 @@ public class Zbdd implements Cloneable
   }
 
 
+  @Contract(pure = true)
+  public static boolean isEmpty(@Range(from = 0, to = MAX_NODES) int zbdd) {
+    return zbdd == ZBDD_EMPTY;
+  }
+
+
+  @Contract(pure = true)
+  public static boolean isBase(@Range(from = 0, to = MAX_NODES) int zbdd) {
+    return zbdd == ZBDD_BASE;
+  }
+
+
   /**
    * Create a new literal/variable.
    *
