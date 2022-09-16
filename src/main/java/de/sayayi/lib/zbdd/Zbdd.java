@@ -685,6 +685,32 @@ public class Zbdd implements Cloneable
   }
 
 
+
+
+  @Contract(mutates = "this")
+  @Range(from = 0, to = MAX_NODES)
+  public int removeBase(@Range(from = 0, to = MAX_NODES) int zbdd) {
+    return __removeBase(checkZbdd(zbdd, "zbdd"));
+  }
+
+
+  @Contract(mutates = "this")
+  @SuppressWarnings("DuplicatedCode")
+  protected int __removeBase(int zbdd)
+  {
+    if (zbdd < 2)
+      return ZBDD_EMPTY;
+
+    __incRef(zbdd);
+
+    final int r = getNode(getVar(zbdd), __removeBase(getP0(zbdd)), getP1(zbdd));
+
+    __decRef(zbdd);
+
+    return r;
+  }
+
+
   @Contract(mutates = "this")
   @Range(from = 0, to = MAX_NODES)
   protected int getNode(@Range(from = 1, to = MAX_VALUE) int var,
@@ -772,7 +798,7 @@ public class Zbdd implements Cloneable
   @Contract(pure = true)
   @Range(from = 0, to = MAX_NODES)
   protected int hash(int var, int p0, int p1) {
-    return ((var * 12582917 + p0 * 4256249 + p1 * 741457) & 0x7fffffff) % nodesCapacity;
+    return ((var * 12582917 + p0 * 4256249 + p1 * 741457) & MAX_VALUE) % nodesCapacity;
   }
 
 
@@ -1003,9 +1029,10 @@ public class Zbdd implements Cloneable
   }
 
 
-  @Contract(pure = true)
-  public void visitCubes(@Range(from = 0, to = MAX_NODES) int zbdd, @NotNull CubeVisitor visitor) {
-    visitCubes0(visitor, new CubeVisitorStack(lastVarNumber), zbdd);
+  public void visitCubes(@Range(from = 0, to = MAX_NODES) int zbdd, @NotNull CubeVisitor visitor)
+  {
+    visitCubes0(visitor, new CubeVisitorStack(lastVarNumber), __incRef(zbdd));
+    __decRef(zbdd);
   }
 
 
