@@ -147,6 +147,27 @@ class ZbddTest
   }
 
 
+  @Test
+  void removeBase()
+  {
+    Zbdd zbdd = new Zbdd();
+    int a = zbdd.createVar();
+    int b = zbdd.createVar();
+    int c = zbdd.createVar();
+
+    zbdd.setLiteralResolver(var -> var == a ? "a" : var == b ? "b" : "c");
+
+    int ab = zbdd.cube(a, b);
+    int ac = zbdd.cube(a, c);
+    int ab_ac_b_c = zbdd.union(zbdd.union(zbdd.union(ab, zbdd.cube(b)), zbdd.cube(c)), ac);
+    int r = zbdd.union(ab_ac_b_c, ZBDD_BASE);
+
+    assertEquals(ab_ac_b_c, zbdd.removeBase(r));
+    assertEquals(zbdd.cube(a), zbdd.removeBase(zbdd.subset1(ab_ac_b_c, c)));
+    assertTrue(Zbdd.isEmpty(zbdd.removeBase(zbdd.base())));
+  }
+
+
   @Test void queens01() { checkSolution(1, 1, 16); }
   @Test void queens02() { checkSolution(2, 0, 16); }
   @Test void queens03() { checkSolution(3, 0, 16); }
