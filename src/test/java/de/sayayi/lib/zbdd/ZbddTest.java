@@ -168,6 +168,31 @@ class ZbddTest
   }
 
 
+  @Test
+  void contains()
+  {
+    Zbdd zbdd = new Zbdd();
+    int a = zbdd.createVar();
+    int b = zbdd.createVar();
+    int c = zbdd.createVar();
+
+    zbdd.setLiteralResolver(var -> var == a ? "a" : var == b ? "b" : "c");
+
+    int ab = zbdd.cube(a, b);
+    int ac = zbdd.cube(a, c);
+    int ab_ac_b_c = zbdd.union(zbdd.union(zbdd.union(ab, zbdd.cube(b)), zbdd.cube(c)), ac);
+    int r = zbdd.union(ab_ac_b_c, ZBDD_BASE);
+
+    assertFalse(zbdd.contains(r, ZBDD_EMPTY));
+    assertTrue(zbdd.contains(r, ZBDD_BASE));
+    assertTrue(zbdd.contains(r, ab));
+    assertTrue(zbdd.contains(r, ac));
+    assertTrue(zbdd.contains(r, zbdd.cube(b)));
+    assertTrue(zbdd.contains(r, zbdd.union(zbdd.cube(b), zbdd.cube(c))));
+    assertFalse(zbdd.contains(r, zbdd.union(ab, zbdd.cube(a))));
+  }
+
+
   @Test void queens01() { checkSolution(1, 1, 16); }
   @Test void queens02() { checkSolution(2, 0, 16); }
   @Test void queens03() { checkSolution(3, 0, 16); }

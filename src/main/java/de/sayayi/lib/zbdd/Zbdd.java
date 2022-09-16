@@ -409,7 +409,8 @@ public class Zbdd implements Cloneable
 
   @Contract(mutates = "this")
   @Range(from = 0, to = MAX_NODES)
-  public int union(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q) {
+  public int union(@Range(from = 0, to = MAX_NODES) int p,
+                   @Range(from = 0, to = MAX_NODES) int q) {
     return __union(checkZbdd(p, "p"), checkZbdd(q, "q"));
   }
 
@@ -455,7 +456,8 @@ public class Zbdd implements Cloneable
 
   @Contract(mutates = "this")
   @Range(from = 0, to = MAX_NODES)
-  public int intersect(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q) {
+  public int intersect(@Range(from = 0, to = MAX_NODES) int p,
+                       @Range(from = 0, to = MAX_NODES) int q) {
     return __intersect(checkZbdd(p, "p"), checkZbdd(q, "q"));
   }
 
@@ -497,7 +499,8 @@ public class Zbdd implements Cloneable
 
   @Contract(mutates = "this")
   @Range(from = 0, to = MAX_NODES)
-  public int difference(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q) {
+  public int difference(@Range(from = 0, to = MAX_NODES) int p,
+                        @Range(from = 0, to = MAX_NODES) int q) {
     return __difference(checkZbdd(p, "p"), checkZbdd(q, "q"));
   }
 
@@ -539,7 +542,8 @@ public class Zbdd implements Cloneable
 
   @Contract(mutates = "this")
   @Range(from = 0, to = MAX_NODES)
-  public int multiply(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q) {
+  public int multiply(@Range(from = 0, to = MAX_NODES) int p,
+                      @Range(from = 0, to = MAX_NODES) int q) {
     return __multiply(checkZbdd(p, "p"), checkZbdd(q, "q"));
   }
 
@@ -587,7 +591,8 @@ public class Zbdd implements Cloneable
 
   @Contract(mutates = "this")
   @Range(from = 0, to = MAX_NODES)
-  public int divide(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q) {
+  public int divide(@Range(from = 0, to = MAX_NODES) int p,
+                    @Range(from = 0, to = MAX_NODES) int q) {
     return __divide(checkZbdd(p, "p"), checkZbdd(q, "q"));
   }
 
@@ -640,7 +645,8 @@ public class Zbdd implements Cloneable
 
   @Contract(mutates = "this")
   @Range(from = 0, to = MAX_NODES)
-  public int modulo(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q) {
+  public int modulo(@Range(from = 0, to = MAX_NODES) int p,
+                    @Range(from = 0, to = MAX_NODES) int q) {
     return __modulo(checkZbdd(p, "p"), checkZbdd(q, "q"));
   }
 
@@ -695,7 +701,6 @@ public class Zbdd implements Cloneable
 
 
   @Contract(mutates = "this")
-  @SuppressWarnings("DuplicatedCode")
   protected int __removeBase(int zbdd)
   {
     if (zbdd < 2)
@@ -708,6 +713,20 @@ public class Zbdd implements Cloneable
     __decRef(zbdd);
 
     return r;
+  }
+
+
+  @Contract(mutates = "this")
+  @Range(from = 0, to = MAX_NODES)
+  public boolean contains(@Range(from = 0, to = MAX_NODES) int p,
+                          @Range(from = 0, to = MAX_NODES) int q) {
+    return __contains(checkZbdd(p, "p"), checkZbdd(q, "q"));
+  }
+
+
+  @Contract(mutates = "this")
+  protected boolean __contains(int p, int q) {
+    return p != ZBDD_EMPTY && q != ZBDD_EMPTY && (p == q || __intersect(p, q) == q);
   }
 
 
