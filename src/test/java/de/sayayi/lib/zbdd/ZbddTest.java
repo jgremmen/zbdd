@@ -15,6 +15,7 @@
  */
 package de.sayayi.lib.zbdd;
 
+import de.sayayi.lib.zbdd.cache.ZbddFastCache;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Range;
 import org.junit.jupiter.api.Test;
@@ -209,6 +210,8 @@ class ZbddTest
   private void checkSolution(int n, int solutionsExpected, int tableSize)
   {
     final Zbdd zbdd = new Zbdd(new SimpleCapacityAdvisor(tableSize));
+    zbdd.setZbddCache(new ZbddFastCache(65536));
+
     final int[][] vars = getVars(zbdd, n);
 
     int solution = ZBDD_BASE;
@@ -251,6 +254,7 @@ class ZbddTest
     System.out.println("Queens " + n + "x" + n + "  (" + solutions + ")");
     System.out.println("  " + zbdd.getStatistics());
     zbdd.visitCubes(solution, cube -> System.out.println("  " + nameResolver.getCubeName(cube)));
+    System.out.println(zbdd.getZbddCache());
     System.out.println();
   }
 

@@ -25,9 +25,26 @@ import org.jetbrains.annotations.NotNull;
  */
 public interface ZbddCache
 {
+  /**
+   * Retrieve result from the cache.
+   *
+   * @param operation  zbdd operation
+   * @param p          operation parameter
+   *
+   * @return  {@link Integer#MIN_VALUE} if the result is not cached. Oherwise the cached result is returned
+   */
   int getResult(@NotNull Operation1 operation, int p);
 
 
+  /**
+   * Retrieve result from the cache.
+   *
+   * @param operation  zbdd operation
+   * @param p1         1st operation parameter
+   * @param p2         2nd operation parameter
+   *
+   * @return  {@link Integer#MIN_VALUE} if the result is not cached. Oherwise the cached result is returned
+   */
   int getResult(@NotNull Operation2 operation, int p1, int p2);
 
 

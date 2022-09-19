@@ -130,6 +130,15 @@ public class Zbdd implements Cloneable
   }
 
 
+  /**
+   * @since 0.1.3
+   */
+  @Contract(pure = true)
+  public ZbddCache getZbddCache() {
+    return zbddCache;
+  }
+
+
   @Override
   @Contract(pure = true)
   @SuppressWarnings("MethodDoesntCallSuperMethod")
@@ -540,7 +549,7 @@ public class Zbdd implements Cloneable
       final int offset = zbdd * NODE_RECORD_SIZE;
 
       zbddCache.putResult(COUNT, zbdd,
-          r = __count_cache(nodes[offset + _P0]) + __count_cache(nodes[offset + _P1]));
+          r = __count(nodes[offset + _P0]) + __count(nodes[offset + _P1]));
     }
 
     return r;
