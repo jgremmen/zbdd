@@ -24,6 +24,8 @@ import static de.sayayi.lib.zbdd.Zbdd.MAX_NODES;
 
 /**
  * @author Jeroen Gremmen
+ *
+ * @see Zbdd#Zbdd(ZbddCapacityAdvisor)
  */
 public interface ZbddCapacityAdvisor
 {

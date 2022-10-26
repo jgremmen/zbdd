@@ -35,7 +35,13 @@ import static java.util.Objects.requireNonNull;
 
 
 /**
- * This class is not thread-safe.
+ * <p>
+ *   <a href="https://en.wikipedia.org/wiki/Zero-suppressed_decision_diagram">Zero-suppressed decision diagram</a>
+ *   on Wikipedia.
+ * </p>
+ * <p>
+ *   This class is not thread-safe.
+ * </p>
  *
  * @author Jeroen Gremmen
  */
@@ -123,6 +129,22 @@ public class Zbdd implements Cloneable
 
 
   /**
+   * <p>
+   *   Sets or removes a zbdd cache.
+   * </p>
+   * <p>
+   *   The zbdd implementation without caching is already very fast. If the same operations on zbdds
+   *   are performed frequently then adding a cache may help to improve performance. However, if the
+   *   operations performed are mostly unique (like the 8-queens problem) then adding a cache will
+   *   reduce the overall performance.
+   * </p>
+   * <p>
+   *   Make sure to test your zbdd operationsthe with and without a cache in order to find out whether
+   *   adding a cache is going to improve performance or not.
+   * </p>
+   *
+   * @param zbddCache  zbdd cache instance or {@code null} to remove a previously assigned cache
+   *
    * @since 0.1.3
    */
   public void setZbddCache(ZbddCache zbddCache) {
@@ -131,6 +153,10 @@ public class Zbdd implements Cloneable
 
 
   /**
+   * Returns the currently assigned zbdd cache implementation.
+   *
+   * @return  zbdd cache instance or {@code null} if no zbdd cache was assigned
+   *
    * @since 0.1.3
    */
   @Contract(pure = true)
@@ -178,6 +204,16 @@ public class Zbdd implements Cloneable
   }
 
 
+  /**
+   * <p>
+   *   Clear all nodes from this zbdd instance. If a zbdd cache is assigned it will be cleared as well.
+   * </p>
+   * <p>
+   *   This method clears all variables and nodes. It does not free up allocated memory.
+   * </p>
+   *
+   * @see ZbddCache#clear()
+   */
   @Contract(mutates = "this")
   public void clear()
   {
@@ -203,12 +239,24 @@ public class Zbdd implements Cloneable
   }
 
 
+  /**
+   * Tells if the zbdd set identified by {@code zbdd} is empty.
+   *
+   * @param zbdd  zbdd node
+   *
+   * @return  {@code true} if the set is empty, {@code false} otherwise
+   *
+   * @see #empty()
+   */
   @Contract(pure = true)
   public static boolean isEmpty(@Range(from = 0, to = MAX_NODES) int zbdd) {
     return zbdd == ZBDD_EMPTY;
   }
 
 
+  /**
+   * @see #base()
+   */
   @Contract(pure = true)
   public static boolean isBase(@Range(from = 0, to = MAX_NODES) int zbdd) {
     return zbdd == ZBDD_BASE;
@@ -230,6 +278,8 @@ public class Zbdd implements Cloneable
    * Returns the empty zbdd set.
    *
    * @return  empty zbdd set
+   *
+   * @see #isEmpty(int)
    */
   @Contract(pure = true)
   public final int empty() {
@@ -241,6 +291,8 @@ public class Zbdd implements Cloneable
    * Returns the base zbdd set.
    *
    * @return  base zbdd set
+   *
+   * @see #isBase(int)
    */
   @Contract(pure = true)
   public final int base() {
@@ -1633,13 +1685,6 @@ public class Zbdd implements Cloneable
   {
     private final int[] stack;
     private int stackSize;
-
-
-    private CubeVisitorStack(@NotNull CubeVisitorStack cvs)
-    {
-      stack = copyOf(cvs.stack, cvs.stack.length);
-      stackSize = cvs.stackSize;
-    }
 
 
     private CubeVisitorStack(int size) {
