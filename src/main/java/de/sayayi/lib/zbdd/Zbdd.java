@@ -952,8 +952,16 @@ public class Zbdd implements Cloneable
       zbddCache.putResult(MULTIPLY, p, q,
           r = __union_cache(p0q0, __change_cache(__union_cache(__union_cache(p0q1, p1q0), p1q1), ptop)));
 
-      for(int n: new int[] { p, q, p0, p1, q0, q1, p0q0, p0q1, p1q0, p1q1 })
-        __decRef(n);
+      __decRef(p1q1);
+      __decRef(p1q0);
+      __decRef(p0q1);
+      __decRef(p0q0);
+      __decRef(q1);
+      __decRef(q0);
+      __decRef(p1);
+      __decRef(p0);
+      __decRef(q);
+      __decRef(p);
     }
 
     return r;
@@ -994,8 +1002,16 @@ public class Zbdd implements Cloneable
     final int p1q1 = __incRef(__multiply(p1, q1));
     final int r = __union(p0q0, __change(__union(__union(p0q1, p1q0), p1q1), ptop));
 
-    for(int n: new int[] { p, q, p0, p1, q0, q1, p0q0, p0q1, p1q0, p1q1 })
-      __decRef(n);
+    __decRef(p1q1);
+    __decRef(p1q0);
+    __decRef(p0q1);
+    __decRef(p0q0);
+    __decRef(q1);
+    __decRef(q0);
+    __decRef(p1);
+    __decRef(p0);
+    __decRef(q);
+    __decRef(p);
 
     return r;
   }
@@ -1294,6 +1310,7 @@ public class Zbdd implements Cloneable
   {
     statistics.nodeLookups++;
 
+    // suppress 0's
     if (p1 == ZBDD_EMPTY)
     {
       statistics.nodeLookupHitCount++;
@@ -1316,6 +1333,7 @@ public class Zbdd implements Cloneable
       r = nodes[offset + _NEXT];
     }
 
+    // increase number of free nodes if there are not enough available
     if (nodesFree < 2)
     {
       __incRef(p0);
@@ -1344,7 +1362,7 @@ public class Zbdd implements Cloneable
     nodes[offset + _P1] = p1;
     nodes[offset + _REFCOUNT] = -1;
 
-    chainBeforeHash(r, hash);
+    prependHashChain(r, hash);
 
     return r;
   }
@@ -1407,7 +1425,7 @@ public class Zbdd implements Cloneable
       if ((nodes[offset + _VAR] & GC_VAR_MARK_MASK) != 0 && nodes[offset + _VAR] != -1)
       {
         // remove mark and chain valid node
-        chainBeforeHash(i,
+        prependHashChain(i,
             hash(nodes[offset + _VAR] &= ~GC_VAR_MARK_MASK, nodes[offset + _P0], nodes[offset + _P1]));
       }
       else
@@ -1488,7 +1506,7 @@ public class Zbdd implements Cloneable
       final int offset = i * NODE_RECORD_SIZE;
 
       if (nodes[offset + _VAR] != -1)
-        chainBeforeHash(i, hash(nodes[offset + _VAR], nodes[offset + _P0], nodes[offset + _P1]));
+        prependHashChain(i, hash(nodes[offset + _VAR], nodes[offset + _P0], nodes[offset + _P1]));
       else
       {
         nodes[offset + _NEXT] = nextFreeNode;
@@ -1501,7 +1519,7 @@ public class Zbdd implements Cloneable
   }
 
 
-  private void chainBeforeHash(int zbdd, int hash)
+  private void prependHashChain(int zbdd, int hash)
   {
     final int hashChain = hash * NODE_RECORD_SIZE + _CHAIN;
 
