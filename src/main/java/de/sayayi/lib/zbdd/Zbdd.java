@@ -16,12 +16,13 @@
 package de.sayayi.lib.zbdd;
 
 import de.sayayi.lib.zbdd.cache.ZbddCache;
-import org.jetbrains.annotations.*;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.MustBeInvokedByOverriders;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Range;
 
 import java.util.Arrays;
-import java.util.Map;
 import java.util.StringJoiner;
-import java.util.TreeMap;
 
 import static de.sayayi.lib.zbdd.cache.ZbddCache.Operation1.*;
 import static de.sayayi.lib.zbdd.cache.ZbddCache.Operation2.*;
@@ -29,7 +30,6 @@ import static java.lang.Integer.MAX_VALUE;
 import static java.lang.Integer.MIN_VALUE;
 import static java.lang.Math.round;
 import static java.util.Arrays.copyOf;
-import static java.util.Collections.unmodifiableMap;
 import static java.util.Locale.ROOT;
 import static java.util.Objects.requireNonNull;
 
@@ -147,8 +147,13 @@ public class Zbdd implements Cloneable
    *
    * @since 0.1.3
    */
-  public void setZbddCache(ZbddCache zbddCache) {
+  @Contract(mutates = "this,param1")
+  public void setZbddCache(ZbddCache zbddCache)
+  {
     this.zbddCache = zbddCache;
+
+    if (zbddCache != null)
+      zbddCache.clear();
   }
 
 
@@ -1629,31 +1634,6 @@ public class Zbdd implements Cloneable
   }
 
 
-  @Contract(value = "_ -> new", pure = true)
-  @Unmodifiable
-  public @NotNull Map<Integer,Node> getNodes(@Range(from = 0, to = MAX_NODES) int zbdd)
-  {
-    final Map<Integer,Node> nodeMap = new TreeMap<>((n1,n2) -> n2 - n1);
-
-    getNodes0(nodeMap, zbdd);
-
-    return unmodifiableMap(nodeMap);
-  }
-
-
-  @Contract(mutates = "param1")
-  private void getNodes0(@NotNull Map<Integer,Node> nodeMap, int zbdd)
-  {
-    nodeMap.computeIfAbsent(zbdd, Node::new);
-
-    if (zbdd >= 2)
-    {
-      getNodes0(nodeMap, getP1(zbdd));
-      getNodes0(nodeMap, getP0(zbdd));
-    }
-  }
-
-
 
 
   /**
@@ -1706,41 +1686,6 @@ public class Zbdd implements Cloneable
 
     private int @NotNull [] getCube() {
       return copyOf(stack, stackSize);
-    }
-  }
-
-
-
-
-  public final class Node
-  {
-    private final int zbdd;
-
-
-    private Node(int zbdd) {
-      this.zbdd = zbdd;
-    }
-
-
-    public int getVar() {
-      return Zbdd.this.getVar(zbdd);
-    }
-
-
-    public int getP0() {
-      return Zbdd.this.getP0(zbdd);
-    }
-
-
-    public int getP1() {
-      return Zbdd.this.getP1(zbdd);
-    }
-
-
-    public String toString()
-    {
-      return zbdd == ZBDD_EMPTY ? "Empty" : zbdd == ZBDD_BASE ? "Base"
-          : ("Node(var=" + literalResolver.getLiteralName(getVar()) + ", P0=" + getP0() + ", P1=" + getP1() + ")");
     }
   }
 
