@@ -26,6 +26,8 @@ javadoc {
     group("ZBDD Core API", ["de.sayayi.lib.zbdd"])
 
     noQualifiers 'java.util', 'java.lang'
+
+    addStringOption('Xdoclint:-missing', '-quiet')
   }
 
   failOnError false

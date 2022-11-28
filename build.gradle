@@ -8,14 +8,14 @@ plugins {
 
 description "Java Implementation of Shin Ichi Minato's Zero-Suppressed BDDs"
 group 'de.sayayi.lib'
-version '0.1.2'
+version '0.2.0'
 
 buildDir = ".build"
 
 
 ext {
   jetbrainsAnnotationsVersion = "23.0.0"
-  junitVersion = "5.9.0"
+  junitVersion = "5.9.1"
 }
 
 

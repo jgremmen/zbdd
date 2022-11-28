@@ -28,6 +28,8 @@ import static java.util.stream.Collectors.joining;
  * Resolve zbdd literal and cube names.
  *
  * @author Jeroen Gremmen
+ *
+ * @see Zbdd#setLiteralResolver(ZbddLiteralResolver)
  */
 public interface ZbddLiteralResolver
 {

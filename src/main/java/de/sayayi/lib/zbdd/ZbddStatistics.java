@@ -22,6 +22,8 @@ import org.jetbrains.annotations.Contract;
  * Zbdd statistics.
  *
  * @author Jeroen Gremmen
+ *
+ * @see Zbdd#getStatistics()
  */
 public interface ZbddStatistics
 {

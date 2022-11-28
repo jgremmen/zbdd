@@ -24,6 +24,8 @@ import static de.sayayi.lib.zbdd.Zbdd.MAX_NODES;
 
 /**
  * @author Jeroen Gremmen
+ *
+ * @see Zbdd#Zbdd(ZbddCapacityAdvisor)
  */
 public interface ZbddCapacityAdvisor
 {
@@ -39,6 +41,17 @@ public interface ZbddCapacityAdvisor
   int getInitialCapacity();
 
 
+  /**
+   * Returns the minimum number of free nodes. This method is invoked directly after node
+   * garbage collection. If the remaining number of free nodes is less than the value returned
+   * by this method, the zbdd node capacity is increased.
+   *
+   * @param statistics  current zbdd statistics, not {@code null}
+   *
+   * @return  minimum number of free nodes (&gt; 0)
+   *
+   * @see #adviseIncrement(ZbddStatistics)
+   */
   @Contract(pure = true)
   @Range(from = 1, to = MAX_NODES)
   int getMinimumFreeNodes(@NotNull ZbddStatistics statistics);
@@ -62,7 +75,7 @@ public interface ZbddCapacityAdvisor
    *
    * @param statistics  current zbdd statistics, not {@code null}
    *
-   * @return  {@code true} if the garbage collection is required, {@code false} otherwise
+   * @return  {@code true} if garbage collection is required, {@code false} otherwise
    */
   @Contract(pure = true)
   boolean isGCRequired(@NotNull ZbddStatistics statistics);
