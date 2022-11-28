@@ -1627,8 +1627,12 @@ public class Zbdd implements Cloneable
 
   public void visitCubes(@Range(from = 0, to = MAX_NODES) int zbdd, @NotNull CubeVisitor visitor)
   {
-    visitCubes0(visitor, new CubeVisitorStack(lastVarNumber), __incRef(zbdd));
-    __decRef(zbdd);
+    __incRef(zbdd);
+    try {
+      visitCubes0(visitor, new CubeVisitorStack(lastVarNumber), zbdd);
+    } finally {
+      __decRef(zbdd);
+    }
   }
 
 
