@@ -139,7 +139,7 @@ public class Zbdd implements Cloneable
    *   reduce the overall performance.
    * </p>
    * <p>
-   *   Make sure to test your zbdd operationsthe with and without a cache in order to find out whether
+   *   Make sure to test your zbdd operations with and without a cache in order to find out whether
    *   adding a cache is going to improve performance or not.
    * </p>
    *
