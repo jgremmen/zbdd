@@ -103,6 +103,7 @@ public class Zbdd implements Cloneable
   }
 
 
+  @SuppressWarnings("CopyConstructorMissesField")
   protected Zbdd(@NotNull Zbdd zbdd)
   {
     capacityAdvisor = zbdd.capacityAdvisor;
