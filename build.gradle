@@ -14,8 +14,8 @@ buildDir = ".build"
 
 
 ext {
-  jetbrainsAnnotationsVersion = "23.0.0"
-  junitVersion = "5.9.1"
+  jetbrainsAnnotationsVersion = "24.0.1"
+  junitVersion = "5.9.2"
 }
 
 
