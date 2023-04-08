@@ -27,7 +27,7 @@ import static java.util.Locale.US;
 
 
 /**
- * Fast cache implementation.
+ * Fast zbdd cache implementation.
  *
  * @author Jeroen Gremmen
  * @since 0.1.3

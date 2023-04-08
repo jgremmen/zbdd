@@ -45,7 +45,7 @@ import static java.util.Objects.requireNonNull;
  *
  * @author Jeroen Gremmen
  */
-@SuppressWarnings("DuplicatedCode")
+@SuppressWarnings({"DuplicatedCode", "UnstableApiUsage"})
 public class Zbdd implements Cloneable
 {
   private static final int GC_VAR_MARK_MASK = 0x80000000;
