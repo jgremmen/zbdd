@@ -1,23 +1,25 @@
 # CI script
-image: openjdk:8-jdk
+image: localhost:5000/sayayi-jdk:17
 
 stages:
   - build
 
 variables:
   GRADLE_OPTS: "-Dorg.gradle.daemon=false"
-  GRADLE_USER_HOME: ".gradle"
+  GRADLE_USER_HOME: ".gradle-cache"
 
 before_script:
+  - export JAVA_HOME="/usr/local/openjdk-17"
   - chmod +x ./gradlew
 
 cache:
   paths:
-    - .gradle/wrapper
-    - .gradle/caches
+    - .gradle-cache
 
 build:
   stage: build
+  tags:
+    - docker
   script: ./gradlew clean build
   artifacts:
     name: "zbdd-artifacts"
