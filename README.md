@@ -21,7 +21,7 @@ set. This leads to significant space savings, making ZBDDs well-suited for a ran
 in computer science and computational logic, including optimization, satisfiability testing, and 
 automated reasoning.
 
-Overall, ZBDDs are a powerful and flexible data structure that provides an efficient way to
+Overall, ZBDDs are a powerful and flexible data structure that provide an efficient way to
 represent and manipulate sets of binary vectors, making them an important tool in the field of 
 computer science and beyond.
 
