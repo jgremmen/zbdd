@@ -35,13 +35,12 @@ import static java.util.Objects.requireNonNull;
 
 
 /**
+ * <a href="https://en.wikipedia.org/wiki/Zero-suppressed_decision_diagram">
+ *   Zero-suppressed decision diagram
+ * </a>
+ * on Wikipedia.
  * <p>
- *   <a href="https://en.wikipedia.org/wiki/Zero-suppressed_decision_diagram">Zero-suppressed decision diagram</a>
- *   on Wikipedia.
- * </p>
- * <p>
- *   This class is not thread-safe.
- * </p>
+ * This class is not thread-safe.
  *
  * @author Jeroen Gremmen
  */
@@ -130,19 +129,15 @@ public class Zbdd implements Cloneable
 
 
   /**
+   * Sets or removes a zbdd cache.
    * <p>
-   *   Sets or removes a zbdd cache.
-   * </p>
+   * The zbdd implementation without caching is already very fast. If the same operations on zbdds
+   * are performed frequently then adding a cache may help to improve performance. However, if the
+   * operations performed are mostly unique (like the 8-queens problem) then adding a cache will
+   * reduce the overall performance.
    * <p>
-   *   The zbdd implementation without caching is already very fast. If the same operations on zbdds
-   *   are performed frequently then adding a cache may help to improve performance. However, if the
-   *   operations performed are mostly unique (like the 8-queens problem) then adding a cache will
-   *   reduce the overall performance.
-   * </p>
-   * <p>
-   *   Make sure to test your zbdd operations with and without a cache in order to find out whether
-   *   adding a cache is going to improve performance or not.
-   * </p>
+   * Make sure to test your zbdd operations with and without a cache in order to find out whether
+   * adding a cache is going to improve performance or not.
    *
    * @param zbddCache  zbdd cache instance or {@code null} to remove a previously assigned cache
    *
@@ -197,10 +192,8 @@ public class Zbdd implements Cloneable
 
 
   /**
-   * <p>
-   *   Returns the statistics for this zbdd instance. The returned object is a singleton and will reflect the
-   *   actual statistics at any time.
-   * </p>
+   * Returns the statistics for this zbdd instance. The returned object is a singleton and will
+   * reflect the actual statistics at any time.
    *
    * @return  statistics, never {@code null}
    */
@@ -211,12 +204,10 @@ public class Zbdd implements Cloneable
 
 
   /**
+   * Clear all nodes from this zbdd instance. If a zbdd cache is assigned it will be cleared as
+   * well.
    * <p>
-   *   Clear all nodes from this zbdd instance. If a zbdd cache is assigned it will be cleared as well.
-   * </p>
-   * <p>
-   *   This method clears all variables and nodes. It does not free up allocated memory.
-   * </p>
+   * This method clears all variables and nodes. It does not free up allocated memory.
    *
    * @see ZbddCache#clear()
    */
@@ -307,12 +298,9 @@ public class Zbdd implements Cloneable
 
 
   /**
+   * Returns a zbdd set with the given {@code var} as its only element.
    * <p>
-   *   Returns a zbdd set with the given {@code var} as its only element.
-   * </p>
-   * <p>
-   *   Example:
-   * </p>
+   * Example:
    * <pre>
    *   Zbdd zbdd = new Zbdd();
    *   int v1 = zbdd.createVar();
@@ -332,12 +320,9 @@ public class Zbdd implements Cloneable
 
 
   /**
+   * Returns a zbdd set with the given {@code vars} combined as its only element.
    * <p>
-   *   Returns a zbdd set with the given {@code vars} combined as its only element.
-   * </p>
-   * <p>
-   *   Example:
-   * </p>
+   * Example:
    * <pre>
    *   Zbdd zbdd = new Zbdd();
    *   int v1 = zbdd.createVar();
@@ -950,8 +935,8 @@ public class Zbdd implements Cloneable
       final int p1q0 = __incRef(__multiply_cache(p1, q0));
       final int p1q1 = __incRef(__multiply_cache(p1, q1));
 
-      zbddCache.putResult(MULTIPLY, p, q,
-          r = __union_cache(p0q0, __change_cache(__union_cache(__union_cache(p0q1, p1q0), p1q1), ptop)));
+      zbddCache.putResult(MULTIPLY, p, q, r = __union_cache(p0q0,
+          __change_cache(__union_cache(__union_cache(p0q1, p1q0), p1q1), ptop)));
 
       __decRef(p1q1);
       __decRef(p1q0);
@@ -1665,13 +1650,10 @@ public class Zbdd implements Cloneable
   public interface CubeVisitor
   {
     /**
+     * This method is invoked for each cube in the zbdd set.
+     * The variables in array {@code vars} are sorted in descendant order.
      * <p>
-     *   This method is invoked for each cube in the zbdd set.
-     *   The variables in array {@code vars} are sorted in descendant order.
-     * </p>
-     * <p>
-     *   If vars is an empty array, it represents the base node.
-     * </p>
+     * If vars is an empty array, it represents the base node.
      *
      * @param vars  cube variables or empty array, never {@code null}
      *
