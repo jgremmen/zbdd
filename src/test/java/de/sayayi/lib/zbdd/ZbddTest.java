@@ -201,10 +201,12 @@ class ZbddTest
   @Test void queens05() { checkSolution(5, 10, 128); }
   @Test void queens06() { checkSolution(6, 4, 256); }
   @Test void queens07() { checkSolution(7, 40, 550); }
-  @Test void queens08() { checkSolution(8, 92, 1700); }
-  @Test void queens09() { checkSolution(9, 352, 5400); }
-  @Test void queens10() { checkSolution(10, 724, 20000); }
-  @Test void queens11() { checkSolution(11, 2680, 80000); }
+  @Test void queens08() { checkSolution(8, 92, 1_700); }
+  @Test void queens09() { checkSolution(9, 352, 5_400); }
+  @Test void queens10() { checkSolution(10, 724, 20_000); }
+  @Test void queens11() { checkSolution(11, 2_680, 80_000); }
+  @Test void queens12() { checkSolution(12, 14_200, 350_000); }
+  @Test void queens13() { checkSolution(13, 73_712, 1_600_000); }
 
 
   private void checkSolution(int n, int solutionsExpected, int tableSize)
@@ -253,7 +255,10 @@ class ZbddTest
     ZbddLiteralResolver nameResolver = zbdd.getLiteralResolver();
     System.out.println("Queens " + n + "x" + n + "  (" + solutions + ")");
     System.out.println("  " + zbdd.getStatistics());
-    zbdd.visitCubes(solution, cube -> System.out.println("  " + nameResolver.getCubeName(cube)));
+
+    if (n < 9)
+      zbdd.visitCubes(solution, cube -> System.out.println("  " + nameResolver.getCubeName(cube)));
+
     System.out.println(zbdd.getZbddCache());
     System.out.println();
   }
