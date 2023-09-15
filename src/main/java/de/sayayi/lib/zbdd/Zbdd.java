@@ -28,6 +28,7 @@ import static de.sayayi.lib.zbdd.cache.ZbddCache.Operation1.*;
 import static de.sayayi.lib.zbdd.cache.ZbddCache.Operation2.*;
 import static java.lang.Integer.MAX_VALUE;
 import static java.lang.Integer.MIN_VALUE;
+import static java.lang.Math.max;
 import static java.lang.Math.round;
 import static java.util.Arrays.copyOf;
 import static java.util.Locale.ROOT;
@@ -90,7 +91,7 @@ public class Zbdd implements Cloneable
     this.capacityAdvisor = capacityAdvisor;
 
     //noinspection ConstantConditions
-    nodesCapacity = Math.max(capacityAdvisor.getInitialCapacity(), 8);
+    nodesCapacity = max(capacityAdvisor.getInitialCapacity(), 8);
     nodes = new int[nodesCapacity * NODE_RECORD_SIZE];
 
     initLeafNode(ZBDD_EMPTY);
@@ -1471,10 +1472,9 @@ public class Zbdd implements Cloneable
     nodesFree = 0;
 
     // initialize new nodes
-    for(int i = nodesCapacity; i-- > oldNodesCapacity;)
+    for(int i = nodesCapacity, offset = (i - 1) * NODE_RECORD_SIZE; i-- > oldNodesCapacity;
+        offset -= NODE_RECORD_SIZE)
     {
-      final int offset = i * NODE_RECORD_SIZE;
-
       nodes[offset + _VAR] = -1;
       nodes[offset + _NEXT] = nextFreeNode;
 
@@ -1487,10 +1487,9 @@ public class Zbdd implements Cloneable
       nodes[i + _CHAIN] = 0;
 
     // re-chain old nodes
-    for(int i = oldNodesCapacity; i-- > 2;)
+    for(int i = oldNodesCapacity, offset = (i - 1) * NODE_RECORD_SIZE; i-- > 2;
+        offset -= NODE_RECORD_SIZE)
     {
-      final int offset = i * NODE_RECORD_SIZE;
-
       if (nodes[offset + _VAR] != -1)
         prependHashChain(i, hash(nodes[offset + _VAR], nodes[offset + _P0], nodes[offset + _P1]));
       else
