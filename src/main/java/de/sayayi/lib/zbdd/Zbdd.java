@@ -1392,10 +1392,9 @@ public class Zbdd implements Cloneable
     statistics.gcCount++;
 
     // mark referenced nodes...
-    for(int i = nodesCapacity; i-- > 0;)
+    for(int i = nodesCapacity, offset = (i - 1) * NODE_RECORD_SIZE; i-- > 0;
+        offset -= NODE_RECORD_SIZE)
     {
-      final int offset = i * NODE_RECORD_SIZE;
-
       if (nodes[offset + _VAR] != -1 && nodes[offset + _REFCOUNT] > 0)
         gc_markTree(i);
 
@@ -1405,10 +1404,9 @@ public class Zbdd implements Cloneable
     final int oldNodesFree = nodesFree;
     nextFreeNode = nodesFree = 0;
 
-    for(int i = nodesCapacity; i-- > 2;)
+    for(int i = nodesCapacity, offset = (i - 1) * NODE_RECORD_SIZE; i-- > 2;
+        offset -= NODE_RECORD_SIZE)
     {
-      final int offset = i * NODE_RECORD_SIZE;
-
       if ((nodes[offset + _VAR] & GC_VAR_MARK_MASK) != 0 && nodes[offset + _VAR] != -1)
       {
         // remove mark and chain valid node
@@ -1646,6 +1644,7 @@ public class Zbdd implements Cloneable
   /**
    * Cube visitor interface to be used with {@link #visitCubes(int, CubeVisitor)}.
    */
+  @FunctionalInterface
   public interface CubeVisitor
   {
     /**
