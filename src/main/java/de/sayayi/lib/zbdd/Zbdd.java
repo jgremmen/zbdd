@@ -28,8 +28,7 @@ import static de.sayayi.lib.zbdd.cache.ZbddCache.Operation1.*;
 import static de.sayayi.lib.zbdd.cache.ZbddCache.Operation2.*;
 import static java.lang.Integer.MAX_VALUE;
 import static java.lang.Integer.MIN_VALUE;
-import static java.lang.Math.max;
-import static java.lang.Math.round;
+import static java.lang.Math.*;
 import static java.util.Arrays.copyOf;
 import static java.util.Locale.ROOT;
 import static java.util.Objects.requireNonNull;
@@ -1463,7 +1462,7 @@ public class Zbdd implements Cloneable
 
     final int oldNodesCapacity = nodesCapacity;
 
-    nodesCapacity = Math.min(nodesCapacity + capacityAdvisor.adviseIncrement(statistics), MAX_NODES);
+    nodesCapacity = min(nodesCapacity + capacityAdvisor.adviseIncrement(statistics), MAX_NODES);
     nodes = copyOf(nodes, nodesCapacity * NODE_RECORD_SIZE);
 
     nextFreeNode = 0;
