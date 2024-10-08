@@ -30,6 +30,7 @@ import static java.util.stream.Collectors.joining;
  * @author Jeroen Gremmen
  *
  * @see Zbdd#setLiteralResolver(ZbddLiteralResolver)
+ * @see Zbdd#toString(int) 
  */
 @FunctionalInterface
 public interface ZbddLiteralResolver
@@ -48,7 +49,7 @@ public interface ZbddLiteralResolver
   /**
    * Return the string representation of a cube.
    *
-   * @param cubeVars  zbdd veriables
+   * @param cubeVars  zbdd variables
    *
    * @return  cube name, never {@code null}
    */
@@ -56,6 +57,22 @@ public interface ZbddLiteralResolver
   default @NotNull String getCubeName(int @NotNull [] cubeVars)
   {
     return cubeVars.length == 0
-        ? "{}" : stream(cubeVars).sorted().mapToObj(this::getLiteralName).collect(joining("."));
+        ? getBaseName()
+        : stream(cubeVars).sorted().mapToObj(this::getLiteralName).collect(joining("."));
+  }
+
+
+  /**
+   * Returns the string representation for a cube representing the base.
+   *
+   * @return  base name, never {@code null}
+   *
+   * @see Zbdd#base()
+   *
+   * @since 0.2.2
+   */
+  @Contract(pure = true)
+  default @NotNull String getBaseName() {
+    return "{}";
   }
 }
