@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
  * @author Jeroen Gremmen
  * @since 0.1.3
  */
+@SuppressWarnings("UnstableApiUsage")
 public interface ZbddCache
 {
   /**

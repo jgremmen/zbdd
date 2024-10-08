@@ -19,11 +19,11 @@ javadoc {
   title "Java ZBDD Library ${version}"
 
   (options as StandardJavadocDocletOptions).with {
-    linksOffline 'https://javadoc.io/doc/org.jetbrains/annotations/20.0.0/', 'gradle/javadocs/jetbrains-annotations'
+    linksOffline 'https://javadoc.io/doc/org.jetbrains/annotations/24.1.0/', 'gradle/javadocs/jetbrains-annotations'
 
     encoding 'UTF-8'
 
-    group("ZBDD Core API", ["de.sayayi.lib.zbdd"])
+    group('ZBDD Core API', ['de.sayayi.lib.zbdd'])
 
     noQualifiers 'java.util', 'java.lang'
 

@@ -31,6 +31,7 @@ import static java.util.stream.Collectors.joining;
  *
  * @see Zbdd#setLiteralResolver(ZbddLiteralResolver)
  */
+@FunctionalInterface
 public interface ZbddLiteralResolver
 {
   /**

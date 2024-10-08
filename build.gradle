@@ -6,17 +6,16 @@ plugins {
 }
 
 
-description "Java Implementation of Shin Ichi Minato's Zero-Suppressed BDDs"
+description 'Java Implementation of Shin Ichi Minato\'s Zero-Suppressed BDDs'
 group 'de.sayayi.lib'
-version '0.2.0'
-
-buildDir = ".build"
+version '0.2.1'
 
 
-ext {
-  jetbrainsAnnotationsVersion = "23.0.0"
-  junitVersion = "5.9.1"
-}
+layout.buildDirectory = '.build'
+
+
+def jetbrainsAnnotationsVersion = '24.1.+'
+def junitVersion = '5.11.+'
 
 
 java {
@@ -47,5 +46,7 @@ dependencies {
 
   // test
   testImplementation "org.junit.jupiter:junit-jupiter-api:${junitVersion}"
+  testImplementation "org.junit.jupiter:junit-jupiter-params:${junitVersion}"
   testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${junitVersion}"
+  testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }

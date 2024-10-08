@@ -18,10 +18,15 @@ package de.sayayi.lib.zbdd;
 import de.sayayi.lib.zbdd.cache.ZbddFastCache;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Range;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static de.sayayi.lib.zbdd.Zbdd.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -33,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class ZbddTest
 {
   @Test
+  @DisplayName("Create variable")
   @SuppressWarnings("ConstantConditions")
   void createVar()
   {
@@ -52,6 +58,7 @@ class ZbddTest
 
 
   @Test
+  @DisplayName("Operation 'change'")
   void change()
   {
     Zbdd zbdd = new Zbdd();
@@ -64,6 +71,7 @@ class ZbddTest
 
 
   @Test
+  @DisplayName("Operation 'count'")
   void count()
   {
     Zbdd zbdd = new Zbdd();
@@ -126,6 +134,7 @@ class ZbddTest
 
 
   @Test
+  @DisplayName("Operation 'multiply'")
   void multiply()
   {
     Zbdd zbdd = new Zbdd();
@@ -149,6 +158,7 @@ class ZbddTest
 
 
   @Test
+  @DisplayName("Operation 'removeBase'")
   void removeBase()
   {
     Zbdd zbdd = new Zbdd();
@@ -170,6 +180,7 @@ class ZbddTest
 
 
   @Test
+  @DisplayName("Operation 'contains'")
   void contains()
   {
     Zbdd zbdd = new Zbdd();
@@ -194,20 +205,30 @@ class ZbddTest
   }
 
 
-  @Test void queens01() { checkSolution(1, 1, 16); }
-  @Test void queens02() { checkSolution(2, 0, 16); }
-  @Test void queens03() { checkSolution(3, 0, 16); }
-  @Test void queens04() { checkSolution(4, 2, 32); }
-  @Test void queens05() { checkSolution(5, 10, 128); }
-  @Test void queens06() { checkSolution(6, 4, 256); }
-  @Test void queens07() { checkSolution(7, 40, 550); }
-  @Test void queens08() { checkSolution(8, 92, 1700); }
-  @Test void queens09() { checkSolution(9, 352, 5400); }
-  @Test void queens10() { checkSolution(10, 724, 20000); }
-  @Test void queens11() { checkSolution(11, 2680, 80000); }
+  private static Stream<Arguments> queensParameters()
+  {
+    return Stream.of(
+        Arguments.of(1, 1, 16),
+        Arguments.of(2, 0, 16),
+        Arguments.of(3, 0, 16),
+        Arguments.of(4, 2, 32),
+        Arguments.of(5, 10, 128),
+        Arguments.of(6, 4, 256),
+        Arguments.of(7, 40, 550),
+        Arguments.of(8, 92, 1_700),
+        Arguments.of(9, 352, 5_400),
+        Arguments.of(10, 724, 20_000),
+        Arguments.of(11, 2_680, 80_000),
+        Arguments.of(12, 14_200, 350_000),
+        Arguments.of(13, 73_712, 256)  // force a large number of capacity changes
+    );
+  }
 
 
-  private void checkSolution(int n, int solutionsExpected, int tableSize)
+  @DisplayName("n-Queens problem solving")
+  @ParameterizedTest(name = "{0}-Queens problem has {1} solutions")
+  @MethodSource("queensParameters")
+  void queens(int n, int solutionsExpected, int tableSize)
   {
     final Zbdd zbdd = new Zbdd(new SimpleCapacityAdvisor(tableSize));
     zbdd.setZbddCache(new ZbddFastCache(65536));
@@ -253,7 +274,10 @@ class ZbddTest
     ZbddLiteralResolver nameResolver = zbdd.getLiteralResolver();
     System.out.println("Queens " + n + "x" + n + "  (" + solutions + ")");
     System.out.println("  " + zbdd.getStatistics());
-    zbdd.visitCubes(solution, cube -> System.out.println("  " + nameResolver.getCubeName(cube)));
+
+    if (n < 9)
+      zbdd.visitCubes(solution, cube -> System.out.println("  " + nameResolver.getCubeName(cube)));
+
     System.out.println(zbdd.getZbddCache());
     System.out.println();
   }

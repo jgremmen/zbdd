@@ -30,9 +30,7 @@ import static de.sayayi.lib.zbdd.Zbdd.MAX_NODES;
 public interface ZbddCapacityAdvisor
 {
   /**
-   * <p>
-   *   Return the initial number of nodes available for zbdd operations.
-   * </p>
+   * Return the initial number of nodes available for zbdd operations.
    *
    * @return  initial capacity, at least 8
    */
@@ -63,15 +61,12 @@ public interface ZbddCapacityAdvisor
 
 
   /**
+   * Tells whether dead nodes should be garbage collected. This method is invoked as soon as a new
+   * node is created and the number of free nodes is 1 or 0.
    * <p>
-   *   Tells whether dead nodes should be garbage collected. This method is invoked as soon as a new node is
-   *   created and the number of free nodes is 1 or 0.
-   * </p>
-   * <p>
-   *   Garbage collection is an expensive operation and only useful if a substantial number of nodes are
-   *   exopected to be freed in the process. The current number of dead nodes may be a good indicator but is not
-   *   a guarantee that those nodes are invalidated.
-   * </p>
+   * Garbage collection is an expensive operation and only useful if a substantial number of nodes
+   * are exopected to be freed in the process. The current number of dead nodes may be a good
+   * indicator but is not a guarantee that those nodes are invalidated.
    *
    * @param statistics  current zbdd statistics, not {@code null}
    *
