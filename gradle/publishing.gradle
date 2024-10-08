@@ -15,17 +15,17 @@
  */
 
 
-tasks.withType(Jar) {
+tasks.withType(Jar).configureEach {
   reproducibleFileOrder true
 
   manifest {
     attributes(
-            "Implementation-Vendor": "Jeroen Gremmen",
-            "Implementation-Vendor-Id": "de.sayayi",
-            "Implementation-Title": project.name,
-            "Implementation-Version": project.version,
-            "Created-By": "${System.getProperty("java.version")} (${System.getProperty("java.specification.vendor")})",
-            "Built-Date": new Date().format('yyyy-MM-dd HH:mm:ss')
+        'Implementation-Vendor': 'Jeroen Gremmen',
+        'Implementation-Vendor-Id': 'de.sayayi',
+        'Implementation-Title': project.name,
+        'Implementation-Version': project.version,
+        'Created-By': "${System.getProperty('java.version')} (${System.getProperty('java.specification.vendor')})",
+        'Built-Date': new Date().format('yyyy-MM-dd HH:mm:ss')
     )
   }
 
@@ -33,13 +33,17 @@ tasks.withType(Jar) {
 }
 
 
-task javadocJar(type: Jar, dependsOn: javadoc) {
+tasks.register('javadocJar', Jar) {
+  dependsOn javadoc
+
   archiveClassifier.set('javadoc')
   from javadoc.destinationDir
 }
 
 
-task sourcesJar(type: Jar, dependsOn: classes) {
+tasks.register('sourcesJar', Jar) {
+  dependsOn classes
+
   archiveClassifier.set('sources')
   from sourceSets.main.allSource
 }
@@ -64,32 +68,32 @@ publishing {
         }
       }
 
-      pom {
-        name = 'Java ZBDD Library'
-        description = "Java Implementation of Shin Ichi Minato's Zero-Suppressed BDDs"
-        url = 'https://github.com/jgremmen/zbdd'
-        inceptionYear = '2021'
+      pom { MavenPom pom ->
+        pom.name = 'Java ZBDD Library'
+        pom.description = "Java Implementation of Shin Ichi Minato's Zero-Suppressed BDDs"
+        pom.url = 'https://github.com/jgremmen/zbdd'
+        pom.inceptionYear = '2021'
 
         licenses {
-          license {
-            name = 'Apache License, Version 2.0'
-            url = 'http://www.apache.org/licenses/LICENSE-2.0'
-            distribution = 'repo'
+          license { MavenPomLicense mpl ->
+            mpl.name = 'Apache License, Version 2.0'
+            mpl.url = 'http://www.apache.org/licenses/LICENSE-2.0'
+            mpl.distribution = 'repo'
           }
         }
 
         developers {
-          developer {
-            id = 'jgremmen'
-            name = 'Jeroen Gremmen'
-            email = 'jeroen.gremmen@sayayi.de'
+          developer { MavenPomDeveloper mpd ->
+            mpd.id = 'jgremmen'
+            mpd.name = 'Jeroen Gremmen'
+            mpd.email = 'jeroen.gremmen@sayayi.de'
           }
         }
 
-        scm {
-          connection = 'scm:git:git://github.com/jgremmen/zbdd.git'
-          developerConnection = 'scm:git:git://github.com/jgremmen/zbdd.git'
-          url = 'https://github.com/jgremmen/zbdd'
+        scm { MavenPomScm scm ->
+          scm.connection = 'scm:git:git://github.com/jgremmen/zbdd.git'
+          scm.developerConnection = 'scm:git:git://github.com/jgremmen/zbdd.git'
+          scm.url = 'https://github.com/jgremmen/zbdd'
         }
       }
     }
