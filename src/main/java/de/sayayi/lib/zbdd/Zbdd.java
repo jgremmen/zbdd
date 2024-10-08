@@ -618,7 +618,7 @@ public class Zbdd implements Cloneable
                    @Range(from = 0, to = MAX_NODES) int q)
   {
     checkZbdd(p, "p");
-    checkZbdd(p, "q");
+    checkZbdd(q, "q");
 
     return zbddCache != null ? __union_cache(p, q) : __union(p, q);
   }
@@ -715,7 +715,7 @@ public class Zbdd implements Cloneable
                        @Range(from = 0, to = MAX_NODES) int q)
   {
     checkZbdd(p, "p");
-    checkZbdd(p, "q");
+    checkZbdd(q, "q");
 
     return zbddCache != null ? __intersect_cache(p, q) : __intersect(p, q);
   }
@@ -803,7 +803,7 @@ public class Zbdd implements Cloneable
                         @Range(from = 0, to = MAX_NODES) int q)
   {
     checkZbdd(p, "p");
-    checkZbdd(p, "q");
+    checkZbdd(q, "q");
 
     return zbddCache != null ? __difference_cache(p, q) : __difference(p, q);
   }
@@ -891,7 +891,7 @@ public class Zbdd implements Cloneable
                       @Range(from = 0, to = MAX_NODES) int q)
   {
     checkZbdd(p, "p");
-    checkZbdd(p, "q");
+    checkZbdd(q, "q");
 
     return zbddCache != null ? __multiply_cache(p, q) : __multiply(p, q);
   }
@@ -1010,7 +1010,7 @@ public class Zbdd implements Cloneable
                     @Range(from = 0, to = MAX_NODES) int q)
   {
     checkZbdd(p, "p");
-    checkZbdd(p, "q");
+    checkZbdd(q, "q");
 
     return zbddCache != null ? __divide_cache(p, q) : __divide(p, q);
   }
@@ -1122,7 +1122,7 @@ public class Zbdd implements Cloneable
                     @Range(from = 0, to = MAX_NODES) int q)
   {
     checkZbdd(p, "p");
-    checkZbdd(p, "q");
+    checkZbdd(q, "q");
 
     return zbddCache != null ? __modulo_cache(p, q) : __modulo(p, q);
   }
