@@ -195,4 +195,27 @@ class ZbddTest
     assertTrue(zbdd.contains(r, zbdd.union(zbdd.cube(b), zbdd.cube(c))));
     assertFalse(zbdd.contains(r, zbdd.union(ab, zbdd.cube(a))));
   }
+
+
+  @Test
+  @DisplayName("Cartesian product")
+  void cartesianProduct()
+  {
+    Zbdd zbdd = new Zbdd();
+    int a = zbdd.createVar();
+    int b = zbdd.createVar();
+    int c = zbdd.createVar();
+    int d = zbdd.createVar();
+    int e = zbdd.createVar();
+
+    zbdd.setLiteralResolver(var -> var == a ? "a" : var == b ? "b" : var == c ? "c" : var ==d ? "d" : "e");
+
+    int r = zbdd.getNode(a, zbdd.base(), zbdd.base());
+    r = zbdd.getNode(b, r, r);
+    r = zbdd.getNode(c, r, r);
+    r = zbdd.getNode(d, r, r);
+    r = zbdd.getNode(e, r, r);
+
+    assertEquals(32, zbdd.count(r));
+  }
 }
