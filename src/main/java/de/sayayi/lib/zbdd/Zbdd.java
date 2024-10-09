@@ -21,7 +21,6 @@ import org.jetbrains.annotations.MustBeInvokedByOverriders;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Range;
 
-import java.util.Arrays;
 import java.util.StringJoiner;
 
 import static de.sayayi.lib.zbdd.cache.ZbddCache.Operation1.*;
@@ -30,6 +29,7 @@ import static java.lang.Integer.MAX_VALUE;
 import static java.lang.Integer.MIN_VALUE;
 import static java.lang.Math.*;
 import static java.util.Arrays.copyOf;
+import static java.util.Arrays.sort;
 import static java.util.Locale.ROOT;
 import static java.util.Objects.requireNonNull;
 
@@ -348,7 +348,7 @@ public class Zbdd implements Cloneable
       return cube(cubeVars[0]);
 
     // var count >= 2
-    Arrays.sort(cubeVars = copyOf(cubeVars, n));
+    sort(cubeVars = copyOf(cubeVars, n));
 
     int r = ZBDD_BASE;
 
@@ -362,8 +362,7 @@ public class Zbdd implements Cloneable
 
   @Contract(mutates = "this")
   @Range(from = 0, to = MAX_NODES)
-  public int subset0(@Range(from = 0, to = MAX_NODES) int zbdd,
-                     @Range(from = 1, to = MAX_VALUE) int var)
+  public int subset0(@Range(from = 0, to = MAX_NODES) int zbdd, @Range(from = 1, to = MAX_VALUE) int var)
   {
     checkZbdd(zbdd, "zbdd");
     checkVar(var);
@@ -428,8 +427,7 @@ public class Zbdd implements Cloneable
 
   @Contract(mutates = "this")
   @Range(from = 0, to = MAX_NODES)
-  public int subset1(@Range(from = 0, to = MAX_NODES) int zbdd,
-                     @Range(from = 1, to = MAX_VALUE) int var)
+  public int subset1(@Range(from = 0, to = MAX_NODES) int zbdd, @Range(from = 1, to = MAX_VALUE) int var)
   {
     checkZbdd(zbdd, "zbdd");
     checkVar(var);
@@ -494,8 +492,7 @@ public class Zbdd implements Cloneable
 
   @Contract(mutates = "this")
   @Range(from = 0, to = MAX_NODES)
-  public int change(@Range(from = 0, to = MAX_NODES) int zbdd,
-                    @Range(from = 1, to = MAX_VALUE) int var)
+  public int change(@Range(from = 0, to = MAX_NODES) int zbdd, @Range(from = 1, to = MAX_VALUE) int var)
   {
     checkZbdd(zbdd, "zbdd");
     checkVar(var);
@@ -568,7 +565,7 @@ public class Zbdd implements Cloneable
 
 
   @Contract(pure = true)
-  @Range(from = 0, to = MAX_VALUE)
+  @Range(from = 0, to = MAX_NODES + 1)
   public int count(@Range(from = 0, to = MAX_NODES) int zbdd)
   {
     checkZbdd(zbdd, "zbdd");
@@ -591,8 +588,7 @@ public class Zbdd implements Cloneable
     {
       final int offset = zbdd * NODE_RECORD_SIZE;
 
-      zbddCache.putResult(COUNT, zbdd,
-          r = __count(nodes[offset + _P0]) + __count(nodes[offset + _P1]));
+      zbddCache.putResult(COUNT, zbdd, r = __count(nodes[offset + _P0]) + __count(nodes[offset + _P1]));
     }
 
     return r;
@@ -613,8 +609,7 @@ public class Zbdd implements Cloneable
 
   @Contract(mutates = "this")
   @Range(from = 0, to = MAX_NODES)
-  public int union(@Range(from = 0, to = MAX_NODES) int p,
-                   @Range(from = 0, to = MAX_NODES) int q)
+  public int union(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q)
   {
     checkZbdd(p, "p");
     checkZbdd(q, "q");
@@ -710,8 +705,7 @@ public class Zbdd implements Cloneable
 
   @Contract(mutates = "this")
   @Range(from = 0, to = MAX_NODES)
-  public int intersect(@Range(from = 0, to = MAX_NODES) int p,
-                       @Range(from = 0, to = MAX_NODES) int q)
+  public int intersect(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q)
   {
     checkZbdd(p, "p");
     checkZbdd(q, "q");
@@ -798,8 +792,7 @@ public class Zbdd implements Cloneable
 
   @Contract(mutates = "this")
   @Range(from = 0, to = MAX_NODES)
-  public int difference(@Range(from = 0, to = MAX_NODES) int p,
-                        @Range(from = 0, to = MAX_NODES) int q)
+  public int difference(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q)
   {
     checkZbdd(p, "p");
     checkZbdd(q, "q");
@@ -886,8 +879,7 @@ public class Zbdd implements Cloneable
 
   @Contract(mutates = "this")
   @Range(from = 0, to = MAX_NODES)
-  public int multiply(@Range(from = 0, to = MAX_NODES) int p,
-                      @Range(from = 0, to = MAX_NODES) int q)
+  public int multiply(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q)
   {
     checkZbdd(p, "p");
     checkZbdd(q, "q");
@@ -1005,8 +997,7 @@ public class Zbdd implements Cloneable
 
   @Contract(mutates = "this")
   @Range(from = 0, to = MAX_NODES)
-  public int divide(@Range(from = 0, to = MAX_NODES) int p,
-                    @Range(from = 0, to = MAX_NODES) int q)
+  public int divide(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q)
   {
     checkZbdd(p, "p");
     checkZbdd(q, "q");
@@ -1117,8 +1108,7 @@ public class Zbdd implements Cloneable
 
   @Contract(mutates = "this")
   @Range(from = 0, to = MAX_NODES)
-  public int modulo(@Range(from = 0, to = MAX_NODES) int p,
-                    @Range(from = 0, to = MAX_NODES) int q)
+  public int modulo(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q)
   {
     checkZbdd(p, "p");
     checkZbdd(q, "q");
@@ -1274,8 +1264,7 @@ public class Zbdd implements Cloneable
 
   @Contract(mutates = "this")
   @Range(from = 0, to = MAX_NODES)
-  public boolean contains(@Range(from = 0, to = MAX_NODES) int p,
-                          @Range(from = 0, to = MAX_NODES) int q) {
+  public boolean contains(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q) {
     return __contains(checkZbdd(p, "p"), checkZbdd(q, "q"));
   }
 
@@ -1391,8 +1380,7 @@ public class Zbdd implements Cloneable
     statistics.gcCount++;
 
     // mark referenced nodes...
-    for(int i = nodesCapacity, offset = (i - 1) * NODE_RECORD_SIZE; i-- > 0;
-        offset -= NODE_RECORD_SIZE)
+    for(int i = nodesCapacity, offset = (i - 1) * NODE_RECORD_SIZE; i-- > 0; offset -= NODE_RECORD_SIZE)
     {
       if (nodes[offset + _VAR] != -1 && nodes[offset + _REFCOUNT] > 0)
         gc_markTree(i);
@@ -1403,8 +1391,7 @@ public class Zbdd implements Cloneable
     final int oldNodesFree = nodesFree;
     nextFreeNode = nodesFree = 0;
 
-    for(int i = nodesCapacity, offset = (i - 1) * NODE_RECORD_SIZE; i-- > 2;
-        offset -= NODE_RECORD_SIZE)
+    for(int i = nodesCapacity, offset = (i - 1) * NODE_RECORD_SIZE; i-- > 2; offset -= NODE_RECORD_SIZE)
     {
       if ((nodes[offset + _VAR] & GC_VAR_MARK_MASK) != 0 && nodes[offset + _VAR] != -1)
       {
@@ -1679,10 +1666,8 @@ public class Zbdd implements Cloneable
     }
 
 
-    private void pop()
-    {
-      if (stackSize > 0)
-        stackSize--;
+    private void pop() {
+      stackSize--;
     }
 
 
