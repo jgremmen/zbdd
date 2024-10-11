@@ -80,7 +80,7 @@ class QueensTest
       for(int c = 0; c < n; c++)
       {
         int sc = solution;
-        int tmp0 = zbdd.incRef(tmp);
+        final int tmp0 = zbdd.incRef(tmp);
 
         for(int r = 0; r < s; r++)
         {

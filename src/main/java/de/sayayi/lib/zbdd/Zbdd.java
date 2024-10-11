@@ -1520,7 +1520,7 @@ public class Zbdd implements Cloneable
         if (ref == 0)
           nodesDead--;
 
-        nodes[refCountOffset]++;
+        nodes[refCountOffset] = ref + 1;
       }
     }
 
@@ -1550,7 +1550,7 @@ public class Zbdd implements Cloneable
         if (ref == 1)
           nodesDead++;
 
-        nodes[refCountOffset]--;
+        nodes[refCountOffset] = ref - 1;
       }
     }
 
