@@ -24,6 +24,14 @@ java {
 }
 
 
+javadoc {
+  // javadoc 8 has various problems -> use javadoc 17
+  javadocTool = javaToolchains.javadocToolFor {
+    languageVersion = JavaLanguageVersion.of(17)
+  }
+}
+
+
 test {
   useJUnitPlatform()
 }
@@ -72,11 +80,6 @@ javadoc {
   }
 
   failOnError false
-
-  // javadoc 8 has various problems -> use javadoc 17
-  javadocTool = javaToolchains.javadocToolFor {
-    languageVersion = JavaLanguageVersion.of(17)
-  }
 }
 
 
