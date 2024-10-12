@@ -123,32 +123,32 @@ publishing {
       artifact javadocJar
       artifact sourcesJar
 
-      pom { MavenPom pom ->
-        pom.name = 'Java ZBDD Library'
-        pom.description = "Java Implementation of Shin Ichi Minato's Zero-Suppressed BDDs"
-        pom.url = 'https://github.com/jgremmen/zbdd'
-        pom.inceptionYear = '2021'
+      pom {
+        name = 'Java ZBDD Library'
+        description = "Java Implementation of Shin Ichi Minato's Zero-Suppressed BDDs"
+        url = 'https://github.com/jgremmen/zbdd'
+        inceptionYear = '2021'
 
         licenses {
-          license { MavenPomLicense mpl ->
-            mpl.name = 'Apache License, Version 2.0'
-            mpl.url = 'https://www.apache.org/licenses/LICENSE-2.0'
-            mpl.distribution = 'repo'
+          license {
+            name = 'Apache License, Version 2.0'
+            url = 'https://www.apache.org/licenses/LICENSE-2.0'
+            distribution = 'repo'
           }
         }
 
         developers {
-          developer { MavenPomDeveloper mpd ->
-            mpd.id = 'jgremmen'
-            mpd.name = 'Jeroen Gremmen'
-            mpd.email = 'jeroen.gremmen@sayayi.de'
+          developer {
+            id = 'jgremmen'
+            name = 'Jeroen Gremmen'
+            email = 'jeroen.gremmen@sayayi.de'
           }
         }
 
-        scm { MavenPomScm scm ->
-          scm.connection = 'scm:git:git://github.com/jgremmen/zbdd.git'
-          scm.developerConnection = 'scm:git:git://github.com/jgremmen/zbdd.git'
-          scm.url = 'https://github.com/jgremmen/zbdd'
+        scm {
+          connection = 'scm:git:git://github.com/jgremmen/zbdd.git'
+          developerConnection = 'scm:git:git://github.com/jgremmen/zbdd.git'
+          url = 'https://github.com/jgremmen/zbdd'
         }
       }
     }
