@@ -40,10 +40,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * The problem is a specific case of the more general N-queen problem, where N represents the board size and number
  * of queens. For the 8-queen case, there are 92 distinct solutions, though only 12 are unique if rotations and
  * reflections of the board are considered equivalent. Solving it manually can be tricky due to the vast number
- * of possible placements—over 4 billion ways to position eight queens without constraints—but logical strategies
+ * of possible placements (over 4 billion ways to position eight queens without constraints) but logical strategies
  * or algorithms can simplify the task.
  * <p>
- * This test implements a solution to the N-queen problem using ZBDD, where N ranges from 1 to 13, meaning it
+ * This test implements a solution to the N-queen problem using ZBDDs, where N ranges from 1 to 13, meaning it
  * places N queens on an NxN chessboard so no two attack each other (sharing no row, column, or diagonal).
  *
  * @author Jeroen Gremmen
