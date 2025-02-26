@@ -609,6 +609,29 @@ public class Zbdd implements Cloneable
 
   @Contract(mutates = "this")
   @Range(from = 0, to = MAX_NODES)
+  public int union(int... p)
+  {
+    for(var pn: p)
+      __incRef(checkZbdd(pn, "p"));
+
+    var r = p[0];
+
+    for(int i = 1, n = p.length; i < n; i++)
+    {
+      final var pi = p[i];
+
+      r = zbddCache != null ? __union_cache(r, pi) : __union(r, pi);
+    }
+
+    for(var pn: p)
+      __decRef(pn);
+
+    return r;
+  }
+
+
+  @Contract(mutates = "this")
+  @Range(from = 0, to = MAX_NODES)
   public int union(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q)
   {
     checkZbdd(p, "p");

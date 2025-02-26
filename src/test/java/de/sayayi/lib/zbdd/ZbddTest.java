@@ -18,8 +18,6 @@ package de.sayayi.lib.zbdd;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static de.sayayi.lib.zbdd.Zbdd.ZBDD_BASE;
-import static de.sayayi.lib.zbdd.Zbdd.ZBDD_EMPTY;
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -41,8 +39,8 @@ class ZbddTest
     assertTrue(var > 0);
     assertTrue(r >= 2);
     assertEquals(var, zbdd.getVar(r));
-    assertEquals(ZBDD_EMPTY, zbdd.getP0(r));
-    assertEquals(ZBDD_BASE, zbdd.getP1(r));
+    assertEquals(zbdd.empty(), zbdd.getP0(r));
+    assertEquals(zbdd.base(), zbdd.getP1(r));
 
     assertThrows(ZbddException.class, () -> zbdd.cube(var + 1));
     assertThrows(ZbddException.class, () -> zbdd.cube(0));
@@ -57,8 +55,8 @@ class ZbddTest
     int var = zbdd.createVar();
     int r = zbdd.cube(var);
 
-    assertEquals(ZBDD_EMPTY, zbdd.change(ZBDD_EMPTY, var));
-    assertEquals(r, zbdd.change(ZBDD_BASE, var));
+    assertEquals(zbdd.empty(), zbdd.change(zbdd.empty(), var));
+    assertEquals(r, zbdd.change(zbdd.base(), var));
   }
 
 
@@ -75,7 +73,7 @@ class ZbddTest
 
     int ab = zbdd.cube(a, b);
     int ac = zbdd.cube(a, c);
-    int r = zbdd.union(zbdd.union(zbdd.union(zbdd.union(ab, zbdd.cube(b)), zbdd.cube(c)), ac), ZBDD_BASE);
+    int r = zbdd.union(ab, zbdd.cube(b), zbdd.cube(c), ac, zbdd.base());
 
     assertEquals(5, zbdd.count(r));
   }
@@ -111,7 +109,7 @@ class ZbddTest
 
     int dependency1 = zbdd.cube(c, x1, x2);
     int dependency2 = zbdd.cube(c, x2);
-    int union = zbdd.union(zbdd.union(zbdd.union(zbdd.cube(x1), dependency1), dependency2), zbdd.cube(c));
+    int union = zbdd.union(zbdd.cube(x1), dependency1, dependency2, zbdd.cube(c));
 
     assertEquals(4, zbdd.count(union));
 
@@ -119,7 +117,7 @@ class ZbddTest
 
     assertEquals(3, zbdd.count(clear));
 
-    int clearWithoutBase = zbdd.difference(clear, ZBDD_BASE);
+    int clearWithoutBase = zbdd.difference(clear, zbdd.base());
 
     assertEquals(2, zbdd.count(clearWithoutBase));
   }
@@ -138,14 +136,14 @@ class ZbddTest
     zbdd.setLiteralResolver(var -> var == a ? "a" : var == b ? "b" : "c");
 
     int ab = zbdd.cube(a, b);
-    int p = zbdd.union(zbdd.union(ab, zbdd.cube(b)), zbdd.cube(c));
-    int q = zbdd.union(ab, ZBDD_BASE);
+    int p = zbdd.union(ab, zbdd.cube(b), zbdd.cube(c));
+    int q = zbdd.union(ab, zbdd.base());
     int r = zbdd.multiply(p, q);
 
     assertEquals(3, zbdd.count(p));
     assertEquals(2, zbdd.count(q));
     assertEquals(4, zbdd.count(r));
-    assertEquals(zbdd.union(zbdd.union(zbdd.union(ab, zbdd.cube(a, b, c)), zbdd.cube(b)), zbdd.cube(c)), r);
+    assertEquals(zbdd.union(ab, zbdd.cube(a, b, c), zbdd.cube(b), zbdd.cube(c)), r);
   }
 
 
@@ -162,8 +160,8 @@ class ZbddTest
 
     int ab = zbdd.cube(a, b);
     int ac = zbdd.cube(a, c);
-    int ab_ac_b_c = zbdd.union(zbdd.union(zbdd.union(ab, zbdd.cube(b)), zbdd.cube(c)), ac);
-    int r = zbdd.union(ab_ac_b_c, ZBDD_BASE);
+    int ab_ac_b_c = zbdd.union(ab, zbdd.cube(b), zbdd.cube(c), ac);
+    int r = zbdd.union(ab_ac_b_c, zbdd.base());
 
     assertEquals(ab_ac_b_c, zbdd.removeBase(r));
     assertEquals(zbdd.cube(a), zbdd.removeBase(zbdd.subset1(ab_ac_b_c, c)));
@@ -184,11 +182,11 @@ class ZbddTest
 
     int ab = zbdd.cube(a, b);
     int ac = zbdd.cube(a, c);
-    int ab_ac_b_c = zbdd.union(zbdd.union(zbdd.union(ab, zbdd.cube(b)), zbdd.cube(c)), ac);
-    int r = zbdd.union(ab_ac_b_c, ZBDD_BASE);
+    int ab_ac_b_c = zbdd.union(ab, zbdd.cube(b), zbdd.cube(c), ac);
+    int r = zbdd.union(ab_ac_b_c, zbdd.base());
 
-    assertFalse(zbdd.contains(r, ZBDD_EMPTY));
-    assertTrue(zbdd.contains(r, ZBDD_BASE));
+    assertFalse(zbdd.contains(r, zbdd.empty()));
+    assertTrue(zbdd.contains(r, zbdd.base()));
     assertTrue(zbdd.contains(r, ab));
     assertTrue(zbdd.contains(r, ac));
     assertTrue(zbdd.contains(r, zbdd.cube(b)));
