@@ -208,7 +208,7 @@ class ZbddTest
     int d = zbdd.createVar();
     int e = zbdd.createVar();
 
-    zbdd.setLiteralResolver(var -> var == a ? "a" : var == b ? "b" : var == c ? "c" : var ==d ? "d" : "e");
+    zbdd.setLiteralResolver(var -> var == a ? "a" : var == b ? "b" : var == c ? "c" : var == d ? "d" : "e");
 
     int r = zbdd.getNode(a, zbdd.base(), zbdd.base());
     r = zbdd.getNode(b, r, r);

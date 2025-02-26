@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 
 import static java.lang.Integer.MAX_VALUE;
 import static java.lang.Integer.MIN_VALUE;
+import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
@@ -64,7 +65,7 @@ public final class ZbddFastCache implements ZbddCache
 
   public ZbddFastCache(int size)
   {
-    slots = Math.max(size, MIN_CACHE_SIZE) / (SLOT_CHAIN_SIZE1 + SLOT_CHAIN_SIZE2);
+    slots = max(size, MIN_CACHE_SIZE) / (SLOT_CHAIN_SIZE1 + SLOT_CHAIN_SIZE2);
     capacity = 2 * slots * CHAIN_CAPACITY;
 
     cache1 = new int[slots * SLOT_CHAIN_SIZE1];
@@ -99,7 +100,7 @@ public final class ZbddFastCache implements ZbddCache
         // move the entry to the front of the chain
         if (n >= CHAIN_CAPACITY / 2)
         {
-          final int[] tmp = new int[SLOT_ENTRY_SIZE1];
+          var tmp = new int[SLOT_ENTRY_SIZE1];
 
           arraycopy(cache1, i, tmp, 0, SLOT_ENTRY_SIZE1);
           arraycopy(cache1, slotIndex, cache1, slotIndex + SLOT_ENTRY_SIZE1, n * SLOT_ENTRY_SIZE1);
@@ -157,7 +158,7 @@ public final class ZbddFastCache implements ZbddCache
         // move the entry to the front of the chain
         if (n >= CHAIN_CAPACITY / 2)
         {
-          final int[] tmp = new int[SLOT_ENTRY_SIZE2];
+          var tmp = new int[SLOT_ENTRY_SIZE2];
 
           arraycopy(cache2, i, tmp, 0, SLOT_ENTRY_SIZE2);
           arraycopy(cache2, slotIndex, cache2, slotIndex + SLOT_ENTRY_SIZE2, n * SLOT_ENTRY_SIZE2);

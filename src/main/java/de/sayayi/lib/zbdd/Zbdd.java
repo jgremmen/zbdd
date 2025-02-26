@@ -1129,8 +1129,7 @@ public class Zbdd implements Cloneable
       __incRef(p);
       __incRef(q);
 
-      zbddCache.putResult(MODULO, p, q,
-          r = __difference_cache(p, __multiply_cache(q, __divide_cache(p, q))));
+      zbddCache.putResult(MODULO, p, q, r = __difference_cache(p, __multiply_cache(q, __divide_cache(p, q))));
 
       __decRef(q);
       __decRef(p);
@@ -1182,8 +1181,7 @@ public class Zbdd implements Cloneable
       final int p0 = __incRef(__atomize_cache(getP0(zbdd)));
       final int p1 = __atomize_cache(getP1(zbdd));
 
-      zbddCache.putResult(ATOMIZE, zbdd,
-          r = getNode(getVar(zbdd), __union_cache(__decRef(p0), p1), ZBDD_BASE));
+      zbddCache.putResult(ATOMIZE, zbdd, r = getNode(getVar(zbdd), __union_cache(__decRef(p0), p1), ZBDD_BASE));
 
       __decRef(zbdd);
     }
@@ -1236,8 +1234,7 @@ public class Zbdd implements Cloneable
     {
       __incRef(zbdd);
 
-      zbddCache.putResult(REMOVE_BASE, zbdd,
-          r = getNode(getVar(zbdd), __removeBase_cache(getP0(zbdd)), getP1(zbdd)));
+      zbddCache.putResult(REMOVE_BASE, zbdd, r = getNode(getVar(zbdd), __removeBase_cache(getP0(zbdd)), getP1(zbdd)));
 
       __decRef(zbdd);
     }
@@ -1586,7 +1583,7 @@ public class Zbdd implements Cloneable
   @Contract(value = "_ -> new", pure = true)
   public @NotNull String toString(@Range(from = 0, to = MAX_NODES) int zbdd)
   {
-    final StringJoiner s = new StringJoiner(", ", "{ ", " }");
+    final var s = new StringJoiner(", ", "{ ", " }");
 
     visitCubes(zbdd, cube -> s.add(literalResolver.getCubeName(cube)));
 
