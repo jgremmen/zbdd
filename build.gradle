@@ -7,7 +7,7 @@ plugins {
 
 description 'Java Implementation of Shin Ichi Minato\'s Zero-Suppressed BDDs'
 group 'de.sayayi.lib'
-version '0.2.2'
+version '0.3.0'
 
 
 layout.buildDirectory = '.build'
@@ -19,7 +19,7 @@ def junitVersion = '5.11.+'
 
 java {
   toolchain {
-    languageVersion = JavaLanguageVersion.of(8)
+    languageVersion = JavaLanguageVersion.of(11)
   }
 }
 
@@ -98,6 +98,11 @@ tasks.withType(Jar).configureEach {
   }
 
   from files('LICENSE')
+}
+
+
+jar {
+  dependsOn test
 }
 
 
