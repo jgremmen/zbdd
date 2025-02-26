@@ -14,7 +14,7 @@ layout.buildDirectory = '.build'
 
 
 def jetbrainsAnnotationsVersion = '[24.0,26.1)'
-def junitVersion = '5.11.+'
+def junitVersion = '5.12.+'
 
 
 java {
