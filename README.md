@@ -7,8 +7,8 @@ A ZBDD is a directed acyclic graph (DAG) that encodes a set of combinations over
 
 - **Variables**: These are the elements or Boolean variables (e.g., \(x_1, x_2, ..., x_n\)) that define the combinations. Variables are assigned a total order, and nodes in the ZBDD are arranged according to this order.
 - **Nodes**: Each non-terminal node corresponds to a variable and has two outgoing edges:
-    - **0-edge (low edge)**: Points to a subgraph representing combinations where the variable is absent (set to 0).
-    - **1-edge (high edge)**: Points to a subgraph representing combinations where the variable is present (set to 1).
+    - **0-edge**: Points to a subgraph representing combinations where the variable is absent (set to 0).
+    - **1-edge**: Points to a subgraph representing combinations where the variable is present (set to 1).
 - **Terminal Nodes**: There are two terminal nodes:
     - **0-terminal**: Represents the empty set (no combinations).
     - **1-terminal**: Represents the set containing the empty combination (the combination where all variables are 0).
@@ -63,6 +63,6 @@ The library offers a straightforward interface to create, modify, and query ZBDD
 
 These operations are implemented with recursive algorithms and memoization, ensuring optimal performance even as the number of variables or combinations grows. The library’s design prioritizes both speed and scalability, making it suitable for real-time applications and large-scale computations.
 
-Built in Java, the library benefits from the language’s portability and widespread use, allowing seamless integration into existing projects. Whether you’re optimizing digital circuits, analyzing fault trees, mining frequent itemsets, or solving graph-based problems, the ZBDD Java Library provides a reliable foundation. Its memory efficiency stems from the zero-suppression property, which prunes unnecessary nodes, while its time efficiency is driven by optimized traversal and operation algorithms.
+A key feature of this implementation is its memory efficiency. Rather than relying on individual Java objects for each node, the library uses a contiguous integer array to store the ZBDD structure. This design takes advantage of CPU read-ahead capabilities and caching, significantly reducing memory overhead and boosting access speed. Combined with the zero-suppression property, this approach minimizes resource use, making it ideal for memory-constrained environments or performance-critical systems.
 
-The ZBDD Java Library stands out as a practical tool for tackling combinatorial challenges efficiently. By combining a clean interface with high performance, it empowers developers to solve complex problems without grappling with the intricacies of ZBDD implementation. Whether your goal is to streamline logic synthesis or accelerate data analysis, this library delivers a modern, Java-based solution tailored for efficiency and ease of use.
+Written in Java, the library benefits from the language’s portability, integrating seamlessly into existing projects. It’s a versatile tool for tasks like circuit optimization, fault tree analysis, frequent itemset mining, or graph algorithms. The API is straightforward—developers can define variables, construct ZBDDs, and execute operations with minimal code.
