@@ -32,6 +32,20 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
 /**
+ * The 8-queen problem is a classic puzzle in chess and computer science. The goal is to place eight queens on an
+ * 8x8 chessboard such that no two queens threaten each other. In chess, a queen can attack any piece in the same
+ * row, column, or diagonal. Therefore, the challenge requires arranging the queens so that no two share the same
+ * row, column, or diagonal.
+ * <p>
+ * The problem is a specific case of the more general N-queen problem, where N represents the board size and number
+ * of queens. For the 8-queen case, there are 92 distinct solutions, though only 12 are unique if rotations and
+ * reflections of the board are considered equivalent. Solving it manually can be tricky due to the vast number
+ * of possible placements—over 4 billion ways to position eight queens without constraints—but logical strategies
+ * or algorithms can simplify the task.
+ * <p>
+ * This test implements a solution to the N-queen problem using ZBDD, where N ranges from 1 to 13, meaning it
+ * places N queens on an NxN chessboard so no two attack each other (sharing no row, column, or diagonal).
+ *
  * @author Jeroen Gremmen
  * @since 0.2.2
  */
