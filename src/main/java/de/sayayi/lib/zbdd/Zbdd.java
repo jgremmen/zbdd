@@ -266,7 +266,11 @@ public class Zbdd implements Cloneable
    * @return  variable number
    */
   @Contract(mutates = "this")
-  public @Range(from = 1, to = MAX_VALUE) int createVar() {
+  public @Range(from = 1, to = MAX_VALUE) int createVar()
+  {
+    if (lastVarNumber == MAX_VALUE)
+      throw new ZbddException("variable count exceeded");
+
     return ++lastVarNumber;
   }
 
@@ -344,11 +348,9 @@ public class Zbdd implements Cloneable
 
     if (n == 0)
       return base();
-    if (n == 1)
-      return cube(cubeVars[0]);
 
-    // var count >= 2
-    sort(cubeVars = copyOf(cubeVars, n));
+    if (n >= 2)
+      sort(cubeVars = copyOf(cubeVars, n));
 
     int r = ZBDD_BASE;
 
@@ -1473,17 +1475,15 @@ public class Zbdd implements Cloneable
     nodes = copyOf(nodes, nodesCapacity * NODE_RECORD_SIZE);
 
     nextFreeNode = 0;
-    nodesFree = 0;
+    nodesFree = nodesCapacity - oldNodesCapacity;
 
     // initialize new nodes
-    for(int i = nodesCapacity, offset = (i - 1) * NODE_RECORD_SIZE; i-- > oldNodesCapacity;
-        offset -= NODE_RECORD_SIZE)
+    for(int i = nodesCapacity, offset = (i - 1) * NODE_RECORD_SIZE; i-- > oldNodesCapacity; offset -= NODE_RECORD_SIZE)
     {
       nodes[offset + _VAR] = -1;
       nodes[offset + _NEXT] = nextFreeNode;
 
       nextFreeNode = i;
-      nodesFree++;
     }
 
     // unchain old nodes
@@ -1491,8 +1491,7 @@ public class Zbdd implements Cloneable
       nodes[i + _CHAIN] = 0;
 
     // re-chain old nodes
-    for(int i = oldNodesCapacity, offset = (i - 1) * NODE_RECORD_SIZE; i-- > 2;
-        offset -= NODE_RECORD_SIZE)
+    for(int i = oldNodesCapacity, offset = (i - 1) * NODE_RECORD_SIZE; i-- > 2; offset -= NODE_RECORD_SIZE)
     {
       if (nodes[offset + _VAR] != -1)
         prependHashChain(i, hash(nodes[offset + _VAR], nodes[offset + _P0], nodes[offset + _P1]));
@@ -1616,7 +1615,7 @@ public class Zbdd implements Cloneable
 
   public void visitCubes(@Range(from = 0, to = MAX_NODES) int zbdd, @NotNull CubeVisitor visitor)
   {
-    __incRef(zbdd);
+    __incRef(checkZbdd(zbdd, "zbdd"));
     try {
       visitCubes0(visitor, new CubeVisitorStack(lastVarNumber), zbdd);
     } finally {
