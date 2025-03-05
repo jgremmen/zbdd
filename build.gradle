@@ -1,26 +1,33 @@
 plugins {
   id 'java-library'
   id 'maven-publish'
-  id 'jacoco'
   id 'signing'
 }
 
 
 description 'Java Implementation of Shin Ichi Minato\'s Zero-Suppressed BDDs'
 group 'de.sayayi.lib'
-version '0.2.1'
+version '0.3.0'
 
 
 layout.buildDirectory = '.build'
 
 
-def jetbrainsAnnotationsVersion = '24.1.+'
-def junitVersion = '5.11.+'
+def jetbrainsAnnotationsVersion = '[24.0,26.1)'
+def junitVersion = '5.12.+'
 
 
 java {
   toolchain {
-    languageVersion = JavaLanguageVersion.of(8)
+    languageVersion = JavaLanguageVersion.of(11)
+  }
+}
+
+
+javadoc {
+  // javadoc 8 has various problems -> use javadoc 17
+  javadocTool = javaToolchains.javadocToolFor {
+    languageVersion = JavaLanguageVersion.of(17)
   }
 }
 
@@ -28,11 +35,6 @@ java {
 test {
   useJUnitPlatform()
 }
-
-
-apply from: file('gradle/javadoc.gradle')
-apply from: file('gradle/quality.gradle')
-apply from: file('gradle/publishing.gradle')
 
 
 repositories {
@@ -49,4 +51,131 @@ dependencies {
   testImplementation "org.junit.jupiter:junit-jupiter-params:${junitVersion}"
   testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${junitVersion}"
   testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+
+def resolvedJetbrainsAnnotationsVersion = configurations
+    .compileClasspath
+    .resolvedConfiguration
+    .resolvedArtifacts
+    .find { it.name == 'annotations' }
+    .moduleVersion.id.version
+
+
+javadoc {
+  title "Java ZBDD Library ${version}"
+
+  (options as StandardJavadocDocletOptions).with {
+    linksOffline "https://javadoc.io/doc/org.jetbrains/annotations/${resolvedJetbrainsAnnotationsVersion}/",
+                 'gradle/javadocs/jetbrains-annotations'
+
+    encoding 'UTF-8'
+
+    group('ZBDD Core API', ['de.sayayi.lib.zbdd'])
+    group('ZBDD Cache API (Experimental)', ['de.sayayi.lib.zbdd.cache'])
+
+    noQualifiers 'java.util', 'java.lang'
+
+    addStringOption('Xdoclint:-missing', '-quiet')
+  }
+
+  failOnError false
+}
+
+
+tasks.withType(Jar).configureEach {
+  reproducibleFileOrder true
+
+  manifest {
+    attributes(
+        'Implementation-Vendor': 'Jeroen Gremmen',
+        'Implementation-Vendor-Id': 'de.sayayi',
+        'Implementation-Title': project.name,
+        'Implementation-Version': project.version,
+        'Created-By': "${System.getProperty('java.version')} (${System.getProperty('java.specification.vendor')})",
+        'Built-Date': new Date().format('yyyy-MM-dd HH:mm:ss')
+    )
+  }
+
+  from files('LICENSE')
+}
+
+
+jar {
+  dependsOn test
+}
+
+
+tasks.register('javadocJar', Jar) {
+  archiveClassifier.set('javadoc')
+  from javadoc
+}
+
+
+tasks.register('sourcesJar', Jar) {
+  dependsOn classes
+
+  archiveClassifier.set('sources')
+  from sourceSets.main.allSource
+}
+
+
+publishing {
+  publications {
+    create('maven', MavenPublication) {
+      from components.java
+
+      artifact javadocJar
+      artifact sourcesJar
+
+      pom {
+        name = 'Java ZBDD Library'
+        description = "Java Implementation of Shin Ichi Minato's Zero-Suppressed BDDs"
+        url = 'https://github.com/jgremmen/zbdd'
+        inceptionYear = '2021'
+
+        licenses {
+          license {
+            name = 'Apache License, Version 2.0'
+            url = 'https://www.apache.org/licenses/LICENSE-2.0'
+            distribution = 'repo'
+          }
+        }
+
+        developers {
+          developer {
+            id = 'jgremmen'
+            name = 'Jeroen Gremmen'
+            email = 'jeroen.gremmen@sayayi.de'
+          }
+        }
+
+        scm {
+          connection = 'scm:git:git://github.com/jgremmen/zbdd.git'
+          developerConnection = 'scm:git:git://github.com/jgremmen/zbdd.git'
+          url = 'https://github.com/jgremmen/zbdd'
+        }
+      }
+    }
+  }
+
+  repositories {
+    maven {
+      name = 'mavenTemp'
+      url = layout.buildDirectory.dir('repository')
+    }
+    maven {
+      // maven central
+      url = 'https://oss.sonatype.org/service/local/staging/deploy/maven2'
+      credentials {
+        username = project.findProperty('mavenCentral.username')
+        password = project.findProperty('mavenCentral.password')
+      }
+    }
+  }
+}
+
+
+signing {
+  sign publishing.publications.maven
 }

@@ -112,7 +112,7 @@ public interface ZbddStatistics
   /**
    * Returns a rough estimation of the number of bytes used by the zbdd.
    *
-   * @return  memory usage in bytes
+   * @return  estimated memory usage in bytes
    */
   @Contract(pure = true)
   long getMemoryUsage();
