@@ -15,9 +15,16 @@
  */
 package de.sayayi.lib.zbdd;
 
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.Random;
+import java.util.TreeMap;
+
+import static java.lang.Integer.bitCount;
+import static java.util.Arrays.stream;
+import static java.util.stream.Collectors.joining;
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -215,5 +222,86 @@ class ZbddTest
     r = zbdd.getNode(e, r, r);
 
     assertEquals(32, zbdd.count(r));
+  }
+
+
+  @Test
+  @DisplayName("Operation 'atomize'")
+  void atomize()
+  {
+    final var zbdd = new Zbdd();
+    final var variableToLiteralMap = new TreeMap<Integer,String>();
+    final var variables = new int[16];
+
+    for(int n = 0; n < 16; n++)
+      variableToLiteralMap.put(variables[n] = zbdd.createVar(), Character.toString((char)('a' + 15 - n)));
+
+    zbdd.setLiteralResolver(new ZbddLiteralResolver() {
+      @Override
+      public @NotNull String getLiteralName(int var) {
+        return variableToLiteralMap.get(var);
+      }
+
+      @Override
+      public @NotNull String getCubeName(int @NotNull [] cubeVars) {
+        return cubeVars.length == 0 ? "*" : stream(cubeVars).boxed().sorted((a,b) -> b - a).map(this::getLiteralName).collect(joining());
+      }
+    });
+
+    final var random = new Random();
+
+    for(int cycle = 1; cycle <= 100; cycle++)
+    {
+      var mask = 0;
+      var set = random.nextBoolean() ? zbdd.base() : zbdd.empty();
+
+      for(int elements = random.nextInt(7) + (random.nextBoolean() ? 1 : 0), e = 0; e < elements; e++)
+      {
+        int elementMask, bits;
+        do { bits = bitCount(elementMask = random.nextInt() & 0xffff); } while(bits > 6);
+
+        mask |= elementMask;
+
+        final var set0 = zbdd.incRef(set);  // lock set
+        set = zbdd.union(set, zbddFromMask(zbdd, variables, elementMask));
+        zbdd.decRef(set0);  // release previous set
+      }
+
+      final var atomizedSet = zbdd.incRef(zbdd.atomize(zbdd.incRef(set)));  // lock set, atomizedSet
+
+      var expectedSet = zbdd.empty();
+      for(int b = 0; b < 16; b++)
+        if ((mask & (1 << b)) != 0)
+        {
+          final var expectedSet0 = zbdd.incRef(expectedSet);  // lock expectedSet
+          expectedSet = zbdd.union(expectedSet, zbdd.cube(variables[b]));
+          zbdd.decRef(expectedSet0);  // release previous expectedSet
+        }
+
+      zbdd.decRef(set);  // release set
+      zbdd.decRef(atomizedSet);  // release atomizedSet
+
+      System.out.println("atomize " + zbdd.toString(set) + " -> " + zbdd.toString(atomizedSet));
+
+      assertEquals(bitCount(mask), zbdd.count(atomizedSet));
+
+      final var _expectedSet = expectedSet;
+      assertEquals(expectedSet, atomizedSet, () -> "expected result = " + zbdd.toString(_expectedSet));
+    }
+
+    System.out.println(zbdd.getStatistics());
+  }
+
+
+  private int zbddFromMask(@NotNull Zbdd zbdd, int[] variables, int mask)
+  {
+    var bits = bitCount(mask);
+    var cubeVars = new int[bits];
+
+    for(int b = 0, i = 0; b < 16 && i < bits; b++)
+      if ((mask & (1 << b)) != 0)
+        cubeVars[i++] = variables[b];
+
+    return zbdd.cube(cubeVars);
   }
 }

@@ -362,6 +362,35 @@ public class Zbdd implements Cloneable
   }
 
 
+  /**
+   * @since 0.3.1
+   */
+  @Contract(pure = true)
+  public boolean hasCubeWithVar(@Range(from = 0, to = MAX_NODES) int zbdd, @Range(from = 1, to = MAX_VALUE) int var) {
+    return __hasCubeWithVar(checkZbdd(zbdd, "zbdd"), checkVar(var));
+  }
+
+
+  /**
+   * @since 0.3.1
+   */
+  @Contract(pure = true)
+  public boolean __hasCubeWithVar(@Range(from = 0, to = MAX_NODES) int zbdd, @Range(from = 1, to = MAX_VALUE) int var)
+  {
+    final int top = getVar(zbdd);
+
+    if (var > top)
+      return false;
+
+    if (top == var)
+      return true;
+
+    return
+        __hasCubeWithVar(getP0(zbdd), var) ||
+        __hasCubeWithVar(getP1(zbdd), var);
+  }
+
+
   @Contract(mutates = "this")
   @Range(from = 0, to = MAX_NODES)
   public int subset0(@Range(from = 0, to = MAX_NODES) int zbdd, @Range(from = 1, to = MAX_VALUE) int var)
@@ -654,13 +683,14 @@ public class Zbdd implements Cloneable
     if (p == ZBDD_EMPTY)
       return q;
 
-    int ptop = getVar(p);
-    int qtop = getVar(q);
+    int p_top = getVar(p);
+    int q_top = getVar(q);
 
-    if (ptop > qtop)
+    if (p_top > q_top)
     {
-      // swap p <-> q, ptop <-> qtop
-      int tmp = p; p = q; q = tmp; tmp = ptop; ptop = qtop; qtop = tmp;
+      // swap p <-> q, p_top <-> q_top
+      int tmp = p; p = q; q = tmp;
+      tmp = p_top; p_top = q_top; q_top = tmp;
     }
 
     int r = zbddCache.getResult(UNION, p, q);
@@ -669,14 +699,15 @@ public class Zbdd implements Cloneable
       __incRef(p);
       __incRef(q);
 
-      if (ptop < qtop)
-        r = getNode(qtop, __union_cache(p, getP0(q)), getP1(q));
+      if (p_top < q_top)
+        r = getNode(q_top, __union_cache(p, getP0(q)), getP1(q));
       else
       {
+        // p_top = q_top
         final int p0 = __incRef(__union_cache(getP0(p), getP0(q)));
         final int p1 = __union_cache(getP1(p), getP1(q));
 
-        r = getNode(ptop, __decRef(p0), p1);
+        r = getNode(p_top, __decRef(p0), p1);
       }
 
       zbddCache.putResult(UNION, p, q, r);
@@ -697,13 +728,14 @@ public class Zbdd implements Cloneable
     if (p == ZBDD_EMPTY)
       return q;
 
-    int ptop = getVar(p);
-    int qtop = getVar(q);
+    int p_top = getVar(p);
+    int q_top = getVar(q);
 
-    if (ptop > qtop)
+    if (p_top > q_top)
     {
-      // swap p <-> q, ptop <-> qtop
-      int tmp = p; p = q; q = tmp; tmp = ptop; ptop = qtop; qtop = tmp;
+      // swap p <-> q, p_top <-> q_top
+      int tmp = p; p = q; q = tmp;
+      tmp = p_top; p_top = q_top; q_top = tmp;
     }
 
     __incRef(p);
@@ -711,14 +743,15 @@ public class Zbdd implements Cloneable
 
     int r;
 
-    if (ptop < qtop)
-      r = getNode(qtop, __union(p, getP0(q)), getP1(q));
+    if (p_top < q_top)
+      r = getNode(q_top, __union(p, getP0(q)), getP1(q));
     else
     {
+      // p_top = q_top
       final int p0 = __incRef(__union(getP0(p), getP0(q)));
       final int p1 = __union(getP1(p), getP1(q));
 
-      r = getNode(ptop, __decRef(p0), p1);
+      r = getNode(p_top, __decRef(p0), p1);
     }
 
     __decRef(q);
@@ -753,22 +786,22 @@ public class Zbdd implements Cloneable
     int r = zbddCache.getResult(INTERSECT, p, q);
     if (r == MIN_VALUE)
     {
-      final int ptop = getVar(p);
-      final int qtop = getVar(q);
+      final int p_top = getVar(p);
+      final int q_top = getVar(q);
 
       __incRef(p);
       __incRef(q);
 
-      if (ptop > qtop)
+      if (p_top > q_top)
         r = __intersect_cache(getP0(p), q);
-      else if (ptop < qtop)
+      else if (p_top < q_top)
         r = __intersect_cache(p, getP0(q));
       else
       {
         final int p0 = __incRef(__intersect_cache(getP0(p), getP0(q)));
         final int p1 = __intersect_cache(getP1(p), getP1(q));
 
-        r = getNode(ptop, __decRef(p0), p1);
+        r = getNode(p_top, __decRef(p0), p1);
       }
 
       zbddCache.putResult(INTERSECT, p, q, r);
@@ -789,23 +822,23 @@ public class Zbdd implements Cloneable
     if (p == q)
       return p;
 
-    final int ptop = getVar(p);
-    final int qtop = getVar(q);
+    final int p_top = getVar(p);
+    final int q_top = getVar(q);
     final int r;
 
     __incRef(p);
     __incRef(q);
 
-    if (ptop > qtop)
+    if (p_top > q_top)
       r = __intersect(getP0(p), q);
-    else if (ptop < qtop)
+    else if (p_top < q_top)
       r = __intersect(p, getP0(q));
     else
     {
       final int p0 = __incRef(__intersect(getP0(p), getP0(q)));
       final int p1 = __intersect(getP1(p), getP1(q));
 
-      r = getNode(ptop, __decRef(p0), p1);
+      r = getNode(p_top, __decRef(p0), p1);
     }
 
     __decRef(q);
@@ -840,22 +873,22 @@ public class Zbdd implements Cloneable
     int r = zbddCache.getResult(DIFFERENCE, p, q);
     if (r == MIN_VALUE)
     {
-      final int ptop = getVar(p);
-      final int qtop = getVar(q);
+      final int p_top = getVar(p);
+      final int q_top = getVar(q);
 
       __incRef(p);
       __incRef(q);
 
-      if (ptop < qtop)
+      if (p_top < q_top)
         r = __difference_cache(p, getP0(q));
-      else if (ptop > qtop)
-        r = getNode(ptop, __difference_cache(getP0(p), getP0(q)), getP1(p));
+      else if (p_top > q_top)
+        r = getNode(p_top, __difference_cache(getP0(p), getP0(q)), getP1(p));
       else
       {
         final int p0 = __incRef(__difference_cache(getP0(p), getP0(q)));
         final int p1 = __difference_cache(getP1(p), getP1(q));
 
-        r = getNode(ptop, __decRef(p0), p1);
+        r = getNode(p_top, __decRef(p0), p1);
       }
 
       zbddCache.putResult(DIFFERENCE, p, q, r);
@@ -876,23 +909,23 @@ public class Zbdd implements Cloneable
     if (q == ZBDD_EMPTY)
       return p;
 
-    final int ptop = getVar(p);
-    final int qtop = getVar(q);
+    final int p_top = getVar(p);
+    final int q_top = getVar(q);
     final int r;
 
     __incRef(p);
     __incRef(q);
 
-    if (ptop < qtop)
+    if (p_top < q_top)
       r = __difference(p, getP0(q));
-    else if (ptop > qtop)
-      r = getNode(ptop, __difference(getP0(p), getP0(q)), getP1(p));
+    else if (p_top > q_top)
+      r = getNode(p_top, __difference(getP0(p), getP0(q)), getP1(p));
     else
     {
       final int p0 = __incRef(__difference(getP0(p), getP0(q)));
       final int p1 = __difference(getP1(p), getP1(q));
 
-      r = getNode(ptop, __decRef(p0), p1);
+      r = getNode(p_top, __decRef(p0), p1);
     }
 
     __decRef(q);
@@ -926,10 +959,10 @@ public class Zbdd implements Cloneable
     if (q == ZBDD_BASE)
       return p;
 
-    final int ptop = getVar(p);
-    final int qtop = getVar(q);
+    final int p_top = getVar(p);
+    final int q_top = getVar(q);
 
-    if (ptop > qtop)
+    if (p_top > q_top)
       return __multiply_cache(q, p);
 
     int r = zbddCache.getResult(MULTIPLY, p, q);
@@ -939,12 +972,12 @@ public class Zbdd implements Cloneable
       __incRef(q);
 
       // factor P = p0 + v * p1
-      final int p0 = __incRef(__subset0_cache(p, ptop));
-      final int p1 = __incRef(__subset1_cache(p, ptop));
+      final int p0 = __incRef(__subset0_cache(p, p_top));
+      final int p1 = __incRef(__subset1_cache(p, p_top));
 
       // factor Q = q0 + v * q1
-      final int q0 = __incRef(__subset0_cache(q, ptop));
-      final int q1 = __incRef(__subset1_cache(q, ptop));
+      final int q0 = __incRef(__subset0_cache(q, p_top));
+      final int q1 = __incRef(__subset1_cache(q, p_top));
 
       // r = (p0 + v * p1) * (q0 + v * q1) = p0q0 + v * (p0q1 + p1q0 + p1q1)
       final int p0q0 = __incRef(__multiply_cache(p0, q0));
@@ -953,7 +986,7 @@ public class Zbdd implements Cloneable
       final int p1q1 = __incRef(__multiply_cache(p1, q1));
 
       zbddCache.putResult(MULTIPLY, p, q, r = __union_cache(p0q0,
-          __change_cache(__union_cache(__union_cache(p0q1, p1q0), p1q1), ptop)));
+          __change_cache(__union_cache(__union_cache(p0q1, p1q0), p1q1), p_top)));
 
       __decRef(p1q1);
       __decRef(p1q0);
@@ -981,29 +1014,29 @@ public class Zbdd implements Cloneable
     if (q == ZBDD_BASE)
       return p;
 
-    final int ptop = getVar(p);
-    final int qtop = getVar(q);
+    final int p_top = getVar(p);
+    final int q_top = getVar(q);
 
-    if (ptop > qtop)
+    if (p_top > q_top)
       return __multiply(q, p);
 
     __incRef(p);
     __incRef(q);
 
     // factor P = p0 + v * p1
-    final int p0 = __incRef(__subset0(p, ptop));
-    final int p1 = __incRef(__subset1(p, ptop));
+    final int p0 = __incRef(__subset0(p, p_top));
+    final int p1 = __incRef(__subset1(p, p_top));
 
     // factor Q = q0 + v * q1
-    final int q0 = __incRef(__subset0(q, ptop));
-    final int q1 = __incRef(__subset1(q, ptop));
+    final int q0 = __incRef(__subset0(q, p_top));
+    final int q1 = __incRef(__subset1(q, p_top));
 
     // r = (p0 + v * p1) * (q0 + v * q1) = p0q0 + v * (p0q1 + p1q0 + p1q1)
     final int p0q0 = __incRef(__multiply(p0, q0));
     final int p0q1 = __incRef(__multiply(p0, q1));
     final int p1q0 = __incRef(__multiply(p1, q0));
     final int p1q1 = __incRef(__multiply(p1, q1));
-    final int r = __union(p0q0, __change(__union(__union(p0q1, p1q0), p1q1), ptop));
+    final int r = __union(p0q0, __change(__union(__union(p0q1, p1q0), p1q1), p_top));
 
     __decRef(p1q1);
     __decRef(p1q0);
@@ -1201,14 +1234,14 @@ public class Zbdd implements Cloneable
     int r = zbddCache.getResult(ATOMIZE, zbdd);
     if (r == MIN_VALUE)
     {
-      __incRef(zbdd);
+      final int p0_atomized = __incRef(__atomize(getP0(__incRef(zbdd))));  // lock zbdd, p0_atomized
+      final int p1_atomized = __atomize(getP1(zbdd));
 
-      final int p0 = __incRef(__atomize_cache(getP0(zbdd)));
-      final int p1 = __atomize_cache(getP1(zbdd));
+      final int p0 = __atomize_union(__decRef(p0_atomized), p1_atomized);  // release p0_atomized
 
-      zbddCache.putResult(ATOMIZE, zbdd, r = getNode(getVar(zbdd), __union_cache(__decRef(p0), p1), ZBDD_BASE));
+      zbddCache.putResult(ATOMIZE, zbdd, r = getNode(getVar(zbdd), p0, ZBDD_BASE));
 
-      __decRef(zbdd);
+      __decRef(zbdd);  // release zbdd
     }
 
     return r;
@@ -1221,18 +1254,56 @@ public class Zbdd implements Cloneable
     if (zbdd < 2)
       return ZBDD_EMPTY;
 
-    __incRef(zbdd);
+    final int p0_atomized = __incRef(__atomize(getP0(__incRef(zbdd))));  // lock zbdd, p0_atomized
+    final int p1_atomized = __atomize(getP1(zbdd));
 
-    final int p0 = __incRef(__atomize(getP0(zbdd)));
-    final int p1 = __atomize(getP1(zbdd));
-    final int r = getNode(getVar(zbdd), __union(__decRef(p0), p1), ZBDD_BASE);
+    final int p0 = __atomize_union(__decRef(p0_atomized), p1_atomized);  // release p0_atomized
+    final int r = getNode(getVar(zbdd), p0, ZBDD_BASE);
 
-    __decRef(zbdd);
+    __decRef(zbdd);  // release zbdd
 
     return r;
   }
 
 
+  // union optimized for atomize; the 1-branch for every node points to base(1)
+  @Contract(mutates = "this")
+  private int __atomize_union(int p, int q)
+  {
+    // trivial cases: remove base from union
+    if (p < 2)
+      return q < 2 ? ZBDD_EMPTY : q;
+    if (q < 2 || p == q)
+      return p;
+
+    int p_top = getVar(p);
+    int q_top = getVar(q);
+
+    if (p_top > q_top)
+    {
+      // swap p <-> q, p_top <-> q_top
+      int tmp = p; p = q; q = tmp;
+      tmp = p_top; p_top = q_top; q_top = tmp;
+    }
+
+    __incRef(p);  // lock p
+
+    final int q_p0 = getP0(__incRef(q));  // lock q
+    final int r;
+
+    if (p_top < q_top)
+      r = getNode(q_top, __atomize_union(p, q_p0), ZBDD_BASE);
+    else
+    {
+      // p_top = q_top
+      r = getNode(p_top, __atomize_union(getP0(p), q_p0), ZBDD_BASE);
+    }
+
+    __decRef(q);  // release q
+    __decRef(p);  // release p
+
+    return r;
+  }
 
 
   @Contract(mutates = "this")
@@ -1294,7 +1365,9 @@ public class Zbdd implements Cloneable
   @Contract(mutates = "this")
   protected boolean __contains(int p, int q)
   {
-    return p != ZBDD_EMPTY && q != ZBDD_EMPTY &&
+    return
+        p != ZBDD_EMPTY &&
+        q != ZBDD_EMPTY &&
         (p == q || (zbddCache != null ? __intersect_cache(p, q) : __intersect(p, q)) == q);
   }
 
@@ -1365,12 +1438,26 @@ public class Zbdd implements Cloneable
   }
 
 
+  /**
+   * Returns the variable for the given {@code zbdd} node.
+   *
+   * @param zbdd  zbdd node
+   *
+   * @return  variable or {@code -1} in case {@code zbdd} is the empty or base node
+   */
   @Contract(pure = true)
   protected int getVar(int zbdd) {
     return zbdd < 2 ? -1 : nodes[zbdd * NODE_RECORD_SIZE + _VAR];
   }
 
 
+  /**
+   * Returns the zbdd node for the 0-branch of the given {@code zbdd} node.
+   *
+   * @param zbdd  zbdd node
+   *
+   * @return  zbdd node for the 0-branch
+   */
   @Contract(pure = true)
   @Range(from = 0, to = MAX_NODES)
   protected int getP0(int zbdd) {
@@ -1378,6 +1465,13 @@ public class Zbdd implements Cloneable
   }
 
 
+  /**
+   * Returns the zbdd node for the 1-branch of the given {@code zbdd} node.
+   *
+   * @param zbdd  zbdd node
+   *
+   * @return  zbdd node for the 1-branch
+   */
   @Contract(pure = true)
   @Range(from = 0, to = MAX_NODES)
   protected int getP1(int zbdd) {
