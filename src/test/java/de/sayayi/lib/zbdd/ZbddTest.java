@@ -250,7 +250,7 @@ class ZbddTest
 
     final var random = new Random();
 
-    for(int cycle = 1; cycle <= 100; cycle++)
+    for(int cycle = 1; cycle <= 500; cycle++)
     {
       var mask = 0;
       var set = random.nextBoolean() ? zbdd.base() : zbdd.empty();
