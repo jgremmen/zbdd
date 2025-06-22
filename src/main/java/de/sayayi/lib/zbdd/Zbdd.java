@@ -28,6 +28,7 @@ import static de.sayayi.lib.zbdd.cache.ZbddCache.Operation2.*;
 import static java.lang.Integer.MAX_VALUE;
 import static java.lang.Integer.MIN_VALUE;
 import static java.lang.Math.*;
+import static java.lang.System.arraycopy;
 import static java.util.Arrays.copyOf;
 import static java.util.Arrays.sort;
 import static java.util.Locale.ROOT;
@@ -1771,6 +1772,113 @@ public class Zbdd implements Cloneable
       // walk 0-branch
       visitCubes0(visitor, vars, nodes[offset + _P0]);
     }
+  }
+
+
+  /**
+   * Calculates a list of zbdd nodes, where each zbdd node references 2 other zbdd nodes in the list with a lower index.
+   * <p>
+   * Initially, each newly created zbdd node references other zbdd nodes with lower zbdd numbers. Starting with the
+   * first garbage collection, freed zbdd numbers are going to be reused, if possible. This means that the initial
+   * contract is no longer valid and new zbdd nodes may have a lower number than the zbdd nodes it references.
+   * The list returned by this method essentially describes the generation sequence for all zbdd nodes in the correct
+   * order.
+   * <p>
+   * Note: this method will always perform a garbage collection
+   *
+   * @return  array with the generation sequence for all zbdd nodes, never {@code null}
+   *
+   * @see #gc()
+   *
+   * @since 0.3.1
+   */
+  @Contract(value = "-> new")
+  public int @NotNull [] calculateNodeDependency()
+  {
+    // make sure we're only dealing with valid nodes
+    gc();
+
+    final var zbddCount = nodesCapacity - nodesFree;
+    final var zbddSequence = new int[zbddCount];
+    final var sortedZbdds = new int[zbddCount];
+
+    zbddSequence[1] = 1;
+
+    var resultIdx = 2;
+    var startZbdd = 2;
+
+    do {
+      for(int zbdd = startZbdd, offset = startZbdd * NODE_RECORD_SIZE;
+          zbdd < nodesCapacity && resultIdx < zbddCount;
+          offset += NODE_RECORD_SIZE, zbdd++)
+      {
+        zbddProcessed: {
+          if (calculateNodeDependency_findZbdd(sortedZbdds, resultIdx, zbdd) || nodes[offset + _VAR] == -1)
+            break zbddProcessed;
+
+          if (calculateNodeDependency_findZbdd(sortedZbdds, resultIdx, nodes[offset + _P0]) &&
+              calculateNodeDependency_findZbdd(sortedZbdds, resultIdx, nodes[offset + _P1]))
+          {
+            calculateNodeDependency_addZbdd(sortedZbdds, resultIdx, zbdd);
+            zbddSequence[resultIdx++] = zbdd;
+            break zbddProcessed;
+          }
+
+          continue;
+        }
+
+        if (zbdd == startZbdd)
+          startZbdd++;
+      }
+    } while(resultIdx < zbddCount);
+
+    return zbddSequence;
+  }
+
+
+  @Contract(pure = true)
+  private boolean calculateNodeDependency_findZbdd(int[] sortedResults, int resultCount, int zbdd)
+  {
+    if (zbdd < 2)
+      return true;
+
+    for(int low = 2, high = resultCount - 1; low <= high;)
+    {
+      final int mid = (low + high) >>> 1;
+      final int midZbdd = sortedResults[mid];
+
+      if (midZbdd < zbdd)
+        low = mid + 1;
+      else if (midZbdd > zbdd)
+        high = mid - 1;
+      else
+        return true;
+    }
+
+    return false;
+  }
+
+
+  @Contract(mutates = "param1")
+  private void calculateNodeDependency_addZbdd(int[] sortedResults, int resultCount, int zbdd)
+  {
+    int low = 2;
+
+    for(int high = resultCount - 1; low <= high;)
+    {
+      final int mid = (low + high) >>> 1;
+      final int midZbdd = sortedResults[mid];
+
+      if (midZbdd < zbdd)
+        low = mid + 1;
+      else if (midZbdd > zbdd)
+        high = mid - 1;
+    }
+
+    if (low < resultCount)
+      arraycopy(sortedResults, low, sortedResults, low + 1, resultCount - low);
+
+    sortedResults[low] = zbdd;
   }
 
 
