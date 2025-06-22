@@ -47,7 +47,7 @@ import static java.util.Objects.requireNonNull;
 @SuppressWarnings("DuplicatedCode")
 public class Zbdd implements Cloneable
 {
-  private static final int GC_VAR_MARK_MASK = 0x80000000;
+  private static final int GC_VAR_MARK_MASK = 0x8000_0000;
   private static final int NODE_RECORD_SIZE = 6;
 
   /** Maximum number of nodes. */
@@ -93,8 +93,8 @@ public class Zbdd implements Cloneable
     nodesCapacity = max(capacityAdvisor.getInitialCapacity(), 8);
     nodes = new int[nodesCapacity * NODE_RECORD_SIZE];
 
-    initLeafNode(ZBDD_EMPTY);
-    initLeafNode(ZBDD_BASE);
+    initTerminalNode(ZBDD_EMPTY);
+    initTerminalNode(ZBDD_BASE);
 
     statistics = new Statistics();
 
@@ -118,7 +118,7 @@ public class Zbdd implements Cloneable
   }
 
 
-  private void initLeafNode(int zbdd)
+  private void initTerminalNode(int zbdd)
   {
     final int offset = zbdd * NODE_RECORD_SIZE;
 

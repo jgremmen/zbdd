@@ -118,7 +118,7 @@ class QueensTest
     int solutions = zbdd.count(zbdd.incRef(solution));
     assertEquals(solutionsExpected, solutions);
 
-    ZbddLiteralResolver nameResolver = zbdd.getLiteralResolver();
+    var nameResolver = zbdd.getLiteralResolver();
     System.out.println("Queens " + n + "x" + n + "  (" + solutions + ")");
     System.out.println("  " + zbdd.getStatistics());
 
