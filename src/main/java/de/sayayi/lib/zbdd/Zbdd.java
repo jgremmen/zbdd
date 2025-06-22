@@ -223,10 +223,8 @@ public class Zbdd implements Cloneable
     nextFreeNode = 2;
     nodesFree = nodesCapacity - 2;
 
-    for(int i = 2; i < nodesCapacity; i++)
+    for(int i = 2, offset = 2 * NODE_RECORD_SIZE; i < nodesCapacity; offset += NODE_RECORD_SIZE, i++)
     {
-      final int offset = i * NODE_RECORD_SIZE;
-
       nodes[offset + _VAR] = -1;
       nodes[offset + _NEXT] = (i + 1) % nodesCapacity;
       nodes[offset + _CHAIN] = 0;
@@ -578,9 +576,9 @@ public class Zbdd implements Cloneable
     if (top < var)
       return getNode(var, ZBDD_EMPTY, zbdd);
 
-    final int r;
-
     __incRef(zbdd);
+
+    final int r;
 
     if (top == var)
       r = getNode(var, getP1(zbdd), getP0(zbdd));
