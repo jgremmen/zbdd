@@ -107,76 +107,15 @@ jar {
 }
 
 
-tasks.register('javadocJar', Jar) {
-  archiveClassifier.set('javadoc')
-  from javadoc
+apply from: 'gradle/publish.gradle'
+apply from: 'gradle/changelog.gradle'
+
+
+clean {
+  delete layout.projectDirectory.dir('build')
 }
 
 
-tasks.register('sourcesJar', Jar) {
-  dependsOn classes
-
-  archiveClassifier.set('sources')
-  from sourceSets.main.allSource
-}
-
-
-publishing {
-  publications {
-    create('maven', MavenPublication) {
-      from components.java
-
-      artifact javadocJar
-      artifact sourcesJar
-
-      pom {
-        name = 'Java ZBDD Library'
-        description = "Java Implementation of Shin Ichi Minato's Zero-Suppressed BDDs"
-        url = 'https://github.com/jgremmen/zbdd'
-        inceptionYear = '2021'
-
-        licenses {
-          license {
-            name = 'Apache License, Version 2.0'
-            url = 'https://www.apache.org/licenses/LICENSE-2.0'
-            distribution = 'repo'
-          }
-        }
-
-        developers {
-          developer {
-            id = 'jgremmen'
-            name = 'Jeroen Gremmen'
-            email = 'jeroen.gremmen@sayayi.de'
-          }
-        }
-
-        scm {
-          connection = 'scm:git:git://github.com/jgremmen/zbdd.git'
-          developerConnection = 'scm:git:git://github.com/jgremmen/zbdd.git'
-          url = 'https://github.com/jgremmen/zbdd'
-        }
-      }
-    }
-  }
-
-  repositories {
-    maven {
-      name = 'mavenTemp'
-      url = layout.buildDirectory.dir('repository')
-    }
-    maven {
-      // maven central
-      url = 'https://oss.sonatype.org/service/local/staging/deploy/maven2'
-      credentials {
-        username = project.findProperty('mavenCentral.username')
-        password = project.findProperty('mavenCentral.password')
-      }
-    }
-  }
-}
-
-
-signing {
-  sign publishing.publications.maven
+wrapper {
+  distributionType = Wrapper.DistributionType.BIN
 }
