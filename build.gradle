@@ -4,9 +4,9 @@ plugins {
 }
 
 
-description 'Java Implementation of Shin Ichi Minato\'s Zero-Suppressed BDDs'
-group 'de.sayayi.lib'
-version '0.3.1-SNAPSHOT'
+description = 'Java Implementation of Shin Ichi Minato\'s Zero-Suppressed BDDs'
+group = 'de.sayayi.lib'
+version = libs.versions.zbdd.get()
 
 
 layout.buildDirectory = '.build'
