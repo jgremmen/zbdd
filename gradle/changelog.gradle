@@ -52,7 +52,7 @@ tasks.named('gitChangelog', GitChangelogTask) {
   {{/ifContainsType}}
 
   {{#ifContainsType commits type='docs'}}
-### 📔 Documentation
+### 📖 Documentation
 
 ---
 
@@ -64,7 +64,7 @@ tasks.named('gitChangelog', GitChangelogTask) {
   {{/ifContainsType}}
 
   {{#ifContainsType commits type='lib'}}
-### 🔨 Dependency Upgrades
+### 🔗 Dependency Upgrades
 
 ---
 
