@@ -15,6 +15,7 @@
  */
 package de.sayayi.lib.zbdd;
 
+import de.sayayi.lib.zbdd.cache.ZbddCached;
 import de.sayayi.lib.zbdd.cache.ZbddFastCache;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Range;
@@ -24,7 +25,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.HashMap;
-import java.util.Map;
 import java.util.stream.Stream;
 
 import static de.sayayi.lib.zbdd.Zbdd.*;
@@ -75,12 +75,13 @@ class QueensTest
   @DisplayName("n-Queens problem solving")
   @ParameterizedTest(name = "{0}-Queens problem has {1} solutions")
   @MethodSource("queensParameters")
+  @SuppressWarnings("removal")
   void queens(int n, int solutionsExpected, int tableSize)
   {
-    final Zbdd zbdd = new Zbdd(new SimpleCapacityAdvisor(tableSize));
+    final var zbdd = new ZbddCached(new SimpleCapacityAdvisor(tableSize));
     zbdd.setZbddCache(new ZbddFastCache(65536));
 
-    final int[][] vars = getVars(zbdd, n);
+    final var vars = getVars(zbdd, n);
 
     int solution = ZBDD_BASE;
     int ct;
@@ -132,9 +133,9 @@ class QueensTest
 
   private int[][] getVars(Zbdd zbdd, int n)
   {
-    final int[][] vars = new int[n][n];
-    final Map<Integer,String> varNames = new HashMap<>();
-    final String format = n < 10 ? "%c%d" : "%c%02d";
+    final var vars = new int[n][n];
+    final var varNames = new HashMap<Integer,String>();
+    final var format = n < 10 ? "%c%d" : "%c%02d";
 
     for(int r = n; r-- > 0;)
       for(int c = n; c-- > 0;)

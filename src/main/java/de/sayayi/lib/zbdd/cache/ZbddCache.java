@@ -26,7 +26,7 @@ import org.jetbrains.annotations.NotNull;
 public interface ZbddCache
 {
   /**
-   * Retrieve result from the cache.
+   * Retrieve the result from the cache.
    *
    * @param operation  zbdd operation
    * @param p          operation parameter
@@ -37,7 +37,7 @@ public interface ZbddCache
 
 
   /**
-   * Retrieve result from the cache.
+   * Retrieve the result from the cache.
    *
    * @param operation  zbdd operation
    * @param p1         1st operation parameter

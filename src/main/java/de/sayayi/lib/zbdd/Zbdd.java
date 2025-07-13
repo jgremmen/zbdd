@@ -23,10 +23,7 @@ import org.jetbrains.annotations.Range;
 
 import java.util.StringJoiner;
 
-import static de.sayayi.lib.zbdd.cache.ZbddCache.Operation1.*;
-import static de.sayayi.lib.zbdd.cache.ZbddCache.Operation2.*;
 import static java.lang.Integer.MAX_VALUE;
-import static java.lang.Integer.MIN_VALUE;
 import static java.lang.Math.*;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.copyOf;
@@ -67,8 +64,6 @@ public class Zbdd implements Cloneable
   private final @NotNull ZbddCapacityAdvisor capacityAdvisor;
   private final @NotNull Statistics statistics;
 
-  private ZbddCache zbddCache = null;
-
   private int lastVarNumber;
 
   private int nodesCapacity;
@@ -103,7 +98,6 @@ public class Zbdd implements Cloneable
   }
 
 
-  @SuppressWarnings("CopyConstructorMissesField")
   protected Zbdd(@NotNull Zbdd zbdd)
   {
     capacityAdvisor = zbdd.capacityAdvisor;
@@ -126,44 +120,6 @@ public class Zbdd implements Cloneable
     nodes[offset + _VAR] = -1;
     nodes[offset + _P0] = zbdd;
     nodes[offset + _P1] = zbdd;
-  }
-
-
-  /**
-   * Sets or removes a zbdd cache.
-   * <p>
-   * The zbdd implementation without caching is already very fast. If the same operations on zbdds
-   * are performed frequently then adding a cache may help to improve performance. However, if the
-   * operations performed are mostly unique (like the 8-queens problem) then adding a cache will
-   * reduce the overall performance.
-   * <p>
-   * Make sure to test your zbdd operations with and without a cache in order to find out whether
-   * adding a cache is going to improve performance or not.
-   *
-   * @param zbddCache  zbdd cache instance or {@code null} to remove a previously assigned cache
-   *
-   * @since 0.1.3
-   */
-  @Contract(mutates = "this,param1")
-  public void setZbddCache(ZbddCache zbddCache)
-  {
-    this.zbddCache = zbddCache;
-
-    if (zbddCache != null)
-      zbddCache.clear();
-  }
-
-
-  /**
-   * Returns the currently assigned zbdd cache implementation.
-   *
-   * @return  zbdd cache instance or {@code null} if no zbdd cache was assigned
-   *
-   * @since 0.1.3
-   */
-  @Contract(pure = true)
-  public ZbddCache getZbddCache() {
-    return zbddCache;
   }
 
 
@@ -216,9 +172,6 @@ public class Zbdd implements Cloneable
   @MustBeInvokedByOverriders
   public void clear()
   {
-    if (zbddCache != null)
-      zbddCache.clear();
-
     lastVarNumber = 0;
     nodesDead = 0;
     nextFreeNode = 2;
@@ -395,43 +348,8 @@ public class Zbdd implements Cloneable
 
   @Contract(mutates = "this")
   @Range(from = 0, to = MAX_NODES)
-  public int subset0(@Range(from = 0, to = MAX_NODES) int zbdd, @Range(from = 1, to = MAX_VALUE) int var)
-  {
-    checkZbdd(zbdd, "zbdd");
-    checkVar(var);
-
-    return zbddCache != null ? __subset0_cache(zbdd, var) : __subset0(zbdd, var);
-  }
-
-
-  /**
-   * @since 0.1.3
-   */
-  @Contract(mutates = "this")
-  protected final int __subset0_cache(int zbdd, int var)
-  {
-    final int top = getVar(zbdd);
-
-    if (top < var)
-      return zbdd;
-
-    if (top == var)
-      return getP0(zbdd);
-
-    int r = zbddCache.getResult(SUBSET0, zbdd, var);
-    if (r == MIN_VALUE)
-    {
-      __incRef(zbdd);
-
-      final int p0 = __incRef(__subset0_cache(getP0(zbdd), var));
-      final int p1 = __subset0_cache(getP1(zbdd), var);
-
-      zbddCache.putResult(SUBSET0, zbdd, var, r = getNode(top, __decRef(p0), p1));
-
-      __decRef(zbdd);
-    }
-
-    return r;
+  public int subset0(@Range(from = 0, to = MAX_NODES) int zbdd, @Range(from = 1, to = MAX_VALUE) int var) {
+    return __subset0(checkZbdd(zbdd, "zbdd"), checkVar(var));
   }
 
 
@@ -460,43 +378,8 @@ public class Zbdd implements Cloneable
 
   @Contract(mutates = "this")
   @Range(from = 0, to = MAX_NODES)
-  public int subset1(@Range(from = 0, to = MAX_NODES) int zbdd, @Range(from = 1, to = MAX_VALUE) int var)
-  {
-    checkZbdd(zbdd, "zbdd");
-    checkVar(var);
-
-    return zbddCache != null ? __subset1_cache(zbdd, var) : __subset1(zbdd, var);
-  }
-
-
-  /**
-   * @since 0.1.3
-   */
-  @Contract(mutates = "this")
-  protected final int __subset1_cache(int zbdd, int var)
-  {
-    final int top = getVar(zbdd);
-
-    if (top < var)
-      return ZBDD_EMPTY;
-
-    if (top == var)
-      return getP1(zbdd);
-
-    int r = zbddCache.getResult(SUBSET1, zbdd, var);
-    if (r == MIN_VALUE)
-    {
-      __incRef(zbdd);
-
-      final int p0 = __incRef(__subset1_cache(getP0(zbdd), var));
-      final int p1 = __subset1_cache(getP1(zbdd), var);
-
-      zbddCache.putResult(SUBSET1, zbdd, var, r = getNode(top, __decRef(p0), p1));
-
-      __decRef(zbdd);
-    }
-
-    return r;
+  public int subset1(@Range(from = 0, to = MAX_NODES) int zbdd, @Range(from = 1, to = MAX_VALUE) int var) {
+    return __subset1(checkZbdd(zbdd, "zbdd"), checkVar(var));
   }
 
 
@@ -525,47 +408,8 @@ public class Zbdd implements Cloneable
 
   @Contract(mutates = "this")
   @Range(from = 0, to = MAX_NODES)
-  public int change(@Range(from = 0, to = MAX_NODES) int zbdd, @Range(from = 1, to = MAX_VALUE) int var)
-  {
-    checkZbdd(zbdd, "zbdd");
-    checkVar(var);
-
-    return zbddCache != null ? __change_cache(zbdd, var) : __change(zbdd, var);
-  }
-
-
-  /**
-   * @since 0.1.3
-   */
-  @Contract(mutates = "this")
-  protected final int __change_cache(int zbdd, int var)
-  {
-    final int top = getVar(zbdd);
-
-    if (top < var)
-      return getNode(var, ZBDD_EMPTY, zbdd);
-
-    int r = zbddCache.getResult(CHANGE, zbdd, var);
-    if (r == MIN_VALUE)
-    {
-      __incRef(zbdd);
-
-      if (top == var)
-        r = getNode(var, getP1(zbdd), getP0(zbdd));
-      else
-      {
-        final int p0 = __incRef(__change_cache(getP0(zbdd), var));
-        final int p1 = __change_cache(getP1(zbdd), var);
-
-        r = getNode(top, __decRef(p0), p1);
-      }
-
-      zbddCache.putResult(CHANGE, zbdd, var, r);
-
-      __decRef(zbdd);
-    }
-
-    return r;
+  public int change(@Range(from = 0, to = MAX_NODES) int zbdd, @Range(from = 1, to = MAX_VALUE) int var) {
+    return __change(checkZbdd(zbdd, "zbdd"), checkVar(var));
   }
 
 
@@ -599,32 +443,8 @@ public class Zbdd implements Cloneable
 
   @Contract(pure = true)
   @Range(from = 0, to = MAX_NODES + 1)
-  public int count(@Range(from = 0, to = MAX_NODES) int zbdd)
-  {
-    checkZbdd(zbdd, "zbdd");
-
-    return zbddCache != null ? __count_cache(zbdd) : __count(zbdd);
-  }
-
-
-  /**
-   * @since 0.1.3
-   */
-  @Contract(pure = true)
-  protected final int __count_cache(int zbdd)
-  {
-    if (zbdd < 2)
-      return zbdd;
-
-    int r = zbddCache.getResult(COUNT, zbdd);
-    if (r == MIN_VALUE)
-    {
-      r = __count(zbdd);
-
-      zbddCache.putResult(COUNT, zbdd, r);
-    }
-
-    return r;
+  public int count(@Range(from = 0, to = MAX_NODES) int zbdd) {
+    return __count(checkZbdd(zbdd, "zbdd"));
   }
 
 
@@ -650,11 +470,7 @@ public class Zbdd implements Cloneable
     var r = p[0];
 
     for(int i = 1, n = p.length; i < n; i++)
-    {
-      final var pi = p[i];
-
-      r = zbddCache != null ? __union_cache(r, pi) : __union(r, pi);
-    }
+      r = __union(r, p[i]);
 
     for(var pn: p)
       __decRef(pn);
@@ -665,64 +481,8 @@ public class Zbdd implements Cloneable
 
   @Contract(mutates = "this")
   @Range(from = 0, to = MAX_NODES)
-  public int union(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q)
-  {
-    checkZbdd(p, "p");
-    checkZbdd(q, "q");
-
-    return zbddCache != null ? __union_cache(p, q) : __union(p, q);
-  }
-
-
-  /**
-   * @since 0.1.3
-   */
-  @Contract(mutates = "this")
-  protected final int __union_cache(int p, int q)
-  {
-    if (q == ZBDD_EMPTY || p == q)
-      return p;
-    if (p == ZBDD_EMPTY)
-      return q;
-
-    int p_var = getVar(p);
-    int q_var = getVar(q);
-
-    if (p_var > q_var)
-    {
-      // swap p <-> q, p_var <-> q_var
-      int tmp = p; p = q; q = tmp;
-      tmp = p_var; p_var = q_var; q_var = tmp;
-    }
-
-    int r = zbddCache.getResult(UNION, p, q);
-    if (r == MIN_VALUE)
-    {
-      __incRef(p);
-      __incRef(q);
-
-      if (p_var < q_var)
-      {
-        final int p0 = __union_cache(p, getP0(q));
-
-        r = getNode(q_var, p0, getP1(q));
-      }
-      else
-      {
-        // p_var = q_var
-        final int p0 = __incRef(__union_cache(getP0(p), getP0(q)));
-        final int p1 = __union_cache(getP1(p), getP1(q));
-
-        r = getNode(p_var, __decRef(p0), p1);
-      }
-
-      zbddCache.putResult(UNION, p, q, r);
-
-      __decRef(q);
-      __decRef(p);
-    }
-
-    return r;
+  public int union(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q) {
+    return __union(checkZbdd(p, "p"), checkZbdd(q, "q"));
   }
 
 
@@ -773,54 +533,8 @@ public class Zbdd implements Cloneable
 
   @Contract(mutates = "this")
   @Range(from = 0, to = MAX_NODES)
-  public int intersect(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q)
-  {
-    checkZbdd(p, "p");
-    checkZbdd(q, "q");
-
-    return zbddCache != null ? __intersect_cache(p, q) : __intersect(p, q);
-  }
-
-
-  /**
-   * @since 0.1.3
-   */
-  @Contract(mutates = "this")
-  protected final int __intersect_cache(int p, int q)
-  {
-    if (p == ZBDD_EMPTY || q == ZBDD_EMPTY)
-      return ZBDD_EMPTY;
-    if (p == q)
-      return p;
-
-    int r = zbddCache.getResult(INTERSECT, p, q);
-    if (r == MIN_VALUE)
-    {
-      final int p_var = getVar(p);
-      final int q_var = getVar(q);
-
-      __incRef(p);
-      __incRef(q);
-
-      if (p_var > q_var)
-        r = __intersect_cache(getP0(p), q);
-      else if (p_var < q_var)
-        r = __intersect_cache(p, getP0(q));
-      else
-      {
-        final int p0 = __incRef(__intersect_cache(getP0(p), getP0(q)));
-        final int p1 = __intersect_cache(getP1(p), getP1(q));
-
-        r = getNode(p_var, __decRef(p0), p1);
-      }
-
-      zbddCache.putResult(INTERSECT, p, q, r);
-
-      __decRef(q);
-      __decRef(p);
-    }
-
-    return r;
+  public int intersect(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q) {
+    return __intersect(checkZbdd(p, "p"), checkZbdd(q, "q"));
   }
 
 
@@ -860,58 +574,8 @@ public class Zbdd implements Cloneable
 
   @Contract(mutates = "this")
   @Range(from = 0, to = MAX_NODES)
-  public int difference(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q)
-  {
-    checkZbdd(p, "p");
-    checkZbdd(q, "q");
-
-    return zbddCache != null ? __difference_cache(p, q) : __difference(p, q);
-  }
-
-
-  /**
-   * @since 0.1.3
-   */
-  @Contract(mutates = "this")
-  protected final int __difference_cache(int p, int q)
-  {
-    if (p == ZBDD_EMPTY || p == q)
-      return ZBDD_EMPTY;
-    if (q == ZBDD_EMPTY)
-      return p;
-
-    int r = zbddCache.getResult(DIFFERENCE, p, q);
-    if (r == MIN_VALUE)
-    {
-      final int p_var = getVar(p);
-      final int q_var = getVar(q);
-
-      __incRef(p);
-      __incRef(q);
-
-      if (p_var < q_var)
-        r = __difference_cache(p, getP0(q));
-      else if (p_var > q_var)
-      {
-        final int p0 = __difference_cache(getP0(p), getP0(q));
-
-        r = getNode(p_var, p0, getP1(p));
-      }
-      else
-      {
-        final int p0 = __incRef(__difference_cache(getP0(p), getP0(q)));
-        final int p1 = __difference_cache(getP1(p), getP1(q));
-
-        r = getNode(p_var, __decRef(p0), p1);
-      }
-
-      zbddCache.putResult(DIFFERENCE, p, q, r);
-
-      __decRef(q);
-      __decRef(p);
-    }
-
-    return r;
+  public int difference(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q) {
+    return __difference(checkZbdd(p, "p"), checkZbdd(q, "q"));
   }
 
 
@@ -955,74 +619,8 @@ public class Zbdd implements Cloneable
 
   @Contract(mutates = "this")
   @Range(from = 0, to = MAX_NODES)
-  public int multiply(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q)
-  {
-    checkZbdd(p, "p");
-    checkZbdd(q, "q");
-
-    return zbddCache != null ? __multiply_cache(p, q) : __multiply(p, q);
-  }
-
-
-  /**
-   * @since 0.1.3
-   */
-  @Contract(mutates = "this")
-  protected final int __multiply_cache(int p, int q)
-  {
-    if (p == ZBDD_EMPTY || q == ZBDD_EMPTY)
-      return ZBDD_EMPTY;
-    if (p == ZBDD_BASE)
-      return q;
-    if (q == ZBDD_BASE)
-      return p;
-
-    int p_var = getVar(p);
-    int q_var = getVar(q);
-
-    if (p_var > q_var)
-    {
-      // swap p <-> q, p_var <-> q_var
-      int tmp = p; p = q; q = tmp;
-      tmp = p_var; p_var = q_var; q_var = tmp;
-    }
-
-    int r = zbddCache.getResult(MULTIPLY, p, q);
-    if (r == MIN_VALUE)
-    {
-      __incRef(p);
-      __incRef(q);
-
-      // factor P = p0 + v * p1
-      final int p0 = __incRef(__subset0_cache(p, p_var));
-      final int p1 = __incRef(__subset1_cache(p, p_var));
-
-      // factor Q = q0 + v * q1
-      final int q0 = __incRef(__subset0_cache(q, p_var));
-      final int q1 = __incRef(__subset1_cache(q, p_var));
-
-      // r = (p0 + v * p1) * (q0 + v * q1) = p0q0 + v * (p0q1 + p1q0 + p1q1)
-      final int p0q0 = __incRef(__multiply_cache(p0, q0));
-      final int p0q1 = __incRef(__multiply_cache(p0, q1));
-      final int p1q0 = __incRef(__multiply_cache(p1, q0));
-      final int p1q1 = __incRef(__multiply_cache(p1, q1));
-
-      zbddCache.putResult(MULTIPLY, p, q, r = __union_cache(p0q0,
-          __change_cache(__union_cache(__union_cache(p0q1, p1q0), p1q1), p_var)));
-
-      __decRef(p1q1);
-      __decRef(p1q0);
-      __decRef(p0q1);
-      __decRef(p0q0);
-      __decRef(q1);
-      __decRef(q0);
-      __decRef(p1);
-      __decRef(p0);
-      __decRef(q);
-      __decRef(p);
-    }
-
-    return r;
+  public int multiply(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q) {
+    return __multiply(checkZbdd(p, "p"), checkZbdd(q, "q"));
   }
 
 
@@ -1081,66 +679,8 @@ public class Zbdd implements Cloneable
 
   @Contract(mutates = "this")
   @Range(from = 0, to = MAX_NODES)
-  public int divide(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q)
-  {
-    checkZbdd(p, "p");
-    checkZbdd(q, "q");
-
-    return zbddCache != null ? __divide_cache(p, q) : __divide(p, q);
-  }
-
-
-  /**
-   * @since 0.1.3
-   */
-  @Contract(mutates = "this")
-  protected final int __divide_cache(int p, int q)
-  {
-    if (p < 2)
-      return ZBDD_EMPTY;
-    if (p == q)
-      return ZBDD_BASE;
-    if (q == ZBDD_BASE)
-      return p;
-
-    int r = zbddCache.getResult(DIVIDE, p, q);
-    if (r == MIN_VALUE)
-    {
-      __incRef(p);
-      __incRef(q);
-
-      final int v = getVar(q);
-
-      // factor P = p0 + v * p1
-      final int p0 = __incRef(__subset0_cache(p, v));
-      final int p1 = __incRef(__subset1_cache(p, v));
-
-      // factor Q = q0 + v * q1
-      final int q0 = __incRef(__subset0_cache(q, v));
-      final int q1 = __subset1_cache(q, v);
-
-      final int r1 = __divide_cache(__decRef(p1), q1);
-
-      if (r1 != ZBDD_EMPTY && q0 != ZBDD_EMPTY)
-      {
-        __incRef(r1);
-
-        final int r0 = __divide_cache(p0, q0);
-
-        r = __intersect_cache(__decRef(r1), r0);
-      }
-      else
-        r = r1;
-
-      zbddCache.putResult(DIVIDE, p, q, r);
-
-      __decRef(q0);
-      __decRef(p0);
-      __decRef(q);
-      __decRef(p);
-    }
-
-    return r;
+  public int divide(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q) {
+    return __divide(checkZbdd(p, "p"), checkZbdd(q, "q"));
   }
 
 
@@ -1192,36 +732,8 @@ public class Zbdd implements Cloneable
 
   @Contract(mutates = "this")
   @Range(from = 0, to = MAX_NODES)
-  public int modulo(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q)
-  {
-    checkZbdd(p, "p");
-    checkZbdd(q, "q");
-
-    return zbddCache != null ? __modulo_cache(p, q) : __modulo(p, q);
-  }
-
-
-  /**
-   * @since 0.1.3
-   */
-  @Contract(mutates = "this")
-  protected final int __modulo_cache(int p, int q)
-  {
-    int r = zbddCache.getResult(MODULO, p, q);
-    if (r == MIN_VALUE)
-    {
-      __incRef(p);
-      __incRef(q);
-
-      r = __difference_cache(p, __multiply_cache(q, __divide_cache(p, q)));
-
-      zbddCache.putResult(MODULO, p, q, r);
-
-      __decRef(q);
-      __decRef(p);
-    }
-
-    return r;
+  public int modulo(@Range(from = 0, to = MAX_NODES) int p, @Range(from = 0, to = MAX_NODES) int q) {
+    return __modulo(checkZbdd(p, "p"), checkZbdd(q, "q"));
   }
 
 
@@ -1242,37 +754,8 @@ public class Zbdd implements Cloneable
 
   @Contract(mutates = "this")
   @Range(from = 0, to = MAX_NODES)
-  public int atomize(@Range(from = 0, to = MAX_NODES) int zbdd)
-  {
-    checkZbdd(zbdd, "zbdd");
-
-    return zbddCache != null ? __atomize_cache(zbdd) : __atomize(zbdd);
-  }
-
-
-  /**
-   * @since 0.1.3
-   */
-  @Contract(mutates = "this")
-  protected final int __atomize_cache(int zbdd)
-  {
-    if (zbdd < 2)
-      return ZBDD_EMPTY;
-
-    int r = zbddCache.getResult(ATOMIZE, zbdd);
-    if (r == MIN_VALUE)
-    {
-      final int p0_atomized = __incRef(__atomize(getP0(__incRef(zbdd))));  // lock zbdd, p0_atomized
-      final int p1_atomized = __atomize(getP1(zbdd));
-
-      final int p0 = __atomize_union(__decRef(p0_atomized), p1_atomized);  // release p0_atomized
-
-      zbddCache.putResult(ATOMIZE, zbdd, r = getNode(getVar(zbdd), p0, ZBDD_BASE));
-
-      __decRef(zbdd);  // release zbdd
-    }
-
-    return r;
+  public int atomize(@Range(from = 0, to = MAX_NODES) int zbdd) {
+    return __atomize(checkZbdd(zbdd, "zbdd"));
   }
 
 
@@ -1294,9 +777,9 @@ public class Zbdd implements Cloneable
   }
 
 
-  // union optimized for atomize; the 1-branch for every node points to base(1)
+  // union optimized for atomization; the 1-branch for every node points to base(1)
   @Contract(mutates = "this")
-  private int __atomize_union(int p, int q)
+  protected int __atomize_union(int p, int q)
   {
     // trivial cases: remove base from union
     if (p < 2)
@@ -1329,37 +812,8 @@ public class Zbdd implements Cloneable
 
   @Contract(mutates = "this")
   @Range(from = 0, to = MAX_NODES)
-  public int removeBase(@Range(from = 0, to = MAX_NODES) int zbdd)
-  {
-    checkZbdd(zbdd, "zbdd");
-
-    return zbddCache != null ? __removeBase_cache(zbdd) : __removeBase(zbdd);
-  }
-
-
-  /**
-   * @since 0.1.3
-   */
-  @Contract(mutates = "this")
-  protected final int __removeBase_cache(int zbdd)
-  {
-    if (zbdd < 2)
-      return ZBDD_EMPTY;
-
-    int r = zbddCache.getResult(REMOVE_BASE, zbdd);
-    if (r == MIN_VALUE)
-    {
-      __incRef(zbdd);
-
-      final int p0 = __removeBase_cache(getP0(zbdd));
-      r = getNode(getVar(zbdd), p0, getP1(zbdd));
-
-      zbddCache.putResult(REMOVE_BASE, zbdd, r);
-
-      __decRef(zbdd);
-    }
-
-    return r;
+  public int removeBase(@Range(from = 0, to = MAX_NODES) int zbdd) {
+    return __removeBase(checkZbdd(zbdd, "zbdd"));
   }
 
 
@@ -1397,12 +851,8 @@ public class Zbdd implements Cloneable
 
 
   @Contract(mutates = "this")
-  protected final boolean __contains(int p, int q)
-  {
-    return
-        p != ZBDD_EMPTY &&
-        q != ZBDD_EMPTY &&
-        (p == q || (zbddCache != null ? __intersect_cache(p, q) : __intersect(p, q)) == q);
+  protected final boolean __contains(int p, int q) {
+    return p != ZBDD_EMPTY && q != ZBDD_EMPTY && (p == q || __intersect(p, q) == q);
   }
 
 
@@ -1423,7 +873,7 @@ public class Zbdd implements Cloneable
 
     int hash = hash(var, p0, p1);
 
-    // find node in chain...
+    // find node in the hash chain...
     for(int r = nodes[hash * NODE_RECORD_SIZE + _CHAIN]; r != 0;)
     {
       final int offset = r * NODE_RECORD_SIZE;
@@ -1437,7 +887,7 @@ public class Zbdd implements Cloneable
       r = nodes[offset + _NEXT];
     }
 
-    // increase number of free nodes if there are not enough available
+    // increase the number of free nodes if there are not enough nodes available
     if (nodesFree < 2)
     {
       __incRef(p0);
@@ -1520,15 +970,24 @@ public class Zbdd implements Cloneable
   }
 
 
+  /**
+   * Perform garbage collection on the internal zbdd structure.
+   * <p>
+   * After garbage collection, all dead and not referenced nodes have been freed and the statistics have been updated
+   * accordingly.
+   *
+   * @return  the number of freed zbdd nodes
+   *
+   * @see #incRef(int)
+   * @see #decRef(int)
+   * @see #getNode(int, int, int) 
+   */
   @Contract(mutates = "this")
   @Range(from = 0, to = MAX_NODES - 2)
   @MustBeInvokedByOverriders
   @SuppressWarnings("UnusedReturnValue")
   public int gc()
   {
-    if (zbddCache != null)
-      zbddCache.clear();
-
     statistics.gcCount++;
 
     // mark referenced nodes...
@@ -2025,7 +1484,7 @@ public class Zbdd implements Cloneable
 
 
 
-  private enum DefaultCapacityAdvisor implements ZbddCapacityAdvisor
+  protected enum DefaultCapacityAdvisor implements ZbddCapacityAdvisor
   {
     INSTANCE;
 
