@@ -101,7 +101,7 @@ public interface ZbddStatistics
 
 
   /**
-   * Returns the cumulative number of nodes freed by grabage collection.
+   * Returns the cumulative number of nodes freed by garbage collection.
    *
    * @return  cumulative number of freed nodes
    */
@@ -110,7 +110,7 @@ public interface ZbddStatistics
 
 
   /**
-   * Returns a rough estimation of the number of bytes used by the zbdd.
+   * Returns an estimation of the number of bytes used by the zbdd.
    *
    * @return  estimated memory usage in bytes
    */
