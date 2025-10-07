@@ -3,7 +3,7 @@
 zbdd = '0.4.1-SNAPSHOT'
 
 jetbrains-annotations = '[24.0,26.1)'
-junit = '5.13.+'
+junit = '5.14.+'
 
 [libraries]
 jetbrains-annotations = { module = 'org.jetbrains:annotations', version.ref = 'jetbrains-annotations' }
