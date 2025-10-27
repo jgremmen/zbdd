@@ -155,6 +155,38 @@ class ZbddTest
 
 
   @Test
+  @DisplayName("Operation 'difference'")
+  void difference()
+  {
+    Zbdd zbdd = new Zbdd();
+
+    int a = zbdd.createVar();
+    int b = zbdd.createVar();
+    int c = zbdd.createVar();
+    int d = zbdd.createVar();
+
+    zbdd.setLiteralResolver(var -> var == a ? "a" : var == b ? "b" : var == c ? "c" : "d");
+
+    // { d, bc, ac, b, a } - { bc, ab, a, 1 } = { d, ac, b }
+    int _ac = zbdd.incRef(zbdd.cube(a, c));
+    int _ab = zbdd.incRef(zbdd.cube(a, b));
+    int _bc = zbdd.incRef(zbdd.cube(b, c));
+    int _a = zbdd.incRef(zbdd.cube(a));
+    int _b = zbdd.incRef(zbdd.cube(b));
+    int _d = zbdd.incRef(zbdd.cube(d));
+
+    int p = zbdd.incRef(zbdd.union(_ac, _bc, _a, _b, _d));
+    int q = zbdd.incRef(zbdd.union(_bc, _ab, _a, zbdd.base()));
+    int r = zbdd.difference(p, q);
+
+    assertEquals(3, zbdd.count(r));
+    assertTrue(zbdd.contains(r, _ac));
+    assertTrue(zbdd.contains(r, _b));
+    assertTrue(zbdd.contains(r, _d));
+  }
+
+
+  @Test
   @DisplayName("Operation 'removeBase'")
   void removeBase()
   {

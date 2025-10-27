@@ -597,11 +597,7 @@ public class Zbdd implements Cloneable
     if (p_var < q_var)
       r = __difference(p, getP0(q));
     else if (p_var > q_var)
-    {
-      final int p0 = __difference(getP0(p), getP0(q));
-
-      r = getNode(p_var, p0, getP1(p));
-    }
+      r = getNode(p_var, __difference(getP0(p), q), getP1(p));
     else
     {
       final int p0 = __incRef(__difference(getP0(p), getP0(q)));
