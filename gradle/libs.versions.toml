@@ -1,6 +1,6 @@
 [versions]
 # zbdd version
-zbdd = '0.4.1-SNAPSHOT'
+zbdd = '0.4.1'
 
 jetbrains-annotations = '[24.0,26.1)'
 junit = '5.14.+'

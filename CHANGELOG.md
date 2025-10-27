@@ -1,6 +1,25 @@
 
 # Changelog 
 
+## [0.4.1](https://github.com/jgremmen/zbdd/compare/0.4.1) (2025-10-27)
+
+
+### 🐞 Bug Fixes
+
+---
+
+ -  Fix `difference` operation for p_top > q_top&nbsp;&nbsp;([924f431eaa6c278](https://github.com/jgremmen/zbdd/commit/924f431eaa6c2788963ca34b6f645be41bd02513))
+
+
+### 🔗 Dependency Upgrades
+
+---
+
+ -  Upgrade Gradle to version 9.1.0&nbsp;&nbsp;([539eead837445ea](https://github.com/jgremmen/zbdd/commit/539eead837445ea69b83eaa5f4e2f7a49afb0566))
+ -  upgrade Gradle to version 9.0.0&nbsp;&nbsp;([c14fcc78f7bee46](https://github.com/jgremmen/zbdd/commit/c14fcc78f7bee466c7a8456775e9ed53757bebbd))
+
+
+
 ## [0.4.0](https://github.com/jgremmen/zbdd/compare/0.4.0) (2025-07-15)
 
 ### ⭐ New Features
