@@ -198,6 +198,13 @@ public interface Zbdd extends Cloneable
   int change(int zbdd, int var);
 
 
+  /**
+   * Returns the number of cubes in the given {@code zbdd}.
+   *
+   * @param zbdd  zbdd
+   *
+   * @return  cube count
+   */
   @Contract(pure = true)
   int count(int zbdd);
 
@@ -234,6 +241,13 @@ public interface Zbdd extends Cloneable
   int atomize(int zbdd);
 
 
+  /**
+   * Removes the base element from the given {@code zbdd}.
+   *
+   * @param zbdd  zbdd
+   *
+   * @return  zbdd node representing {@code zbdd} without {@link #base()}
+   */
   @Contract(mutates = "this")
   int removeBase(int zbdd);
 
@@ -359,6 +373,13 @@ public interface Zbdd extends Cloneable
   @NotNull String toString(int zbdd);
 
 
+  /**
+   * Visit all cubes in the given {@code zbdd}. For each cube {@link CubeVisitor#visitCube(int[]) visitCube(int[])}
+   * is invoked. For the {@link #base()} node, {@code visitCube} is invoked with an empty array.
+   *
+   * @param zbdd     zbdd node
+   * @param visitor  cube visitor, not {@code null}
+   */
   void visitCubes(int zbdd, @NotNull CubeVisitor visitor);
 
 
@@ -425,7 +446,7 @@ public interface Zbdd extends Cloneable
    * A ZbddNode provides a "live view" on a zbdd node. As the reference count or literal resolver changes, those
    * changes reflect in the return values for the associated methods.
    * <p>
-   * If the zbdd node gets garbage collected, all methods in this interface, including {@code toString()},
+   * If the zbdd node was garbage collected, all methods in this interface, including {@code toString()},
    * throw an exception stating that the zbdd is not valid.
    *
    * @author Jeroen Gremmen
@@ -436,7 +457,7 @@ public interface Zbdd extends Cloneable
     /**
      * Returns the zbdd for this instance.
      *
-     * @return  zbdd
+     * @return  zbdd node
      */
     @Contract(pure = true)
     int getZbdd();
@@ -445,7 +466,7 @@ public interface Zbdd extends Cloneable
     /**
      * Returns the var of the zbdd node.
      *
-     * @return  var
+     * @return  var of the zbdd node
      */
     @Contract(pure = true)
     int getVar();
