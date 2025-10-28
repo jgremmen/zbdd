@@ -64,7 +64,7 @@ def resolvedJetbrainsAnnotationsVersion = configurations
 
 
 javadoc {
-  title "Java ZBDD Library ${version}"
+  title = "Java ZBDD Library ${version}"
 
   (options as StandardJavadocDocletOptions).with {
     linksOffline "https://javadoc.io/doc/org.jetbrains/annotations/${resolvedJetbrainsAnnotationsVersion}/",
@@ -80,12 +80,12 @@ javadoc {
     addStringOption('Xdoclint:-missing', '-quiet')
   }
 
-  failOnError false
+  failOnError = false
 }
 
 
 tasks.withType(Jar).configureEach {
-  reproducibleFileOrder true
+  reproducibleFileOrder = true
 
   manifest {
     attributes(
