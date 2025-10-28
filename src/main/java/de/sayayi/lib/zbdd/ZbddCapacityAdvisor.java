@@ -17,15 +17,15 @@ package de.sayayi.lib.zbdd;
 
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Range;
-
-import static de.sayayi.lib.zbdd.Zbdd.MAX_NODES;
 
 
 /**
+ * A zbdd capacity advisor manages the initial nodes capacity and how it grows over time.
+ * It also determines the conditions for activating the garbage collector.
+ *
  * @author Jeroen Gremmen
  *
- * @see Zbdd#Zbdd(ZbddCapacityAdvisor)
+ * @see ZbddFactory#create(ZbddCapacityAdvisor)
  */
 public interface ZbddCapacityAdvisor
 {
@@ -35,7 +35,6 @@ public interface ZbddCapacityAdvisor
    * @return  initial capacity, at least 8
    */
   @Contract(pure = true)
-  @Range(from = 8, to = MAX_NODES)
   int getInitialCapacity();
 
 
@@ -51,18 +50,23 @@ public interface ZbddCapacityAdvisor
    * @see #adviseIncrement(ZbddStatistics)
    */
   @Contract(pure = true)
-  @Range(from = 1, to = MAX_NODES)
   int getMinimumFreeNodes(@NotNull ZbddStatistics statistics);
 
 
+  /**
+   * Calculate the number of nodes to incease the zbdd node capacity by.
+   *
+   * @param statistics  current zbdd statistics, not {@code null}
+   *
+   * @return  number of nodes (&gt;= 0) to increase the capacity by
+   */
   @Contract(pure = true)
-  @Range(from = 1, to = MAX_NODES)
   int adviseIncrement(@NotNull ZbddStatistics statistics);
 
 
   /**
    * Tells whether dead nodes should be garbage collected. This method is invoked as soon as a new
-   * node is created and the number of free nodes is 1 or 0.
+   * node is created and the number of free nodes is less than 2.
    * <p>
    * Garbage collection is an expensive operation and only useful if a substantial number of nodes
    * are exopected to be freed in the process. The current number of dead nodes may be a good

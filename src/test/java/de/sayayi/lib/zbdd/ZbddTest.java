@@ -15,6 +15,7 @@
  */
 package de.sayayi.lib.zbdd;
 
+import de.sayayi.lib.zbdd.impl.DefaultCapacityAdvisor;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -39,15 +40,15 @@ class ZbddTest
   @SuppressWarnings("ConstantConditions")
   void createVar()
   {
-    Zbdd zbdd = new Zbdd();
+    Zbdd zbdd = ZbddFactory.create();
     int var = zbdd.createVar();
     int r = zbdd.cube(var);
 
     assertTrue(var > 0);
     assertTrue(r >= 2);
     assertEquals(var, zbdd.getVar(r));
-    assertEquals(zbdd.empty(), zbdd.getP0(r));
-    assertEquals(zbdd.base(), zbdd.getP1(r));
+    assertEquals(Zbdd.empty(), zbdd.getP0(r));
+    assertEquals(Zbdd.base(), zbdd.getP1(r));
 
     assertThrows(ZbddException.class, () -> zbdd.cube(var + 1));
     assertThrows(ZbddException.class, () -> zbdd.cube(0));
@@ -58,12 +59,12 @@ class ZbddTest
   @DisplayName("Operation 'change'")
   void change()
   {
-    Zbdd zbdd = new Zbdd();
+    Zbdd zbdd = ZbddFactory.create();
     int var = zbdd.createVar();
     int r = zbdd.cube(var);
 
-    assertEquals(zbdd.empty(), zbdd.change(zbdd.empty(), var));
-    assertEquals(r, zbdd.change(zbdd.base(), var));
+    assertEquals(Zbdd.empty(), zbdd.change(Zbdd.empty(), var));
+    assertEquals(r, zbdd.change(Zbdd.base(), var));
   }
 
 
@@ -71,7 +72,7 @@ class ZbddTest
   @DisplayName("Operation 'count'")
   void count()
   {
-    Zbdd zbdd = new Zbdd();
+    Zbdd zbdd = ZbddFactory.create();
     int a = zbdd.createVar();
     int b = zbdd.createVar();
     int c = zbdd.createVar();
@@ -80,7 +81,7 @@ class ZbddTest
 
     int ab = zbdd.cube(a, b);
     int ac = zbdd.cube(a, c);
-    int r = zbdd.union(ab, zbdd.cube(b), zbdd.cube(c), ac, zbdd.base());
+    int r = zbdd.union(ab, zbdd.cube(b), zbdd.cube(c), ac, Zbdd.base());
 
     assertEquals(5, zbdd.count(r));
   }
@@ -89,7 +90,7 @@ class ZbddTest
   @Test
   void subset1Test1()
   {
-    Zbdd zbdd = new Zbdd();
+    Zbdd zbdd = ZbddFactory.create();
     int c = zbdd.createVar();
     int x1 = zbdd.createVar();
     int x2 = zbdd.createVar();
@@ -107,7 +108,7 @@ class ZbddTest
   @Test
   void subset1Test2()
   {
-    Zbdd zbdd = new Zbdd();
+    Zbdd zbdd = ZbddFactory.create();
     int c = zbdd.createVar();
     int x1 = zbdd.createVar();
     int x2 = zbdd.createVar();
@@ -124,7 +125,7 @@ class ZbddTest
 
     assertEquals(3, zbdd.count(clear));
 
-    int clearWithoutBase = zbdd.difference(clear, zbdd.base());
+    int clearWithoutBase = zbdd.difference(clear, Zbdd.base());
 
     assertEquals(2, zbdd.count(clearWithoutBase));
   }
@@ -134,7 +135,7 @@ class ZbddTest
   @DisplayName("Operation 'multiply'")
   void multiply()
   {
-    Zbdd zbdd = new Zbdd();
+    Zbdd zbdd = ZbddFactory.create();
 
     int a = zbdd.createVar();
     int b = zbdd.createVar();
@@ -144,7 +145,7 @@ class ZbddTest
 
     int ab = zbdd.cube(a, b);
     int p = zbdd.union(ab, zbdd.cube(b), zbdd.cube(c));
-    int q = zbdd.union(ab, zbdd.base());
+    int q = zbdd.union(ab, Zbdd.base());
     int r = zbdd.multiply(p, q);
 
     assertEquals(3, zbdd.count(p));
@@ -158,7 +159,7 @@ class ZbddTest
   @DisplayName("Operation 'difference'")
   void difference()
   {
-    Zbdd zbdd = new Zbdd();
+    Zbdd zbdd = ZbddFactory.create();
 
     int a = zbdd.createVar();
     int b = zbdd.createVar();
@@ -167,7 +168,7 @@ class ZbddTest
 
     zbdd.setLiteralResolver(var -> var == a ? "a" : var == b ? "b" : var == c ? "c" : "d");
 
-    // { d, bc, ac, b, a } - { bc, ab, a, 1 } = { d, ac, b }
+    // { d, bc, ac, b, a } - { bc, ab, a, ø } = { d, ac, b }
     int _ac = zbdd.incRef(zbdd.cube(a, c));
     int _ab = zbdd.incRef(zbdd.cube(a, b));
     int _bc = zbdd.incRef(zbdd.cube(b, c));
@@ -176,7 +177,7 @@ class ZbddTest
     int _d = zbdd.incRef(zbdd.cube(d));
 
     int p = zbdd.incRef(zbdd.union(_ac, _bc, _a, _b, _d));
-    int q = zbdd.incRef(zbdd.union(_bc, _ab, _a, zbdd.base()));
+    int q = zbdd.incRef(zbdd.union(_bc, _ab, _a, Zbdd.base()));
     int r = zbdd.difference(p, q);
 
     assertEquals(3, zbdd.count(r));
@@ -190,7 +191,7 @@ class ZbddTest
   @DisplayName("Operation 'removeBase'")
   void removeBase()
   {
-    Zbdd zbdd = new Zbdd();
+    Zbdd zbdd = ZbddFactory.create();
     int a = zbdd.createVar();
     int b = zbdd.createVar();
     int c = zbdd.createVar();
@@ -200,11 +201,11 @@ class ZbddTest
     int ab = zbdd.cube(a, b);
     int ac = zbdd.cube(a, c);
     int ab_ac_b_c = zbdd.union(ab, zbdd.cube(b), zbdd.cube(c), ac);
-    int r = zbdd.union(ab_ac_b_c, zbdd.base());
+    int r = zbdd.union(ab_ac_b_c, Zbdd.base());
 
     assertEquals(ab_ac_b_c, zbdd.removeBase(r));
     assertEquals(zbdd.cube(a), zbdd.removeBase(zbdd.subset1(ab_ac_b_c, c)));
-    assertTrue(Zbdd.isEmpty(zbdd.removeBase(zbdd.base())));
+    assertTrue(Zbdd.isEmpty(zbdd.removeBase(Zbdd.base())));
   }
 
 
@@ -212,7 +213,7 @@ class ZbddTest
   @DisplayName("Operation 'contains'")
   void contains()
   {
-    Zbdd zbdd = new Zbdd();
+    Zbdd zbdd = ZbddFactory.create();
     int a = zbdd.createVar();
     int b = zbdd.createVar();
     int c = zbdd.createVar();
@@ -222,10 +223,10 @@ class ZbddTest
     int ab = zbdd.cube(a, b);
     int ac = zbdd.cube(a, c);
     int ab_ac_b_c = zbdd.union(ab, zbdd.cube(b), zbdd.cube(c), ac);
-    int r = zbdd.union(ab_ac_b_c, zbdd.base());
+    int r = zbdd.union(ab_ac_b_c, Zbdd.base());
 
-    assertFalse(zbdd.contains(r, zbdd.empty()));
-    assertTrue(zbdd.contains(r, zbdd.base()));
+    assertFalse(zbdd.contains(r, Zbdd.empty()));
+    assertTrue(zbdd.contains(r, Zbdd.base()));
     assertTrue(zbdd.contains(r, ab));
     assertTrue(zbdd.contains(r, ac));
     assertTrue(zbdd.contains(r, zbdd.cube(b)));
@@ -238,7 +239,8 @@ class ZbddTest
   @DisplayName("Cartesian product")
   void cartesianProduct()
   {
-    Zbdd zbdd = new Zbdd();
+    Zbdd zbdd = ZbddFactory.create(DefaultCapacityAdvisor.INSTANCE);
+
     int a = zbdd.createVar();
     int b = zbdd.createVar();
     int c = zbdd.createVar();
@@ -247,7 +249,7 @@ class ZbddTest
 
     zbdd.setLiteralResolver(var -> var == a ? "a" : var == b ? "b" : var == c ? "c" : var == d ? "d" : "e");
 
-    int r = zbdd.getNode(a, zbdd.base(), zbdd.base());
+    int r = zbdd.getNode(a, Zbdd.base(), Zbdd.base());
     r = zbdd.getNode(b, r, r);
     r = zbdd.getNode(c, r, r);
     r = zbdd.getNode(d, r, r);
@@ -261,7 +263,7 @@ class ZbddTest
   @DisplayName("Operation 'atomize'")
   void atomize()
   {
-    final var zbdd = new Zbdd();
+    final var zbdd = ZbddFactory.create();
     final var variableToLiteralMap = new TreeMap<Integer,String>();
     final var variables = new int[16];
 
@@ -285,7 +287,7 @@ class ZbddTest
     for(int cycle = 1; cycle <= 500; cycle++)
     {
       var mask = 0;
-      var set = random.nextBoolean() ? zbdd.base() : zbdd.empty();
+      var set = random.nextBoolean() ? Zbdd.base() : Zbdd.empty();
 
       for(int elements = random.nextInt(7) + (random.nextBoolean() ? 1 : 0), e = 0; e < elements; e++)
       {
@@ -301,7 +303,7 @@ class ZbddTest
 
       final var atomizedSet = zbdd.incRef(zbdd.atomize(zbdd.incRef(set)));  // lock set, atomizedSet
 
-      var expectedSet = zbdd.empty();
+      var expectedSet = Zbdd.empty();
       for(int b = 0; b < 16; b++)
         if ((mask & (1 << b)) != 0)
         {
