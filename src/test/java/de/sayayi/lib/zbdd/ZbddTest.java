@@ -260,6 +260,50 @@ class ZbddTest
 
 
   @Test
+  @DisplayName("Valid zbdd")
+  void isValidZbdd()
+  {
+    ZbddCapacityAdvisor advisor = DefaultCapacityAdvisor.INSTANCE;
+    Zbdd zbdd = ZbddFactory.create(advisor);
+
+    int a = zbdd.createVar();
+    int b = zbdd.createVar();
+    int c = zbdd.createVar();
+
+    zbdd.setLiteralResolver(var -> var == a ? "a" : var == b ? "b" : "c");
+
+    assertTrue(zbdd.isValidZbdd(Zbdd.empty()));
+    assertTrue(zbdd.isValidZbdd(Zbdd.base()));
+    assertTrue(zbdd.isValidZbdd(zbdd.cube(a, b)));
+    assertTrue(zbdd.isValidZbdd(zbdd.cube(c)));
+
+    assertFalse(zbdd.isValidZbdd(-1));
+    assertFalse(zbdd.isValidZbdd(zbdd.cube(a, b, c) + 5));
+    assertFalse(zbdd.isValidZbdd(advisor.getInitialCapacity() + 1));
+  }
+
+
+  @Test
+  @DisplayName("Valid var")
+  void isValidVar()
+  {
+    Zbdd zbdd = ZbddFactory.create();
+
+    int a = zbdd.createVar();
+    int b = zbdd.createVar();
+    int c = zbdd.createVar();
+
+    zbdd.setLiteralResolver(var -> var == a ? "a" : var == b ? "b" : "c");
+
+    assertTrue(zbdd.isValidVar(a));
+    assertTrue(zbdd.isValidVar(c));
+
+    assertFalse(zbdd.isValidVar(0));
+    assertFalse(zbdd.isValidVar(c + 1));
+  }
+
+
+  @Test
   @DisplayName("Operation 'atomize'")
   void atomize()
   {

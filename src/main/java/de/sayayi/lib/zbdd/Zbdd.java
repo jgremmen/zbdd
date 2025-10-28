@@ -252,6 +252,32 @@ public interface Zbdd extends Cloneable
 
 
   /**
+   * Tells if the given {@code zbdd} is a valid node.
+   *
+   * @param zbdd  zbdd node to check for validity
+   *
+   * @return  {@code true} if the zbdd node is valid, {@code false} otherwise
+   *
+   * @since 0.5.0
+   */
+  @Contract(pure = true)
+  boolean isValidZbdd(int zbdd);
+
+
+  /**
+   * Tells if the given {@code var} is valid.
+   *
+   * @param var  var to check for validity
+   *
+   * @return  {@code true} if the var is valid, {@code false} otherwise
+   *
+   * @since 0.5.0
+   */
+  @Contract(pure = true)
+  boolean isValidVar(int var);
+
+
+  /**
    * Returns the variable for the given {@code zbdd} node.
    *
    * @param zbdd  zbdd node

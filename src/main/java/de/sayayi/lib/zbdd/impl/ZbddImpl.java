@@ -1142,6 +1142,12 @@ public class ZbddImpl implements Zbdd
   }
 
 
+  @Override
+  public boolean isValidZbdd(int zbdd) {
+    return zbdd >= 0 && zbdd < nodesCapacity && (zbdd < 2 || nodes[zbdd * NODE_RECORD_SIZE + _VAR] > 0);
+  }
+
+
   @Contract(value = "_, _ -> param1")
   @MustBeInvokedByOverriders
   protected int checkZbdd(int zbdd, @NotNull String param)
@@ -1153,6 +1159,12 @@ public class ZbddImpl implements Zbdd
       throw new ZbddException("invalid " + param + " node " + zbdd);
 
     return zbdd;
+  }
+
+
+  @Override
+  public boolean isValidVar(int var) {
+    return var > 0 && var <= lastVarNumber;
   }
 
 
