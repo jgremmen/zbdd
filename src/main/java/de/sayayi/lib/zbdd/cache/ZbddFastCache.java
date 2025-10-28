@@ -33,7 +33,6 @@ import static java.util.Locale.US;
  * @author Jeroen Gremmen
  * @since 0.1.3
  */
-@Deprecated(forRemoval = true)
 public final class ZbddFastCache implements ZbddCache
 {
   public static final int MIN_CACHE_SIZE = 1024;

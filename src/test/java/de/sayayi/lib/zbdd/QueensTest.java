@@ -15,10 +15,8 @@
  */
 package de.sayayi.lib.zbdd;
 
-import de.sayayi.lib.zbdd.cache.ZbddCached;
 import de.sayayi.lib.zbdd.cache.ZbddFastCache;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Range;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -27,12 +25,12 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.util.HashMap;
 import java.util.stream.Stream;
 
-import static de.sayayi.lib.zbdd.Zbdd.*;
+import static de.sayayi.lib.zbdd.ZbddFactory.createCached;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
 /**
- * The 8-queen problem is a classic puzzle in chess and computer science. The goal is to place eight queens on an
+ * The 8-queen problem is a classic puzzle in chess and computer science. The goal is to place eight queens on a
  * 8x8 chessboard such that no two queens threaten each other. In chess, a queen can attack any piece in the same
  * row, column, or diagonal. Therefore, the challenge requires arranging the queens so that no two share the same
  * row, column, or diagonal.
@@ -78,17 +76,15 @@ class QueensTest
   @SuppressWarnings("removal")
   void queens(int n, int solutionsExpected, int tableSize)
   {
-    final var zbdd = new ZbddCached(new SimpleCapacityAdvisor(tableSize));
-    zbdd.setZbddCache(new ZbddFastCache(65536));
-
+    final var zbdd = createCached(new SimpleCapacityAdvisor(tableSize), new ZbddFastCache(65536));
     final var vars = getVars(zbdd, n);
 
-    int solution = ZBDD_BASE;
+    int solution = Zbdd.base();
     int ct;
 
     for(int s = 0; s < n; s++)
     {
-      int tmp = ZBDD_EMPTY;
+      int tmp = Zbdd.empty();
 
       zbdd.incRef(solution);
 
@@ -166,13 +162,13 @@ class QueensTest
 
 
     @Override
-    public @Range(from = 1, to = MAX_NODES) int getMinimumFreeNodes(@NotNull ZbddStatistics statistics) {
+    public int getMinimumFreeNodes(@NotNull ZbddStatistics statistics) {
       return statistics.getNodesCapacity() / 20;
     }
 
 
     @Override
-    public @Range(from = 1, to = MAX_NODES) int adviseIncrement(@NotNull ZbddStatistics statistics) {
+    public int adviseIncrement(@NotNull ZbddStatistics statistics) {
       return statistics.getNodesCapacity() / 5;  // +20%
     }
 
