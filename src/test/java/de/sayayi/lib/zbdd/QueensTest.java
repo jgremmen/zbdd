@@ -73,7 +73,6 @@ class QueensTest
   @DisplayName("n-Queens problem solving")
   @ParameterizedTest(name = "{0}-Queens problem has {1} solutions")
   @MethodSource("queensParameters")
-  @SuppressWarnings("removal")
   void queens(int n, int solutionsExpected, int tableSize)
   {
     final var zbdd = createCached(new SimpleCapacityAdvisor(tableSize), new ZbddFastCache(65536));
@@ -115,10 +114,11 @@ class QueensTest
     int solutions = zbdd.count(zbdd.incRef(solution));
     assertEquals(solutionsExpected, solutions);
 
-    var nameResolver = zbdd.getLiteralResolver();
+    zbdd.gc();
     System.out.println("Queens " + n + "x" + n + "  (" + solutions + ")");
     System.out.println("  " + zbdd.getStatistics());
 
+    var nameResolver = zbdd.getLiteralResolver();
     if (n < 9)
       zbdd.visitCubes(solution, cube -> System.out.println("  " + nameResolver.getCubeName(cube)));
 
