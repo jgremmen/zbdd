@@ -21,6 +21,9 @@ import org.jetbrains.annotations.NotNull;
 
 
 /**
+ * Default capacity advisor that starts with a low initial capacity and increases agressively by 150% each time
+ * until the capacity has reached 500k zbdd nodes. From there it will increase by 30%.
+ *
  * @author Jeroen Gremmen
  * @since 0.5.0
  */

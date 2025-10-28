@@ -69,8 +69,8 @@ public interface ZbddCapacityAdvisor
    * node is created and the number of free nodes is less than 2.
    * <p>
    * Garbage collection is an expensive operation and only useful if a substantial number of nodes
-   * are exopected to be freed in the process. The current number of dead nodes may be a good
-   * indicator but is not a guarantee that those nodes are invalidated.
+   * are expected to be freed in the process. The current number of dead nodes may be a good
+   * indicator, but is not a guarantee that those nodes are invalidated.
    *
    * @param statistics  current zbdd statistics, not {@code null}
    *
