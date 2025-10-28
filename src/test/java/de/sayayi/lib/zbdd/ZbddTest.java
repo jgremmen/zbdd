@@ -304,6 +304,57 @@ class ZbddTest
 
 
   @Test
+  @DisplayName("Zbdd node info")
+  void getZbddNodeInfo()
+  {
+    Zbdd zbdd = ZbddFactory.create();
+
+    int a = zbdd.createVar();
+    int b = zbdd.createVar();
+    int c = zbdd.createVar();
+
+    zbdd.setLiteralResolver(var -> var == a ? "a" : var == b ? "b" : "c");
+
+    int _a = zbdd.incRef(zbdd.cube(a));
+    int _ac = zbdd.incRef(zbdd.cube(a, c));
+    int _b = zbdd.incRef(zbdd.cube(b));
+    int _ac_b = zbdd.union(_ac, _b);
+
+    var zbddNodeInfo = zbdd.getZbddNodeInfo(_ac_b);
+
+    //noinspection ResultOfMethodCallIgnored
+    zbddNodeInfo.toString();
+
+    assertEquals(_ac_b, zbddNodeInfo.getZbdd());
+    assertEquals(c, zbddNodeInfo.getVar());
+    assertEquals(_b, zbddNodeInfo.getP0());
+    assertEquals(_a, zbddNodeInfo.getP1());
+    assertEquals(-1, zbddNodeInfo.getReferenceCount());
+    assertEquals("c", zbddNodeInfo.getLiteral());
+    assertTrue(zbddNodeInfo.isNewNode());
+
+    zbdd.incRef(_ac_b);
+    assertEquals(1, zbddNodeInfo.getReferenceCount());
+    assertFalse(zbddNodeInfo.isNewNode());
+    assertFalse(zbddNodeInfo.isDeadNode());
+
+    zbdd.decRef(_ac_b);
+    assertTrue(zbddNodeInfo.isDeadNode());
+    zbdd.gc();
+
+    assertThrowsExactly(ZbddException.class, zbddNodeInfo::getZbdd);
+    assertThrowsExactly(ZbddException.class, zbddNodeInfo::getVar);
+    assertThrowsExactly(ZbddException.class, zbddNodeInfo::getP0);
+    assertThrowsExactly(ZbddException.class, zbddNodeInfo::getP1);
+    assertThrowsExactly(ZbddException.class, zbddNodeInfo::getLiteral);
+    assertThrowsExactly(ZbddException.class, zbddNodeInfo::getReferenceCount);
+    assertThrowsExactly(ZbddException.class, zbddNodeInfo::isNewNode);
+    assertThrowsExactly(ZbddException.class, zbddNodeInfo::isDeadNode);
+    assertThrowsExactly(ZbddException.class, zbddNodeInfo::toString);
+  }
+
+
+  @Test
   @DisplayName("Operation 'atomize'")
   void atomize()
   {

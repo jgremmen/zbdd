@@ -342,6 +342,19 @@ public interface Zbdd extends Cloneable
   int decRef(int zbdd);
 
 
+  /**
+   * Returns an object that provides a "live" view of the given {@code zbdd} node.
+   *
+   * @param zbdd  zbdd node info to get
+   *
+   * @return  zbdd node info, never {@code null}
+   *
+   * @since 0.5.0
+   */
+  @Contract(pure = true)
+  @NotNull ZbddNodeInfo getZbddNodeInfo(int zbdd);
+
+
   @Contract(value = "_ -> new", pure = true)
   @NotNull String toString(int zbdd);
 
@@ -403,5 +416,108 @@ public interface Zbdd extends Cloneable
   {
     @Contract(pure = true)
     @NotNull ZbddCache getZbddCache();
+  }
+
+
+
+
+  /**
+   * A ZbddNode provides a "live view" on a zbdd node. As the reference count or literal resolver changes, those
+   * changes reflect in the return values for the associated methods.
+   * <p>
+   * If the zbdd node gets garbage collected, all methods in this interface, including {@code toString()},
+   * throw an exception stating that the zbdd is not valid.
+   *
+   * @author Jeroen Gremmen
+   * @since 0.5.0
+   */
+  interface ZbddNodeInfo
+  {
+    /**
+     * Returns the zbdd for this instance.
+     *
+     * @return  zbdd
+     */
+    @Contract(pure = true)
+    int getZbdd();
+
+
+    /**
+     * Returns the var of the zbdd node.
+     *
+     * @return  var
+     */
+    @Contract(pure = true)
+    int getVar();
+
+
+    /**
+     * Returns the zbdd for the 0-edge of the zbdd node.
+     *
+     * @return  zbdd for the 0-edge
+     */
+    @Contract(pure = true)
+    int getP0();
+
+
+    /**
+     * Returns the zbdd for the 1-edge of the zbdd node.
+     *
+     * @return  zbdd for the 1-edge
+     */
+    @Contract(pure = true)
+    int getP1();
+
+
+    /**
+     * Returns the reference count of the zbdd node.
+     * <p>
+     * If the reference count equals {@code -1}, the node has been newly created. If the reference count equals
+     * {@code 0}, the node is dead.
+     *
+     * @return  reference count of the zbdd node
+     *
+     * @see #isNewNode()
+     * @see #isDeadNode()
+     */
+    @Contract(pure = true)
+    int getReferenceCount();
+
+
+    /**
+     * Returns the literal for the var of the zbdd node.
+     *
+     * @return  literal of the var, never {@code null}
+     */
+    @Contract(pure = true)
+    @NotNull String getLiteral();
+
+
+    /**
+     * Tells whether the zbdd node is a newly created node.
+     *
+     * @return  {@code true} if the zbdd node is valid and was newly created, {@code false} otherwise
+     *
+     * @see #getReferenceCount()
+     */
+    @Contract(pure = true)
+    default boolean isNewNode() {
+      return getReferenceCount() == -1;
+    }
+
+
+    /**
+     * Tells whether the zbdd node is a dead node.
+     * <p>
+     * A node becomes dead as soon as the reference count decreases from {@code 1} to {@code 0}.
+     *
+     * @return  {@code true} if the zbdd node is valid and dead, {@code false} otherwise
+     *
+     * @see #getReferenceCount()
+     */
+    @Contract(pure = true)
+    default boolean isDeadNode() {
+      return getReferenceCount() == 0;
+    }
   }
 }

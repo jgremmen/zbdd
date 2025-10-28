@@ -1180,6 +1180,12 @@ public class ZbddImpl implements Zbdd
 
 
   @Override
+  public @NotNull Zbdd.ZbddNodeInfo getZbddNodeInfo(int zbdd) {
+    return new ZbddNodeInfoDelegate(checkZbdd(zbdd, "zbdd"));
+  }
+
+
+  @Override
   @Contract(value = "_ -> new", pure = true)
   public @NotNull String toString(int zbdd)
   {
@@ -1454,6 +1460,98 @@ public class ZbddImpl implements Zbdd
           round(getNodeLookupHitRatio() * 1000) / 10.0 + "%, gcCount=" + getGCCount() + ", capIncCount=" +
           getCapacityIncreaseCount() + ", mem=" +
           String.format(ROOT, "%.1fKB", getMemoryUsage() / 1024.0) + ")";
+    }
+  }
+
+
+
+
+  private final class ZbddNodeInfoDelegate implements ZbddNodeInfo
+  {
+    private final int zbdd;
+
+
+    private ZbddNodeInfoDelegate(int zbdd) {
+      this.zbdd = zbdd;
+    }
+
+
+    @Override
+    public int getZbdd() {
+      return checkZbdd(zbdd, "zbdd");
+    }
+
+
+    @Override
+    public int getVar() {
+      return ZbddImpl.this.getVar(zbdd);
+    }
+
+
+    @Override
+    public int getP0() {
+      return ZbddImpl.this.getP0(zbdd);
+    }
+
+
+    @Override
+    public int getP1() {
+      return ZbddImpl.this.getP1(zbdd);
+    }
+
+
+    @Override
+    public int getReferenceCount() {
+      return nodes[(getZbdd() * NODE_RECORD_SIZE) + _REFCOUNT];
+    }
+
+
+    @Override
+    public @NotNull String getLiteral() {
+      return literalResolver.getLiteralName(getVar());
+    }
+
+
+    @Override
+    public String toString()
+    {
+      final var var = getVar();
+      final var s = new StringBuilder("ZbddNode(zbdd=").append(zbdd).append(",var=").append(var);
+      final var literal = literalResolver.getLiteralName(var);
+
+      if (!literal.isBlank())
+        s.append(':').append(literal);
+
+      final var p0 = __getP0(zbdd);
+      s.append(",P0=").append(p0);
+      final var p0var = ZbddImpl.this.getVar(p0);
+      if (p0var != -1)
+      {
+        final var p0literal = literalResolver.getLiteralName(p0var);
+        if (!p0literal.isBlank())
+          s.append(':').append(p0literal);
+      }
+
+      final var p1 = __getP1(zbdd);
+      s.append(",P1=").append(p1);
+      final var p1var = ZbddImpl.this.getVar(p1);
+      if (p1var != -1)
+      {
+        final var p1literal = literalResolver.getLiteralName(p1var);
+        if (!p1literal.isBlank())
+          s.append(':').append(p1literal);
+      }
+
+      final var refCount = getReferenceCount();
+      s.append(",refCount=");
+      if (refCount == -1)
+        s.append("new");
+      else if (refCount == 0)
+        s.append("dead");
+      else
+        s.append(refCount);
+
+      return s.append(')').toString();
     }
   }
 }
