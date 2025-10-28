@@ -1035,6 +1035,8 @@ public class ZbddImpl implements Zbdd
 
     final int oldNodesCapacity = nodesCapacity;
 
+    statistics.capacityIncreaseCount++;
+
     nodesCapacity = min(nodesCapacity + capacityAdvisor.adviseIncrement(statistics), MAX_NODES);
     nodes = copyOf(nodes, nodesCapacity * NODE_RECORD_SIZE);
 
@@ -1354,6 +1356,7 @@ public class ZbddImpl implements Zbdd
     private int nodeLookups;
     private int nodeLookupHitCount;
     private int gcCount;
+    private int capacityIncreaseCount;
     private long gcFreedNodes;
 
 
@@ -1367,6 +1370,7 @@ public class ZbddImpl implements Zbdd
       nodeLookupHitCount = 0;
       gcCount = 0;
       gcFreedNodes = 0;
+      capacityIncreaseCount = 0;
     }
 
 
@@ -1413,6 +1417,12 @@ public class ZbddImpl implements Zbdd
 
 
     @Override
+    public int getCapacityIncreaseCount() {
+      return capacityIncreaseCount;
+    }
+
+
+    @Override
     public long getMemoryUsage() {
       return nodes.length * 4L;
     }
@@ -1429,9 +1439,9 @@ public class ZbddImpl implements Zbdd
     {
       return "Statistics(node={capacity=" + getNodesCapacity() + ", occupied=" + getOccupiedNodes() +
           ", free=" + getFreeNodes() + ", dead=" + getDeadNodes() + "}, hitRatio=" +
-          round(getNodeLookupHitRatio() * 1000) / 10.0 + "%, gcCount=" + getGCCount() +
-          ", mem=" + String.format(ROOT, "%.1fKB", getMemoryUsage() / 1024.0) +
-          ")";
+          round(getNodeLookupHitRatio() * 1000) / 10.0 + "%, gcCount=" + getGCCount() + ", capIncCount=" +
+          getCapacityIncreaseCount() + ", mem=" +
+          String.format(ROOT, "%.1fKB", getMemoryUsage() / 1024.0) + ")";
     }
   }
 }

@@ -110,6 +110,16 @@ public interface ZbddStatistics
 
 
   /**
+   * Returns the number of capacity increases.
+   *
+   * @return  number of capacity increases
+   *
+   * @since 0.5.0
+   */
+  int getCapacityIncreaseCount();
+
+
+  /**
    * Returns an estimation of the number of bytes used by the zbdd.
    *
    * @return  estimated memory usage in bytes
