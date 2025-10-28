@@ -1185,7 +1185,7 @@ public class ZbddImpl implements Zbdd
   {
     __incRef(checkZbdd(zbdd, "zbdd"));
     try {
-      visitCubes0(visitor, new CubeVisitorStack(lastVarNumber), zbdd);
+      visitCubes0(visitor, new CubeVisitorStack(max(__getVar(zbdd), 1)), zbdd);
     } finally {
       __decRef(zbdd);
     }
