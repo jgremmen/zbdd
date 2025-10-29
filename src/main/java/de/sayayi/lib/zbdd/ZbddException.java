@@ -15,6 +15,8 @@
  */
 package de.sayayi.lib.zbdd;
 
+import org.jetbrains.annotations.NotNull;
+
 
 /**
  * Zbdd related exception.
@@ -23,7 +25,12 @@ package de.sayayi.lib.zbdd;
  */
 public class ZbddException extends RuntimeException
 {
-  public ZbddException(String message) {
+  /**
+   * Construct a zbdd exception with the given {@code message}.
+   *
+   * @param message  exception message, not {@code null}
+   */
+  public ZbddException(@NotNull String message) {
     super(message);
   }
 }

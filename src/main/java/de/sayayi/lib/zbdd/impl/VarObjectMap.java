@@ -22,6 +22,8 @@ import static java.lang.Integer.bitCount;
 
 
 /**
+ * Minimalistic map implementation for mapping native {@code int} keys to an {@code Object}.
+ *
  * @author Jeroen Gremmen
  * @since 0.5.0
  */
