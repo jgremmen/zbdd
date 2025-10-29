@@ -94,22 +94,6 @@ public class ZbddImpl implements Zbdd
   }
 
 
-  public ZbddImpl(@NotNull ZbddImpl zbdd)
-  {
-    capacityAdvisor = zbdd.capacityAdvisor;
-    lastVarNumber = zbdd.lastVarNumber;
-    nodesCapacity = zbdd.nodesCapacity;
-    nodesFree = zbdd.nodesFree;
-    nodesDead = zbdd.nodesDead;
-    nodes = copyOf(zbdd.nodes, zbdd.nodes.length);
-    nextFreeNode = zbdd.nextFreeNode;
-    literalResolver = zbdd.literalResolver;
-
-    statistics = new Statistics();
-    callbacks = new ArrayList<>();
-  }
-
-
   private void initTerminalNode(int zbdd)
   {
     final int offset = zbdd * NODE_RECORD_SIZE;
@@ -123,14 +107,6 @@ public class ZbddImpl implements Zbdd
   @Override
   public void registerCallback(@NotNull ZbddCallback callback) {
     callbacks.add(callback);
-  }
-
-
-  @Override
-  @Contract(pure = true)
-  @SuppressWarnings("MethodDoesntCallSuperMethod")
-  public @NotNull ZbddImpl clone() {
-    return new ZbddImpl(this);
   }
 
 

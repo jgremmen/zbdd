@@ -33,7 +33,7 @@ import static java.lang.Integer.MAX_VALUE;
  * @author Jeroen Gremmen
  * @since 0.5.0
  */
-public interface Zbdd extends Cloneable
+public interface Zbdd
 {
   int ZBDD_EMPTY = 0;
   int ZBDD_BASE = 1;
@@ -46,10 +46,6 @@ public interface Zbdd extends Cloneable
    */
   @Contract(mutates = "this")
   void registerCallback(@NotNull ZbddCallback callback);
-
-
-  @Contract(pure = true)
-  @NotNull Zbdd clone();
 
 
   /**
@@ -120,6 +116,34 @@ public interface Zbdd extends Cloneable
   @Contract(mutates = "this")
   @MustBeInvokedByOverriders
   int createVar();
+
+
+  /**
+   * Create a new literal/variable with an associated {@code varObject}.
+   *
+   * @param varObject  object to be associated with the created variable
+   *
+   * @return  variable number
+   * 
+   * @see #getVarObject(int) 
+   */
+  @Contract(mutates = "this")
+  @MustBeInvokedByOverriders
+  int createVar(@NotNull Object varObject);
+
+
+  /**
+   * Return the associated object for the given {@code var}.
+   *
+   * @param var  var to get the object for
+   *
+   * @return  object associated with {@code var} or {@code null} if the variable was created without an object
+   *
+   * @see #createVar() 
+   * @see #createVar(Object)
+   */
+  @Contract(pure = true)
+  <T> T getVarObject(int var);
 
 
   /**

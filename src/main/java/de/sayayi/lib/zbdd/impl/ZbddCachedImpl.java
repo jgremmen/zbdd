@@ -45,22 +45,6 @@ public class ZbddCachedImpl extends ZbddImpl implements WithCache
 
     this.zbddCache = requireNonNull(zbddCache);
 
-    registerCallback();
-  }
-
-
-  public ZbddCachedImpl(@NotNull ZbddImpl zbdd, @NotNull ZbddCache zbddCache)
-  {
-    super(zbdd);
-
-    this.zbddCache = requireNonNull(zbddCache);
-
-    registerCallback();
-  }
-
-
-  private void registerCallback()
-  {
     registerCallback(new ZbddCallback() {
       @Override public void beforeClear() { clearZbddCache(); }
       @Override public void beforeGc() { clearZbddCache(); }

@@ -41,20 +41,8 @@ public final class ZbddFactory
 	}
 
 
-  @Contract(value = "_ -> new", pure = true)
-  public static @NotNull Zbdd create(Zbdd.WithCache zbdd) {
-    return new ZbddImpl((ZbddImpl)zbdd);
-  }
-
-
   @Contract(value = "_, _ -> new", pure = true)
   public static @NotNull Zbdd.WithCache createCached(ZbddCapacityAdvisor capacityAdvisor, @NotNull ZbddCache zbddCache) {
     return new ZbddCachedImpl(capacityAdvisor != null ? capacityAdvisor : DefaultCapacityAdvisor.INSTANCE, zbddCache);
-  }
-
-
-  @Contract(value = "_, _ -> new", pure = true)
-  public static @NotNull Zbdd.WithCache createCached(Zbdd zbdd, @NotNull ZbddCache zbddCache) {
-    return new ZbddCachedImpl((ZbddImpl)zbdd, zbddCache);
   }
 }
