@@ -21,6 +21,8 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.MustBeInvokedByOverriders;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.StringJoiner;
 
 import static java.lang.Integer.MAX_VALUE;
@@ -60,6 +62,7 @@ public class ZbddImpl implements Zbdd
 
   private final @NotNull ZbddCapacityAdvisor capacityAdvisor;
   private final @NotNull Statistics statistics;
+  private final @NotNull List<ZbddCallback> callbacks;
 
   private int lastVarNumber;
 
@@ -85,6 +88,7 @@ public class ZbddImpl implements Zbdd
     initTerminalNode(ZBDD_BASE);
 
     statistics = new Statistics();
+    callbacks = new ArrayList<>();
 
     clear();
   }
@@ -102,6 +106,7 @@ public class ZbddImpl implements Zbdd
     literalResolver = zbdd.literalResolver;
 
     statistics = new Statistics();
+    callbacks = new ArrayList<>();
   }
 
 
@@ -112,6 +117,12 @@ public class ZbddImpl implements Zbdd
     nodes[offset + _VAR] = -1;
     nodes[offset + _P0] = zbdd;
     nodes[offset + _P1] = zbdd;
+  }
+
+
+  @Override
+  public void registerCallback(@NotNull ZbddCallback callback) {
+    callbacks.add(callback);
   }
 
 
@@ -168,6 +179,8 @@ public class ZbddImpl implements Zbdd
   @MustBeInvokedByOverriders
   public void clear()
   {
+    callbacks.forEach(ZbddCallback::beforeClear);
+
     lastVarNumber = 0;
     nodesDead = 0;
     nextFreeNode = 2;
@@ -181,6 +194,8 @@ public class ZbddImpl implements Zbdd
     }
 
     statistics.clear();
+
+    callbacks.forEach(ZbddCallback::afterClear);
   }
 
 
@@ -950,6 +965,8 @@ public class ZbddImpl implements Zbdd
   @SuppressWarnings("UnusedReturnValue")
   public int gc()
   {
+    callbacks.forEach(ZbddCallback::beforeGc);
+
     final int oldNodesFree = nodesFree;
 
     gc_markReferencedNodes();
@@ -959,6 +976,8 @@ public class ZbddImpl implements Zbdd
 
     statistics.gcFreedNodes += gcFreedNodesCount;
     statistics.gcCount++;
+
+    callbacks.forEach(ZbddCallback::afterGc);
 
     return gcFreedNodesCount;
   }

@@ -433,4 +433,52 @@ class ZbddTest
 
     return zbdd.cube(cubeVars);
   }
+
+
+  @Test
+  @DisplayName("Zbdd callback")
+  @SuppressWarnings({"ConstantValue", "DataFlowIssue"})
+  void zbddCallback()
+  {
+    Zbdd zbdd = ZbddFactory.create();
+
+    final int a = zbdd.createVar();
+    final int b = zbdd.createVar();
+    zbdd.createVar();
+
+    zbdd.setLiteralResolver(var -> var == a ? "a" : var == b ? "b" : "c");
+
+    final int _a = zbdd.incRef(zbdd.cube(a));
+    final int _b = zbdd.incRef(zbdd.cube(b));
+    zbdd.union(_a, _b);
+
+    final boolean[] callbackResult = new boolean[4];
+    final var zbddNodeInfo = zbdd.getZbddNodeInfo(_a);
+
+    zbdd.registerCallback(new Zbdd.ZbddCallback() {
+      @Override public void beforeClear() { callbackResult[0] = true; }
+      @Override public void afterClear() { callbackResult[1] = true; }
+      @Override public void beforeGc() {
+        callbackResult[2] = true;
+        assertTrue(zbddNodeInfo.isDeadNode());
+      }
+      @Override public void afterGc() {
+        callbackResult[3] = true;
+        assertThrowsExactly(ZbddException.class, zbddNodeInfo::isDeadNode);
+      }
+    });
+
+    zbdd.decRef(_a);
+    zbdd.gc();
+
+    assertFalse(callbackResult[0]);
+    assertFalse(callbackResult[1]);
+    assertTrue(callbackResult[2]);
+    assertTrue(callbackResult[3]);
+
+    zbdd.clear();
+
+    assertTrue(callbackResult[0]);
+    assertTrue(callbackResult[1]);
+  }
 }

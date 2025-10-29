@@ -39,6 +39,15 @@ public interface Zbdd extends Cloneable
   int ZBDD_BASE = 1;
 
 
+  /**
+   * Registers a zbdd callback instance.
+   *
+   * @param callback  callback, not {@code null}
+   */
+  @Contract(mutates = "this")
+  void registerCallback(@NotNull ZbddCallback callback);
+
+
   @Contract(pure = true)
   @NotNull Zbdd clone();
 
@@ -424,6 +433,49 @@ public interface Zbdd extends Cloneable
      * @see #base()
      */
     void visitCube(int @NotNull [] vars);
+  }
+
+
+
+
+  /**
+   * This interface provides various callback functions that might be of interest to classes working with Zbdd
+   * instances.
+   * <p>
+   * Implementing classes must assure that all methods in this interface return without throwing an exception!
+   *
+   * @author Jeroen Gremmen
+   * @since 0.5.0
+   */
+  interface ZbddCallback
+  {
+    /**
+     * This method is invoked before all zbdd nodes are cleared.
+     */
+    default void beforeClear() {
+    }
+
+
+    /**
+     * This method is invoked after all zbdd nodes have been cleared.
+     */
+    default void afterClear() {
+    }
+
+
+    /**
+     * This method is invoked before zbdd garbage collection.
+     */
+    default void beforeGc() {
+    }
+
+
+    /**
+     * This method is invoked after zbdd garbage collection. At this point dead and newly created nodes are
+     * nonexistent anymore.
+     */
+    default void afterGc() {
+    }
   }
 
 
