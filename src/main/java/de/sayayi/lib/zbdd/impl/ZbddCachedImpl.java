@@ -15,22 +15,20 @@
  */
 package de.sayayi.lib.zbdd.impl;
 
-import de.sayayi.lib.zbdd.Zbdd;
 import de.sayayi.lib.zbdd.Zbdd.WithCache;
 import de.sayayi.lib.zbdd.ZbddCapacityAdvisor;
 import de.sayayi.lib.zbdd.cache.ZbddCache;
 import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.MustBeInvokedByOverriders;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Range;
 
 import static de.sayayi.lib.zbdd.cache.ZbddCache.Operation1.*;
 import static de.sayayi.lib.zbdd.cache.ZbddCache.Operation2.*;
 import static java.lang.Integer.MIN_VALUE;
+import static java.util.Objects.requireNonNull;
 
 
 /**
- * Extension of the {@link Zbdd} class to add support for caching results.
+ * Extension of the {@link ZbddImpl} class to add support for caching results.
  *
  * @author Jeroen Gremmen
  * @since 0.5.0
@@ -45,7 +43,9 @@ public class ZbddCachedImpl extends ZbddImpl implements WithCache
   {
     super(capacityAdvisor);
 
-    this.zbddCache = zbddCache;
+    this.zbddCache = requireNonNull(zbddCache);
+
+    registerCallback();
   }
 
 
@@ -53,7 +53,27 @@ public class ZbddCachedImpl extends ZbddImpl implements WithCache
   {
     super(zbdd);
 
-    this.zbddCache = zbddCache;
+    this.zbddCache = requireNonNull(zbddCache);
+
+    registerCallback();
+  }
+
+
+  private void registerCallback()
+  {
+    registerCallback(new ZbddCallback() {
+      @Override public void beforeClear() { clearZbddCache(); }
+      @Override public void beforeGc() { clearZbddCache(); }
+    });
+  }
+
+
+  private void clearZbddCache()
+  {
+    try {
+      zbddCache.clear();
+    } catch(Exception ignored) {
+    }
   }
 
 
@@ -67,23 +87,6 @@ public class ZbddCachedImpl extends ZbddImpl implements WithCache
   @Contract(pure = true)
   public @NotNull ZbddCachedImpl clone() {
     throw new UnsupportedOperationException();
-  }
-
-
-  /**
-   * {@inheritDoc}
-   *
-   * If a zbdd cache is assigned, it will be cleared as well.
-   */
-  @Override
-  @Contract(mutates = "this")
-  @MustBeInvokedByOverriders
-  public void clear()
-  {
-    if (zbddCache != null)
-      zbddCache.clear();
-
-    super.clear();
   }
 
 
@@ -335,18 +338,5 @@ public class ZbddCachedImpl extends ZbddImpl implements WithCache
       zbddCache.putResult(REMOVE_BASE, zbdd, r = super.__removeBase(zbdd));
 
     return r;
-  }
-
-
-  @Contract(mutates = "this")
-  @Range(from = 0, to = MAX_NODES - 2)
-  @MustBeInvokedByOverriders
-  @SuppressWarnings("UnusedReturnValue")
-  public int gc()
-  {
-    if (zbddCache != null)
-      zbddCache.clear();
-
-    return super.gc();
   }
 }
