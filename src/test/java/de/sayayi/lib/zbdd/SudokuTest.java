@@ -27,7 +27,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.stream.Stream;
 
 import static de.sayayi.lib.zbdd.ZbddFactory.createCached;
@@ -42,7 +41,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class SudokuTest
 {
   private Zbdd zbdd;
-  private Map<Integer,GridCellValue> varToGrid;
   private Map<GridCellValue,Integer> gridToVar;
 
 
@@ -50,18 +48,14 @@ public class SudokuTest
   void init()
   {
     zbdd = createCached(DefaultCapacityAdvisor.INSTANCE, new ZbddFastCache(65536));
-    varToGrid = new TreeMap<>();
     gridToVar = new HashMap<>();
 
     for(int row = 1; row <= 9; row++)
       for(int col = 1; col <= 9; col++)
         for(int value = 1; value <= 9; value++)
         {
-          final int var = zbdd.createVar();
-          final GridCellValue cellValue = new GridCellValue(col, row, value);
-
-          varToGrid.put(var, cellValue);
-          gridToVar.put(cellValue, var);
+          final var cellValue = new GridCellValue(col, row, value);
+          gridToVar.put(cellValue, zbdd.createVar(cellValue));
         }
 
     zbdd.setLiteralResolver(new SudokuLiteralResolver());
@@ -163,11 +157,11 @@ public class SudokuTest
     System.out.println("Solution for '" + level + "' Sudoko:");
 
     zbdd.visitCubes(solution, vars -> {
-      final char[][] sudoku = new char[9][9];
+      final var sudoku = new char[9][9];
 
       for(int var: vars)
       {
-        final var cell = varToGrid.get(var);
+        final var cell = zbdd.<GridCellValue>getVarObject(var);
         sudoku[cell.row - 1][cell.col - 1] = (char)('0' + cell.value);
       }
 
@@ -317,7 +311,7 @@ public class SudokuTest
   {
     @Override
     public @NotNull String getLiteralName(int var) {
-      return varToGrid.get(var).toString();
+      return zbdd.getVarObject(var).toString();
     }
 
 
@@ -338,7 +332,7 @@ public class SudokuTest
 
       for(int var: cubeVars)
       {
-        final var cell = varToGrid.get(var);
+        final var cell = zbdd.<GridCellValue>getVarObject(var);
         sudoku[10 * (cell.row - 1) + cell.col] = (char)('0' + cell.value);
       }
 

@@ -22,7 +22,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.util.HashMap;
 import java.util.stream.Stream;
 
 import static de.sayayi.lib.zbdd.ZbddFactory.createCached;
@@ -130,14 +129,13 @@ class QueensTest
   private int[][] getVars(Zbdd zbdd, int n)
   {
     final var vars = new int[n][n];
-    final var varNames = new HashMap<Integer,String>();
     final var format = n < 10 ? "%c%d" : "%c%02d";
 
     for(int r = n; r-- > 0;)
       for(int c = n; c-- > 0;)
-        varNames.put(vars[r][c] = zbdd.createVar(), String.format(format, 'a' + c, n - r));
+        vars[r][c] = zbdd.createVar(String.format(format, 'a' + c, n - r));
 
-    zbdd.setLiteralResolver(varNames::get);
+    zbdd.setLiteralResolver(zbdd::getVarObject);
 
     return vars;
   }

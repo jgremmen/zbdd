@@ -125,7 +125,9 @@ public interface Zbdd
    *
    * @return  variable number
    * 
-   * @see #getVarObject(int) 
+   * @see #getVarObject(int)
+   *
+   * @since 0.5.0
    */
   @Contract(mutates = "this")
   @MustBeInvokedByOverriders

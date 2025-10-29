@@ -63,6 +63,7 @@ public class ZbddImpl implements Zbdd
   private final @NotNull ZbddCapacityAdvisor capacityAdvisor;
   private final @NotNull Statistics statistics;
   private final @NotNull List<ZbddCallback> callbacks;
+  private final @NotNull VarObjectMap varObjectMap;
 
   private int lastVarNumber;
 
@@ -89,6 +90,7 @@ public class ZbddImpl implements Zbdd
 
     statistics = new Statistics();
     callbacks = new ArrayList<>();
+    varObjectMap = new VarObjectMap();
 
     clear();
   }
@@ -189,6 +191,25 @@ public class ZbddImpl implements Zbdd
       throw new ZbddException("variable count exceeded");
 
     return ++lastVarNumber;
+  }
+
+
+  @Override
+  public int createVar(@NotNull Object varObject)
+  {
+    requireNonNull(varObject);
+
+    final int var = createVar();
+    varObjectMap.put(var, varObject);
+
+    return var;
+  }
+
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public <T> T getVarObject(int var) {
+    return (T)varObjectMap.get(checkVar(var));
   }
 
 
