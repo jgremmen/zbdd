@@ -18,6 +18,8 @@ package de.sayayi.lib.zbdd.impl;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
+import static java.lang.Integer.bitCount;
+
 
 /**
  * @author Jeroen Gremmen
@@ -29,12 +31,11 @@ final class VarObjectMap
   private static final double LOAD_FACTOR = 0.7;
 
   private int capacity, threshold;
-  private int size;
-  private int hashMask;
-  private int hashShift;
+  private int hashShift, hashMask;
 
   private int[] keys;
   private Object[] values;
+  private int size;
 
 
   VarObjectMap() {
@@ -42,6 +43,7 @@ final class VarObjectMap
   }
 
 
+  @Contract(mutates = "this")
   private void ensureCapacity(int newCapacity)
   {
     if (newCapacity < size)
@@ -50,15 +52,16 @@ final class VarObjectMap
     int newPow2Capacity;
 
     //noinspection StatementWithEmptyBody
-    for(hashShift = 30, newPow2Capacity = 2;
+    for(newPow2Capacity = 2;
         newPow2Capacity * LOAD_FACTOR < newCapacity && newPow2Capacity < MAX_CAPACITY;
-        hashShift--, newPow2Capacity <<= 1);
+        newPow2Capacity <<= 1);
 
     if (newPow2Capacity != capacity)
     {
       capacity = newPow2Capacity;
       threshold = (int)(capacity * LOAD_FACTOR);
       hashMask = capacity - 1;
+      hashShift = 31 - bitCount(hashMask);
 
       final var oldKeys = keys;
       final var oldValues = values;
@@ -70,11 +73,11 @@ final class VarObjectMap
       if (oldKeys != null)
       {
         assert oldValues != null;
-        Object v;
+        Object value;
 
-        for(int idx = 0, l = oldKeys.length; idx < l; idx++)
-          if ((v = oldValues[idx]) != null)
-            put(oldKeys[idx], v);
+        for(int idx = 0, length = oldKeys.length; idx < length; idx++)
+          if ((value = oldValues[idx]) != null)
+            put(oldKeys[idx], value);
       }
     }
   }
@@ -84,17 +87,14 @@ final class VarObjectMap
   void put(int key, @NotNull Object value)
   {
     final int idx = indexOf(key);
-
     if (values[idx] != null)
-      values[idx] = value;  // replace
-    else
-    {
-      keys[idx] = key;
-      values[idx] = value;
+      throw new IllegalStateException();
 
-      if (++size > threshold)
-        ensureCapacity(size);
-    }
+    keys[idx] = key;
+    values[idx] = value;
+
+    if (++size > threshold)
+      ensureCapacity(size);
   }
 
 
@@ -111,7 +111,7 @@ final class VarObjectMap
 
     for(; values[i] != null; i = (i - 1) & hashMask)
       if (key == keys[i])
-        return i;
+        break;
 
     return i;
   }
