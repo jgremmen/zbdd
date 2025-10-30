@@ -55,7 +55,7 @@ final class VarObjectMap
 
     //noinspection StatementWithEmptyBody
     for(newPow2Capacity = 2;
-        newPow2Capacity * LOAD_FACTOR < newCapacity && newPow2Capacity < MAX_CAPACITY;
+        (int)(newPow2Capacity * LOAD_FACTOR) < newCapacity && newPow2Capacity < MAX_CAPACITY;
         newPow2Capacity <<= 1);
 
     if (newPow2Capacity != capacity)
