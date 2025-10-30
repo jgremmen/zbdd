@@ -18,6 +18,7 @@ package de.sayayi.lib.zbdd;
 import de.sayayi.lib.zbdd.cache.ZbddCache;
 import de.sayayi.lib.zbdd.impl.DefaultCapacityAdvisor;
 import de.sayayi.lib.zbdd.impl.ZbddCachedImpl;
+import de.sayayi.lib.zbdd.impl.ZbddConcurrent;
 import de.sayayi.lib.zbdd.impl.ZbddImpl;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -32,7 +33,8 @@ import org.jetbrains.annotations.NotNull;
 public final class ZbddFactory
 {
   /**
-   * Create a new zbdd instance with a default capacity advisor.
+   * Create a new zbdd instance with a default capacity advisor. The returned zbdd instance does no
+   * zbdd operation caching and is not thread safe.
    *
    * @return  new zbdd instance, never {@code null}
    */
@@ -43,7 +45,8 @@ public final class ZbddFactory
 
 
   /**
-   * Create a new zbdd instance with the given {@code capacityAdvisor}.
+   * Create a new zbdd instance with the given {@code capacityAdvisor}. The returned zbdd instance does no
+   * zbdd operation caching and is not thread safe.
    *
    * @param capacityAdvisor  capacity advisor. If this parameter equals {@code null} then a default capacity advisor
    *                         is used.
@@ -58,6 +61,7 @@ public final class ZbddFactory
 
   /**
    * Create a new cached zbdd instance with the given {@code zbddCache} and a default capacity advisor.
+   * The returned zbdd instance is not thread safe.
    *
    * @param zbddCache  zbdd cache, not {@code null}
    *
@@ -71,6 +75,7 @@ public final class ZbddFactory
 
   /**
    * Create a new cached zbdd instance with the given {@code capacityAdvisor} and {@code zbddCache}.
+   * The returned zbdd instance is not thread safe.
    *
    * @param capacityAdvisor  capacity advisor. If this parameter equals {@code null} then a default capacity advisor
    *                         is used.
@@ -81,5 +86,18 @@ public final class ZbddFactory
   @Contract(value = "_, _ -> new", pure = true)
   public static @NotNull Zbdd.WithCache createCached(ZbddCapacityAdvisor capacityAdvisor, @NotNull ZbddCache zbddCache) {
     return new ZbddCachedImpl(capacityAdvisor != null ? capacityAdvisor : DefaultCapacityAdvisor.INSTANCE, zbddCache);
+  }
+
+
+  @Contract(value = "_ -> new", pure = true)
+  public static @NotNull Zbdd.Concurrent asConcurrent(@NotNull Zbdd zbdd) {
+    return zbdd instanceof Zbdd.Concurrent ? (Zbdd.Concurrent)zbdd : new ZbddConcurrent(zbdd);
+  }
+
+
+  @Contract(value = "_ -> new", pure = true)
+  @SuppressWarnings("unchecked")
+  public static <T extends Zbdd.Concurrent & Zbdd.WithCache> @NotNull T asConcurrent(@NotNull Zbdd.WithCache zbdd) {
+    return (T)(zbdd instanceof Zbdd.Concurrent ? zbdd : new ZbddConcurrent.WithCache(zbdd));
   }
 }

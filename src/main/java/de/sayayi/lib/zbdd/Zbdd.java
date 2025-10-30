@@ -19,9 +19,9 @@ import de.sayayi.lib.zbdd.cache.ZbddCache;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.MustBeInvokedByOverriders;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Range;
 
-import static java.lang.Integer.MAX_VALUE;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 
 /**
@@ -190,7 +190,7 @@ public interface Zbdd
    * @return  zbdd set with {@code var} as its only element
    */
   @Contract(mutates = "this")
-  int cube(@Range(from = 1, to = MAX_VALUE) int var);
+  int cube(int var);
 
 
   /**
@@ -508,6 +508,8 @@ public interface Zbdd
 
 
   /**
+   * Zbdd implementation that caches results of zbdd operations.
+   *
    * @author Jeroen Gremmen
    * @since 0.5.0
    */
@@ -515,6 +517,51 @@ public interface Zbdd
   {
     @Contract(pure = true)
     @NotNull ZbddCache getZbddCache();
+  }
+
+
+
+
+  /**
+   * Zbdd implementation that is thread-safe.
+   *
+   * @author Jeroen Gremmen
+   * @since 0.5.0
+   */
+  interface Concurrent extends Zbdd
+  {
+    /**
+     * Perform operations within a locked context, acting like one atomic operation.
+     * <p>
+     * When executing multiple zbdd operations on this concurrent instance, a lock is aquired for each operation
+     * on entry and released on exit. For multiple zbdd operations, there's always a chance another thread is given
+     * the next lock, allowing it to perform its operations.
+     * <p>
+     * Note: the {@code operation} function should do its work as fast as possible. Essentially, it should perform
+     * zbdd operations only and then exit.
+     *
+     * @param operation  operation function, performing zbdd operations that are required to be atomic
+     *
+     * @return  return value from the {@code operation} function
+     *
+     * @param <T>  return value type
+     */
+    <T> T doAtomic(@NotNull Function<Zbdd,T> operation);
+
+
+    /**
+     * Perform operations within a locked context, acting like one atomic operation.
+     * <p>
+     * When executing multiple zbdd operations on this concurrent instance, a lock is aquired for each operation
+     * on entry and released on exit. For multiple zbdd operations, there's always a chance another thread is given
+     * the next lock, allowing it to perform its operations.
+     * <p>
+     * Note: the {@code operation} function should do its work as fast as possible. Essentially, it should perform
+     * zbdd operations only and then exit.
+     *
+     * @param operation  operation function, performing zbdd operations that are required to be atomic
+     */
+    void doAtomic(@NotNull Consumer<Zbdd> operation);
   }
 
 
