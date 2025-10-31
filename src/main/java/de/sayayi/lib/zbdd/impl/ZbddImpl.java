@@ -15,8 +15,14 @@
  */
 package de.sayayi.lib.zbdd.impl;
 
-import de.sayayi.lib.zbdd.*;
+import de.sayayi.lib.zbdd.Zbdd;
+import de.sayayi.lib.zbdd.ZbddCapacityAdvisor;
+import de.sayayi.lib.zbdd.ZbddLiteralResolver;
+import de.sayayi.lib.zbdd.ZbddStatistics;
 import de.sayayi.lib.zbdd.cache.ZbddCache;
+import de.sayayi.lib.zbdd.exception.InvalidVarException;
+import de.sayayi.lib.zbdd.exception.InvalidZbddException;
+import de.sayayi.lib.zbdd.exception.ZbddException;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.MustBeInvokedByOverriders;
 import org.jetbrains.annotations.NotNull;
@@ -188,7 +194,7 @@ public class ZbddImpl implements Zbdd
   public int createVar()
   {
     if (lastVarNumber == MAX_VALUE)
-      throw new ZbddException("variable count exceeded");
+      throw new InvalidVarException(-1, "variable count exceeded");
 
     return ++lastVarNumber;
   }
@@ -1169,10 +1175,10 @@ public class ZbddImpl implements Zbdd
   protected int checkZbdd(int zbdd, @NotNull String param)
   {
     if (zbdd < 0 || zbdd >= nodesCapacity)
-      throw new ZbddException(param + " must be in range 0.." + (nodesCapacity - 1));
+      throw new InvalidZbddException(zbdd, param + " must be in range 0.." + (nodesCapacity - 1));
 
     if (zbdd >= 2 && nodes[zbdd * NODE_RECORD_SIZE + _VAR] == -1)
-      throw new ZbddException("invalid " + param + " node " + zbdd);
+      throw new InvalidZbddException(zbdd, "invalid " + param + " node " + zbdd);
 
     return zbdd;
   }
@@ -1189,7 +1195,7 @@ public class ZbddImpl implements Zbdd
   protected int checkVar(int var)
   {
     if (var <= 0 || var > lastVarNumber)
-      throw new ZbddException("var must be in range 1.." + var);
+      throw new InvalidVarException(var, "var must be in range 1.." + var);
 
     return var;
   }

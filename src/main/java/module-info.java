@@ -4,5 +4,6 @@ module de.sayayi.lib.zbdd {
 
   exports de.sayayi.lib.zbdd;
   exports de.sayayi.lib.zbdd.cache;
+  exports de.sayayi.lib.zbdd.exception;
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Jeroen Gremmen
+ * Copyright 2025 Jeroen Gremmen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.sayayi.lib.zbdd;
+package de.sayayi.lib.zbdd.exception;
 
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 
@@ -23,14 +24,25 @@ import org.jetbrains.annotations.NotNull;
  *
  * @author Jeroen Gremmen
  */
-public class ZbddException extends RuntimeException
+public final class InvalidZbddException extends ZbddException
 {
+  private final int invalidZbdd;
+
+
   /**
    * Construct a zbdd exception with the given {@code message}.
    *
    * @param message  exception message, not {@code null}
    */
-  public ZbddException(@NotNull String message) {
+  public InvalidZbddException(int invalidZbdd, @NotNull String message)
+  {
     super(message);
+    this.invalidZbdd = invalidZbdd;
+  }
+
+
+  @Contract(pure = true)
+  public int getInvalidZbdd() {
+    return invalidZbdd;
   }
 }

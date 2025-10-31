@@ -15,6 +15,8 @@
  */
 package de.sayayi.lib.zbdd;
 
+import de.sayayi.lib.zbdd.exception.InvalidVarException;
+import de.sayayi.lib.zbdd.exception.InvalidZbddException;
 import de.sayayi.lib.zbdd.impl.DefaultCapacityAdvisor;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
@@ -50,8 +52,8 @@ class ZbddTest
     assertEquals(Zbdd.empty(), zbdd.getP0(r));
     assertEquals(Zbdd.base(), zbdd.getP1(r));
 
-    assertThrows(ZbddException.class, () -> zbdd.cube(var + 1));
-    assertThrows(ZbddException.class, () -> zbdd.cube(0));
+    assertThrowsExactly(InvalidVarException.class, () -> zbdd.cube(var + 1));
+    assertThrowsExactly(InvalidVarException.class, () -> zbdd.cube(0));
   }
 
 
@@ -342,15 +344,15 @@ class ZbddTest
     assertTrue(zbddNodeInfo.isDeadNode());
     zbdd.gc();
 
-    assertThrowsExactly(ZbddException.class, zbddNodeInfo::getZbdd);
-    assertThrowsExactly(ZbddException.class, zbddNodeInfo::getVar);
-    assertThrowsExactly(ZbddException.class, zbddNodeInfo::getP0);
-    assertThrowsExactly(ZbddException.class, zbddNodeInfo::getP1);
-    assertThrowsExactly(ZbddException.class, zbddNodeInfo::getLiteral);
-    assertThrowsExactly(ZbddException.class, zbddNodeInfo::getReferenceCount);
-    assertThrowsExactly(ZbddException.class, zbddNodeInfo::isNewNode);
-    assertThrowsExactly(ZbddException.class, zbddNodeInfo::isDeadNode);
-    assertThrowsExactly(ZbddException.class, zbddNodeInfo::toString);
+    assertThrowsExactly(InvalidZbddException.class, zbddNodeInfo::getZbdd);
+    assertThrowsExactly(InvalidZbddException.class, zbddNodeInfo::getVar);
+    assertThrowsExactly(InvalidZbddException.class, zbddNodeInfo::getP0);
+    assertThrowsExactly(InvalidZbddException.class, zbddNodeInfo::getP1);
+    assertThrowsExactly(InvalidZbddException.class, zbddNodeInfo::getLiteral);
+    assertThrowsExactly(InvalidZbddException.class, zbddNodeInfo::getReferenceCount);
+    assertThrowsExactly(InvalidZbddException.class, zbddNodeInfo::isNewNode);
+    assertThrowsExactly(InvalidZbddException.class, zbddNodeInfo::isDeadNode);
+    assertThrowsExactly(InvalidZbddException.class, zbddNodeInfo::toString);
   }
 
 
@@ -464,7 +466,7 @@ class ZbddTest
       }
       @Override public void afterGc() {
         callbackResult[3] = true;
-        assertThrowsExactly(ZbddException.class, zbddNodeInfo::isDeadNode);
+        assertThrowsExactly(InvalidZbddException.class, zbddNodeInfo::isDeadNode);
       }
     });
 

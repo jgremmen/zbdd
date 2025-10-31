@@ -1,5 +1,6 @@
 package de.sayayi.lib.zbdd;
 
+import de.sayayi.lib.zbdd.exception.InvalidZbddException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -45,7 +46,7 @@ public class ZbddConcurrentTest
         return null;
       });
 
-      assertEquals(ZbddException.class,
+      assertEquals(InvalidZbddException.class,
           assertThrowsExactly(ExecutionException.class, future::get).getCause().getClass());
     } finally {
       executor.shutdown();
