@@ -57,6 +57,11 @@ public interface Zbdd
   @NotNull ZbddLiteralResolver getLiteralResolver();
 
 
+  /**
+   * Sets the literal resolver.
+   *
+   * @param literalResolver  literal resolver, not {@code null}
+   */
   @Contract(mutates = "this")
   void setLiteralResolver(@NotNull ZbddLiteralResolver literalResolver);
 
@@ -376,7 +381,6 @@ public interface Zbdd
    */
   @Contract(mutates = "this")
   @MustBeInvokedByOverriders
-  @SuppressWarnings("UnusedReturnValue")
   int gc();
 
 
@@ -387,7 +391,6 @@ public interface Zbdd
 
   @Contract(value = "_ -> param1", mutates = "this")
   @MustBeInvokedByOverriders
-  @SuppressWarnings("UnusedReturnValue")
   int decRef(int zbdd);
 
 

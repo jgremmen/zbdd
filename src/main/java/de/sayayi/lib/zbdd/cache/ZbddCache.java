@@ -56,12 +56,18 @@ public interface ZbddCache
   void putResult(@NotNull Operation2 operation, int p1, int p2, int result);
 
 
+  /**
+   * Clears the cache.
+   */
   @Contract(mutates = "this")
   void clear();
 
 
 
 
+  /**
+   * Single parameter operations.
+   */
   enum Operation1
   {
     COUNT,
@@ -72,6 +78,9 @@ public interface ZbddCache
 
 
 
+  /**
+   * Operations with 2 parameters.
+   */
   enum Operation2
   {
     SUBSET0,
