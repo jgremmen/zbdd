@@ -36,14 +36,15 @@ import static java.util.Objects.requireNonNull;
 @SuppressWarnings("DuplicatedCode")
 public class ZbddCachedImpl extends ZbddImpl implements WithCache
 {
-  private final ZbddCache zbddCache;
+  private ZbddCache zbddCache;
 
 
+  @Contract(mutates = "param2")
   public ZbddCachedImpl(@NotNull ZbddCapacityAdvisor capacityAdvisor, @NotNull ZbddCache zbddCache)
   {
     super(capacityAdvisor);
 
-    this.zbddCache = requireNonNull(zbddCache);
+    setZbddCache(zbddCache);
 
     registerCallback(new ZbddCallback() {
       @Override public void beforeClear() { clearZbddCache(); }
@@ -64,6 +65,14 @@ public class ZbddCachedImpl extends ZbddImpl implements WithCache
   @Override
   public @NotNull ZbddCache getZbddCache() {
     return zbddCache;
+  }
+
+
+  @Override
+  public void setZbddCache(@NotNull ZbddCache zbddCache)
+  {
+    requireNonNull(zbddCache).clear();
+    this.zbddCache = zbddCache;
   }
 
 

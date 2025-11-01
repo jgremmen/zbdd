@@ -629,5 +629,11 @@ public class ZbddConcurrent implements Zbdd.Concurrent
     public @NotNull ZbddCache getZbddCache() {
       return ((Zbdd.WithCache)zbdd).getZbddCache();
     }
+
+
+    @Override
+    public void setZbddCache(@NotNull ZbddCache zbddCache) {
+      ((Zbdd.WithCache)zbdd).setZbddCache(zbddCache);
+    }
   }
 }

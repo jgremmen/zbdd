@@ -518,8 +518,22 @@ public interface Zbdd
    */
   interface WithCache extends Zbdd
   {
+    /**
+     * Returns the current zbdd cache instance used for caching.
+     *
+     * @return  current zbdd cache instance, never {@code null}
+     */
     @Contract(pure = true)
     @NotNull ZbddCache getZbddCache();
+
+
+    /**
+     * Sets the given {@code zbddCache}.
+     *
+     * @param zbddCache  new zbdd cache instance to use for caching, not {@code null}
+     */
+    @Contract(mutates = "this,param1")
+    void setZbddCache(@NotNull ZbddCache zbddCache);
   }
 
 
