@@ -599,7 +599,7 @@ public class ZbddImpl implements Zbdd
     {
       // swap p <-> q, p_var <-> q_var
       int tmp = p; p = q; q = tmp;
-      tmp = p_var; p_var = q_var; q_var = tmp;
+      p_var = q_var;
     }
 
     __incRef(p);
