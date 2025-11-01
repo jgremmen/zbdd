@@ -24,8 +24,8 @@ instances, enhancing performance through memoization where needed. Additionally,
 instance to make it thread-safe, supporting concurrent applications without compromising integrity.
 
 ### Test Suite
-The library's comprehensive test suite demonstrates its practical efficacy through real-world combinatorial challenges,
-including solutions to the n-Queens problem across grid sizes from 1x1 to 13x13, as well as Sudoku puzzles spanning 
+The library's comprehensive test suite demonstrates its practical efficacy through real-world combinatorial challenges.
+E.g. solutions to the n-Queens problem across grid sizes from 1x1 to 13x13 and Sudoku puzzles spanning 
 easy to extreme difficulty levels.
 
 <img src="doc/image/test-suite-elapsed-time.png" title="n-Queens and Sudoku timing" width="450px">
