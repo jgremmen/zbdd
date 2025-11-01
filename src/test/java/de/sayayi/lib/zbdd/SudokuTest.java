@@ -16,7 +16,7 @@
 package de.sayayi.lib.zbdd;
 
 import de.sayayi.lib.zbdd.cache.ZbddFastCache;
-import de.sayayi.lib.zbdd.impl.DefaultCapacityAdvisor;
+import de.sayayi.lib.zbdd.internal.DefaultCapacityAdvisor;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;

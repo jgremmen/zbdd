@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.sayayi.lib.zbdd.impl;
+package de.sayayi.lib.zbdd.internal;
 
 import de.sayayi.lib.zbdd.Zbdd.WithCache;
 import de.sayayi.lib.zbdd.ZbddCapacityAdvisor;

@@ -17,7 +17,7 @@ package de.sayayi.lib.zbdd;
 
 import de.sayayi.lib.zbdd.exception.InvalidVarException;
 import de.sayayi.lib.zbdd.exception.InvalidZbddException;
-import de.sayayi.lib.zbdd.impl.DefaultCapacityAdvisor;
+import de.sayayi.lib.zbdd.internal.DefaultCapacityAdvisor;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
