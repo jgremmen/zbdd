@@ -9,6 +9,6 @@ buildscript {
 
   dependencies {
     classpath 'se.bjurr.gitchangelog.git-changelog-gradle-plugin:se.bjurr.gitchangelog.git-changelog-gradle-plugin.gradle.plugin:3.1.1'
-    classpath 'org.danilopianini.publish-on-central:org.danilopianini.publish-on-central.gradle.plugin:9.1.7'
+    classpath 'org.danilopianini.publish-on-central:org.danilopianini.publish-on-central.gradle.plugin:9.1.6'
   }
 }
