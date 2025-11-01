@@ -28,4 +28,4 @@ The library's comprehensive test suite demonstrates its practical efficacy throu
 including solutions to the n-Queens problem across grid sizes from 1x1 to 13x13, as well as Sudoku puzzles spanning 
 easy to extreme difficulty levels.
 
-<img src="doc/image/test-suite-elapsed-time.png" title="n-Queens and Sudoku timing" width="400px">
+<img src="doc/image/test-suite-elapsed-time.png" title="n-Queens and Sudoku timing" width="450px">
