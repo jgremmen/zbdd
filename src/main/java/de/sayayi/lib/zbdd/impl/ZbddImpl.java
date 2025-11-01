@@ -1225,7 +1225,7 @@ public class ZbddImpl implements Zbdd
   {
     __incRef(checkZbdd(zbdd, "zbdd"));
     try {
-      visitCubes0(visitor, new CubeVisitorStack(max(__getVar(zbdd), 1)), zbdd);
+      visitCubes0(visitor, new CubeVisitorStack(max(__getVar(zbdd), 0)), zbdd);
     } finally {
       __decRef(zbdd);
     }
@@ -1258,6 +1258,7 @@ public class ZbddImpl implements Zbdd
    * Initially, each newly created zbdd node references other zbdd nodes with lower zbdd numbers. Starting with the
    * first garbage collection, freed zbdd numbers are going to be reused, if possible. This means that the initial
    * contract is no longer valid and new zbdd nodes may have a lower number than the zbdd nodes it references.
+   * <p>
    * The list returned by this method essentially describes the generation sequence for all zbdd nodes in the correct
    * order.
    * <p>
@@ -1364,16 +1365,20 @@ public class ZbddImpl implements Zbdd
 
   private static final class CubeVisitorStack
   {
-    private final int[] stack;
+    private int[] stack;
     private int stackSize;
 
 
     private CubeVisitorStack(int size) {
-      stack = new int[size];
+      stack = new int[min(size, 24)];
     }
 
 
-    private void push(int value) {
+    private void push(int value)
+    {
+      if (stackSize == stack.length)
+        stack = copyOf(stack, stackSize * 3 / 2);
+
       stack[stackSize++] = value;
     }
 
