@@ -76,13 +76,6 @@ public class ZbddCachedImpl extends ZbddImpl implements WithCache
   }
 
 
-  @Override
-  @Contract(pure = true)
-  public @NotNull ZbddCachedImpl clone() {
-    throw new UnsupportedOperationException();
-  }
-
-
   /**
    * @since 0.1.3
    */
