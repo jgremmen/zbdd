@@ -16,57 +16,27 @@
 
 apply plugin: 'se.bjurr.gitchangelog.git-changelog-gradle-plugin'
 
-import se.bjurr.gitchangelog.plugin.gradle.GitChangelogTask;
+
+import com.github.jknack.handlebars.Options
+import se.bjurr.gitchangelog.api.model.Commit
+import se.bjurr.gitchangelog.plugin.gradle.GitChangelogTask
+import se.bjurr.gitchangelog.plugin.gradle.HelperParam
 
 
 tasks.named('gitChangelog', GitChangelogTask) {
   fromRevision.set('0.3.0')
   templateContent.set(layout.projectDirectory.dir("gradle").file("changelog.mustache").asFile.getText("UTF-8"))
 
-    {{#commits}}
-      {{#ifCommitType . type='feat'}}
- - {{#eachCommitScope .}} **{{.}}** {{/eachCommitScope}} {{{commitDescription .}}}&nbsp;&nbsp;([{{hash}}](https://github.com/jgremmen/zbdd/commit/{{hashFull}}))
-      {{/ifCommitType}}
-    {{/commits}}
-  {{/ifContainsType}}
-
-  {{#ifContainsType commits type='fix'}}
-### 🐞 Bug Fixes
-
----
-
-    {{#commits}}
-      {{#ifCommitType . type='fix'}}
- - {{#eachCommitScope .}} **{{.}}** {{/eachCommitScope}} {{{commitDescription .}}}&nbsp;&nbsp;([{{hash}}](https://github.com/jgremmen/zbdd/commit/{{hashFull}}))
-      {{/ifCommitType}}
-    {{/commits}}
-  {{/ifContainsType}}
-
-  {{#ifContainsType commits type='docs'}}
-### 📖 Documentation
-
----
-
-    {{#commits}}
-      {{#ifCommitType . type='docs'}}
- - {{#eachCommitScope .}} **{{.}}** {{/eachCommitScope}} {{{commitDescription .}}}&nbsp;&nbsp;([{{hash}}](https://github.com/jgremmen/zbdd/commit/{{hashFull}}))
-      {{/ifCommitType}}
-    {{/commits}}
-  {{/ifContainsType}}
-
-  {{#ifContainsType commits type='lib'}}
-### 🔗 Dependency Upgrades
-
----
-
-    {{#commits}}
-      {{#ifCommitType . type='lib'}}
- - {{#eachCommitScope .}} **{{.}}** {{/eachCommitScope}} {{{commitDescription .}}}&nbsp;&nbsp;([{{hash}}](https://github.com/jgremmen/zbdd/commit/{{hashFull}}))
-      {{/ifCommitType}}
-    {{/commits}}
-  {{/ifContainsType}}
-
-{{/ifReleaseTag}}
-{{/tags}}
-  """)
+  handlebarsHelpers.set([
+      new HelperParam("ifContainsFeature", (List<Commit> commits, Options options) -> {
+        return commits.find { it.message.startsWith('feat: ') } != null
+            ? options.fn(this)
+            : options.inverse(this)
+      }),
+      new HelperParam("ifCommitFeature", (String message, Options options) -> {
+        return message.startsWith('feat: ')
+            ? options.fn(this)
+            : options.inverse(this)
+      }),
+  ])
 }
