@@ -1,7 +1,7 @@
 ## Introduction to the ZBDD Java Library
 
 ### Introduction
-Zero-Suppressed Binary Decision Diagrams (ZBDDs), introduced by Shin Ichi Minato, are a compact data structure for
+[Zero-Suppressed Binary Decision Diagrams (ZBDDs)][1], introduced by Shin Ichi Minato, are a compact data structure for
 representing and manipulating large collections of sets or combinations from a universe of variables. Each ZBDD is a 
 directed acyclic graph where nodes correspond to variables, and edges indicate the absence (0-edge) or presence (1-edge)
 of a variable in a combination, with zero-suppression rules eliminating redundant nodes to optimize for sparse datasets.
@@ -29,3 +29,5 @@ E.g. solutions to the n-Queens problem across grid sizes from 1x1 to 13x13 and S
 easy to extreme difficulty levels.
 
 <img src="doc/image/test-suite-elapsed-time.png" title="n-Queens and Sudoku timing" width="450px">
+
+[1]: <https://dl.acm.org/doi/pdf/10.1145/157485.164890> "Zero-Suppressed BDDs for Set Manipulation in Combinatorial Problems"
