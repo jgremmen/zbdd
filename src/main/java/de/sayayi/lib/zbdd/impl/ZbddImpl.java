@@ -69,7 +69,7 @@ public class ZbddImpl implements Zbdd
   private final @NotNull ZbddCapacityAdvisor capacityAdvisor;
   private final @NotNull Statistics statistics;
   private final @NotNull List<ZbddCallback> callbacks;
-  private final @NotNull VarObjectMap varObjectMap;
+  private final @NotNull IntObjectMap varObjectMap;
 
   private int lastVarNumber;
 
@@ -96,7 +96,7 @@ public class ZbddImpl implements Zbdd
 
     statistics = new Statistics();
     callbacks = new ArrayList<>();
-    varObjectMap = new VarObjectMap();
+    varObjectMap = new IntObjectMap();
 
     clear();
   }
@@ -737,7 +737,7 @@ public class ZbddImpl implements Zbdd
 
   // union optimized for atomization; the 1-branch for every node points to base(1)
   @Contract(mutates = "this")
-  protected int __atomize_union(int p, int q)
+  private int __atomize_union(int p, int q)
   {
     // trivial cases: remove base from union
     if (p < 2)

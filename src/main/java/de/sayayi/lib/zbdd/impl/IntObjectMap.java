@@ -27,7 +27,7 @@ import static java.lang.Integer.bitCount;
  * @author Jeroen Gremmen
  * @since 0.5.0
  */
-final class VarObjectMap
+final class IntObjectMap
 {
   private static final int MAX_CAPACITY = 1 << 30;
   private static final double LOAD_FACTOR = 0.7;
@@ -40,7 +40,7 @@ final class VarObjectMap
   private int size;
 
 
-  VarObjectMap() {
+  IntObjectMap() {
     ensureCapacity(16);
   }
 
