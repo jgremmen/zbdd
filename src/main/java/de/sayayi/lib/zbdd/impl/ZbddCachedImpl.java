@@ -139,7 +139,7 @@ public class ZbddCachedImpl extends ZbddImpl implements WithCache
     final int top = __getVar(zbdd);
 
     if (top < var)
-      return getNode(var, ZBDD_EMPTY, zbdd);
+      return __getNode(var, ZBDD_EMPTY, zbdd);
 
     int r = zbddCache.getResult(CHANGE, zbdd, var);
     if (r == MIN_VALUE)

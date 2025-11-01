@@ -237,7 +237,7 @@ public class ZbddImpl implements Zbdd
   @Override
   @Contract(mutates = "this")
   public int cube(int var) {
-    return getNode(checkVar(var), ZBDD_EMPTY, ZBDD_BASE);
+    return __getNode(checkVar(var), ZBDD_EMPTY, ZBDD_BASE);
   }
 
 
@@ -274,7 +274,7 @@ public class ZbddImpl implements Zbdd
 
     for(int var: cubeVars)
       if (checkVar(var) != __getVar(r))
-        r = getNode(var, ZBDD_EMPTY, r);
+        r = __getNode(var, ZBDD_EMPTY, r);
 
     return r;
   }
@@ -330,7 +330,7 @@ public class ZbddImpl implements Zbdd
 
     final int p0 = __incRef(__subset0(__getP0(zbdd), var));
     final int p1 = __subset0(__getP1(zbdd), var);
-    final int r = getNode(top, __decRef(p0), p1);
+    final int r = __getNode(top, __decRef(p0), p1);
 
     __decRef(zbdd);
 
@@ -360,7 +360,7 @@ public class ZbddImpl implements Zbdd
 
     final int p0 = __incRef(__subset1(__getP0(zbdd), var));
     final int p1 = __subset1(__getP1(zbdd), var);
-    final int r = getNode(top, __decRef(p0), p1);
+    final int r = __getNode(top, __decRef(p0), p1);
 
     __decRef(zbdd);
 
@@ -381,20 +381,20 @@ public class ZbddImpl implements Zbdd
     final int top = __getVar(zbdd);
 
     if (top < var)
-      return getNode(var, ZBDD_EMPTY, zbdd);
+      return __getNode(var, ZBDD_EMPTY, zbdd);
 
     __incRef(zbdd);
 
     final int r;
 
     if (top == var)
-      r = getNode(var, __getP1(zbdd), __getP0(zbdd));
+      r = __getNode(var, __getP1(zbdd), __getP0(zbdd));
     else
     {
       final int p0 = __incRef(__change(__getP0(zbdd), var));
       final int p1 = __change(__getP1(zbdd), var);
 
-      r = getNode(top, __decRef(p0), p1);
+      r = __getNode(top, __decRef(p0), p1);
     }
 
     __decRef(zbdd);
@@ -475,7 +475,7 @@ public class ZbddImpl implements Zbdd
     {
       final int p0 = __union(p, __getP0(q));
 
-      r = getNode(q_var, p0, __getP1(q));
+      r = __getNode(q_var, p0, __getP1(q));
     }
     else
     {
@@ -483,7 +483,7 @@ public class ZbddImpl implements Zbdd
       final int p0 = __incRef(__union(__getP0(p), __getP0(q)));
       final int p1 = __union(__getP1(p), __getP1(q));
 
-      r = getNode(p_var, __decRef(p0), p1);
+      r = __getNode(p_var, __decRef(p0), p1);
     }
 
     __decRef(q);
@@ -524,7 +524,7 @@ public class ZbddImpl implements Zbdd
       final int p0 = __incRef(__intersect(__getP0(p), __getP0(q)));
       final int p1 = __intersect(__getP1(p), __getP1(q));
 
-      r = getNode(p_var, __decRef(p0), p1);
+      r = __getNode(p_var, __decRef(p0), p1);
     }
 
     __decRef(q);
@@ -559,13 +559,13 @@ public class ZbddImpl implements Zbdd
     if (p_var < q_var)
       r = __difference(p, __getP0(q));
     else if (p_var > q_var)
-      r = getNode(p_var, __difference(__getP0(p), q), __getP1(p));
+      r = __getNode(p_var, __difference(__getP0(p), q), __getP1(p));
     else
     {
       final int p0 = __incRef(__difference(__getP0(p), __getP0(q)));
       final int p1 = __difference(__getP1(p), __getP1(q));
 
-      r = getNode(p_var, __decRef(p0), p1);
+      r = __getNode(p_var, __decRef(p0), p1);
     }
 
     __decRef(q);
@@ -727,7 +727,7 @@ public class ZbddImpl implements Zbdd
     final int p1_atomized = __atomize(__getP1(zbdd));
 
     final int p0 = __atomize_union(__decRef(p0_atomized), p1_atomized);  // release p0_atomized
-    final int r = getNode(__getVar(zbdd), p0, ZBDD_BASE);
+    final int r = __getNode(__getVar(zbdd), p0, ZBDD_BASE);
 
     __decRef(zbdd);  // release zbdd
 
@@ -759,7 +759,7 @@ public class ZbddImpl implements Zbdd
     __incRef(q);  // lock q
 
     final int p0 = __atomize_union(p_var < q_var ? p : __getP0(p), __getP0(q));
-    final int r = getNode(q_var, p0, ZBDD_BASE);
+    final int r = __getNode(q_var, p0, ZBDD_BASE);
 
     __decRef(q);  // release q
     __decRef(p);  // release p
@@ -784,7 +784,7 @@ public class ZbddImpl implements Zbdd
     __incRef(zbdd);
 
     final int p0 = __removeBase(__getP0(zbdd));
-    final int r = getNode(__getVar(zbdd), p0, __getP1(zbdd));
+    final int r = __getNode(__getVar(zbdd), p0, __getP1(zbdd));
 
     __decRef(zbdd);
 
