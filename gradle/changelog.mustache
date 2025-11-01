@@ -1,0 +1,64 @@
+# Zbdd Changelog
+
+{{#tags}}
+---
+## [v{{name}}](https://github.com/jgremmen/zbdd/compare/{{name}})&nbsp;&nbsp;({{tagDate .}})
+
+  {{#ifContainsBreaking commits}}
+### Breaking Changes
+
+    {{#commits}}
+      {{#ifCommitBreaking .}}
+- {{#eachCommitScope .}} **{{.}}** {{/eachCommitScope}} {{{commitDescription .}}}&nbsp;&nbsp;([{{subString hash 0 6}}](https://github.com/jgremmen/zbdd/commit/{{hashFull}}))
+      {{/ifCommitBreaking}}
+    {{/commits}}
+  {{/ifContainsBreaking}}
+
+
+  {{#ifContainsType commits type="feat"}}
+### Features
+
+    {{#commits}}
+      {{#ifCommitType . type="feat"}}
+- {{#eachCommitScope .}} **{{.}}** {{/eachCommitScope}} {{{commitDescription .}}}&nbsp;&nbsp;([{{subString hash 0 6}}](https://github.com/jgremmen/zbdd/commit/{{hashFull}}))
+      {{/ifCommitType}}
+    {{/commits}}
+  {{/ifContainsType}}
+
+
+  {{#ifContainsType commits type="fix"}}
+### Bug Fixes
+
+    {{#commits}}
+      {{#ifCommitType . type="fix"}}
+- {{#eachCommitScope .}} **{{.}}** {{/eachCommitScope}} {{{commitDescription .}}}&nbsp;&nbsp;([{{subString hash 0 6}}](https://github.com/jgremmen/zbdd/commit/{{hashFull}}))
+      {{/ifCommitType}}
+    {{/commits}}
+  {{/ifContainsType}}
+
+
+  {{#ifContainsTypeAndScope commits type="feat" scope="deps"}}
+### Dependency Updates
+
+    {{#commits}}
+      {{#ifCommitType . type="feat"}}
+        {{#ifCommitScope . scope="deps"}}
+- {{{commitDescription .}}}&nbsp;&nbsp;([{{subString hash 0 6}}](https://github.com/jgremmen/zbdd/commit/{{hashFull}}))
+        {{/ifCommitScope}}
+      {{/ifCommitType}}
+    {{/commits}}
+  {{/ifContainsTypeAndScope}}
+
+
+  {{#ifContainsType commits type="docs"}}
+### Documentation
+
+    {{#commits}}
+      {{#ifCommitType . type="docs"}}
+- {{#eachCommitScope .}} **{{.}}** {{/eachCommitScope}} {{{commitDescription .}}}&nbsp;&nbsp;([{{subString hash 0 6}}](https://github.com/jgremmen/zbdd/commit/{{hashFull}}))
+      {{/ifCommitType}}
+    {{/commits}}
+  {{/ifContainsType}}
+
+
+{{/tags}}

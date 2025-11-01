@@ -21,16 +21,7 @@ import se.bjurr.gitchangelog.plugin.gradle.GitChangelogTask;
 
 tasks.named('gitChangelog', GitChangelogTask) {
   fromRevision.set('0.3.0')
-  templateContent.set("""
-# Changelog {{#tags}}
-
-{{#ifReleaseTag .}}
-## [{{name}}](https://github.com/jgremmen/zbdd/compare/{{name}}) ({{tagDate .}})
-
-  {{#ifContainsType commits type='feat'}}
-### ⭐ New Features
-
----
+  templateContent.set(layout.projectDirectory.dir("gradle").file("changelog.mustache").asFile.getText("UTF-8"))
 
     {{#commits}}
       {{#ifCommitType . type='feat'}}
