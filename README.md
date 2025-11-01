@@ -20,3 +20,7 @@ single-variable elements present in the original.
 The library includes a factory mechanism for instantiating either regular or cached ZBDD
 instances, enhancing performance through memoization where needed. Additionally, the factory allows wrapping any ZBDD 
 instance to make it thread-safe, supporting concurrent applications without compromising integrity.
+
+The library's comprehensive test suite demonstrates its practical efficacy through real-world combinatorial challenges,
+including solutions to the n-queens problem across grid sizes from 1x1 to 13x13, as well as Sudoku puzzles spanning 
+easy to extreme difficulty levels.
