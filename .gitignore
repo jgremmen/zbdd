@@ -1,3 +1,6 @@
 /.build/
 /.gradle/
 /gradle.properties
+/.idea/compiler.xml
+/.idea/gradle.xml
+/.idea/jarRepositories.xml
