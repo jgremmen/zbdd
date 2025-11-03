@@ -18,6 +18,8 @@ package de.sayayi.lib.zbdd.internal;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.StringJoiner;
+
 import static java.lang.Integer.bitCount;
 
 
@@ -122,5 +124,21 @@ final class IntObjectMap
   @Contract(pure = true)
   private int hash(int key) {
     return ((1327217885 * key) >> hashShift) & hashMask;
+  }
+
+
+  @Override
+  public String toString()
+  {
+    final var s = new StringJoiner(", ", "{", "}");
+
+    for(int i = 0, length = keys.length; i < length; i++)
+    {
+      var value = values[i];
+      if (value != null)
+        s.add(Integer.toString(keys[i]) + '=' + value);
+    }
+
+    return s.toString();
   }
 }
