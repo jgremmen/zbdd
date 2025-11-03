@@ -23,20 +23,69 @@ import se.bjurr.gitchangelog.plugin.gradle.GitChangelogTask
 import se.bjurr.gitchangelog.plugin.gradle.HelperParam
 
 
+def isFeature = (Commit commit) -> {
+  return commit.messageTitle.startsWith('feat: ')
+}
+
+def isBugFix = (Commit commit) -> {
+  def msg = commit.messageTitle
+  return msg.startsWith('fix: ') || msg.startsWith('chore(fix): ')
+}
+
+def isDependency = (Commit commit) -> {
+  def msg = commit.messageTitle
+  return msg.startsWith('feat(deps): ') || msg.startsWith('fix(deps): ')
+}
+
+def isDocumentation = (Commit commit) -> {
+  return commit.messageTitle.startsWith('docs: ')
+}
+
+
 tasks.named('gitChangelog', GitChangelogTask) {
   fromRevision.set('0.3.0')
   templateContent.set(layout.projectDirectory.dir("gradle").file("changelog.mustache").asFile.getText("UTF-8"))
 
   handlebarsHelpers.set([
       new HelperParam("ifContainsFeature", (List<Commit> commits, Options options) -> {
-        return commits.find { it.message.startsWith('feat: ') } != null
-            ? options.fn(this)
-            : options.inverse(this)
+        return commits.find { isFeature(it) } != null
+            ? options.fn(options.context)
+            : options.inverse(options.context)
       }),
-      new HelperParam("ifCommitFeature", (String message, Options options) -> {
-        return message.startsWith('feat: ')
-            ? options.fn(this)
-            : options.inverse(this)
+      new HelperParam("ifCommitFeature", (Commit commit, Options options) -> {
+        return isFeature(commit)
+            ? options.fn(options.context)
+            : options.inverse(options.context)
       }),
+      new HelperParam("ifContainsBugFix", (List<Commit> commits, Options options) -> {
+        return commits.find { isBugFix(it) } != null
+            ? options.fn(options.context)
+            : options.inverse(options.context)
+      }),
+      new HelperParam("ifCommitBugFix", (Commit commit, Options options) -> {
+        return isBugFix(commit)
+            ? options.fn(options.context)
+            : options.inverse(options.context)
+      }),
+      new HelperParam("ifContainsDependency", (List<Commit> commits, Options options) -> {
+        return commits.find { isDependency(it) } != null
+            ? options.fn(options.context)
+            : options.inverse(options.context)
+      }),
+      new HelperParam("ifCommitDependency", (Commit commit, Options options) -> {
+        return isDependency(commit)
+            ? options.fn(options.context)
+            : options.inverse(options.context)
+      }),
+      new HelperParam("ifContainsDocumentation", (List<Commit> commits, Options options) -> {
+        return commits.find { isDocumentation(it) } != null
+            ? options.fn(options.context)
+            : options.inverse(options.context)
+      }),
+      new HelperParam("ifCommitDocumentation", (Commit commit, Options options) -> {
+        return isDocumentation(commit)
+            ? options.fn(options.context)
+            : options.inverse(options.context)
+      })
   ])
 }

@@ -11,62 +11,56 @@
 
     {{#commits}}
       {{#ifCommitBreaking .}}
-- {{#eachCommitScope .}} **{{.}}** {{/eachCommitScope}} {{{commitDescription .}}}&nbsp;&nbsp;([{{subString hash 0 6}}](https://github.com/jgremmen/zbdd/commit/{{hashFull}}))
+- {{{commitDescription .}}}&nbsp;&nbsp;([{{subString hash 0 6}}](https://github.com/jgremmen/zbdd/commit/{{hashFull}}))
       {{/ifCommitBreaking}}
     {{/commits}}
   {{/ifContainsBreaking}}
 
 
-  {{#ifContainsType commits type="feat"}}
+  {{#ifContainsFeature commits}}
 ### <svg xmlns="http://www.w3.org/2000/svg" style="vertical-align:top;" height="1em" viewBox="2 2 22 19"><path fill="currentColor" d="M12,15.39L8.24,17.66L9.23,13.38L5.91,10.5L10.29,10.13L12,6.09L13.71,10.13L18.09,10.5L14.77,13.38L15.76,17.66M22,9.24L14.81,8.63L12,2L9.19,8.63L2,9.24L7.45,13.97L5.82,21L12,17.27L18.18,21L16.54,13.97L22,9.24Z"/></svg> Features
 
     {{#commits}}
-      {{#ifCommitBreaking .}}{{else}}
-        {{#ifCommitType . type="feat"}}
-- {{#eachCommitScope .}} **{{.}}** {{/eachCommitScope}} {{{commitDescription .}}}&nbsp;&nbsp;([{{subString hash 0 6}}](https://github.com/jgremmen/zbdd/commit/{{hashFull}}))
-        {{/ifCommitType}}
-      {{/ifCommitBreaking}}
+      {{#ifCommitFeature .}}
+- {{{commitDescription .}}}&nbsp;&nbsp;([{{subString hash 0 6}}](https://github.com/jgremmen/zbdd/commit/{{hashFull}}))
+      {{/ifCommitFeature}}
     {{/commits}}
-  {{/ifContainsType}}
+  {{/ifContainsFeature}}
 
 
-  {{#ifContainsType commits type="fix"}}
+  {{#ifContainsBugFix commits}}
 ### <svg xmlns="http://www.w3.org/2000/svg" style="vertical-align:top;" height="1em" viewBox="1 2 23 20"><path fill="currentColor" d="M9,2H7V4.1C6.29,4.25 5.73,4.54 5.32,4.91L2.7,2.29L1.29,3.71L4.24,6.65C4,7.39 4,8 4,8H2V10H4.04C4.1,10.63 4.21,11.36 4.4,12.15L1.68,13.05L2.31,14.95L5,14.05C5.24,14.56 5.5,15.08 5.82,15.58L3.44,17.17L4.55,18.83L7.07,17.15C7.63,17.71 8.29,18.21 9.06,18.64L8.1,20.55L9.89,21.45L10.89,19.45L10.73,19.36C11.68,19.68 12.76,19.9 14,19.97V22H16V19.93C16.76,19.84 17.81,19.64 18.77,19.19L20.29,20.71L21.7,19.29L20.37,17.95C20.75,17.44 21,16.8 21,16C21,15.5 20.95,15.08 20.88,14.68L22.45,13.9L21.55,12.1L20.18,12.79C19.63,11.96 18.91,11.5 18.29,11.28L18.95,9.32L17.05,8.68L16.29,10.96C14.96,10.83 14.17,10.32 13.7,9.77L15.45,8.9L14.55,7.1L13,7.89C12.97,7.59 12.86,6.72 12.28,5.87L13.83,3.55L12.17,2.44L10.76,4.56C10.28,4.33 9.7,4.15 9,4.06M15,18C12.06,18 9.81,17.18 8.31,15.56C5.68,12.72 6,8.2 6,8.17V8.11L6,8.03C6,7.1 6.39,6 8,6C10.63,6 10.97,7.43 11,8C11,10 12.6,13 17,13C17.33,13 19,13.15 19,16C19,17.89 15.03,18 15,18M8.5,8A1.5,1.5 0 0,0 7,9.5A1.5,1.5 0 0,0 8.5,11A1.5,1.5 0 0,0 10,9.5A1.5,1.5 0 0,0 8.5,8M11,12A1,1 0 0,0 10,13A1,1 0 0,0 11,14A1,1 0 0,0 12,13A1,1 0 0,0 11,12M15.5,14A1.5,1.5 0 0,0 14,15.5A1.5,1.5 0 0,0 15.5,17A1.5,1.5 0 0,0 17,15.5A1.5,1.5 0 0,0 15.5,14Z"/></svg> Bug Fixes
 
     {{#commits}}
       {{#ifCommitBreaking .}}{{else}}
-        {{#ifCommitType . type="fix"}}
-- {{#eachCommitScope .}} **{{.}}** {{/eachCommitScope}} {{{commitDescription .}}}&nbsp;&nbsp;([{{subString hash 0 6}}](https://github.com/jgremmen/zbdd/commit/{{hashFull}}))
-        {{/ifCommitType}}
+        {{#ifCommitBugFix .}}
+- {{{commitDescription .}}}&nbsp;&nbsp;([{{subString hash 0 6}}](https://github.com/jgremmen/zbdd/commit/{{hashFull}}))
+        {{/ifCommitBugFix}}
       {{/ifCommitBreaking}}
     {{/commits}}
-  {{/ifContainsType}}
+  {{/ifContainsBugFix}}
 
 
-  {{#ifContainsTypeAndScope commits type="feat" scope="deps"}}
+  {{#ifContainsDependency commits}}
 ### <svg xmlns="http://www.w3.org/2000/svg" style="vertical-align:top;" height="1em" viewBox="2 2 22 20"><path fill="currentColor" d="M19.5 17C19.36 17 19.24 17 19.11 17.04L17.5 13.8C17.95 13.35 18.25 12.71 18.25 12C18.25 10.62 17.13 9.5 15.75 9.5C15.61 9.5 15.5 9.5 15.35 9.54L13.74 6.3C14.21 5.84 14.5 5.21 14.5 4.5C14.5 3.12 13.38 2 12 2S9.5 3.12 9.5 4.5C9.5 5.2 9.79 5.84 10.26 6.29L8.65 9.54C8.5 9.5 8.39 9.5 8.25 9.5C6.87 9.5 5.75 10.62 5.75 12C5.75 12.71 6.04 13.34 6.5 13.79L4.89 17.04C4.76 17 4.64 17 4.5 17C3.12 17 2 18.12 2 19.5C2 20.88 3.12 22 4.5 22S7 20.88 7 19.5C7 18.8 6.71 18.16 6.24 17.71L7.86 14.46C8 14.5 8.12 14.5 8.25 14.5C8.38 14.5 8.5 14.5 8.63 14.46L10.26 17.71C9.79 18.16 9.5 18.8 9.5 19.5C9.5 20.88 10.62 22 12 22S14.5 20.88 14.5 19.5C14.5 18.12 13.38 17 12 17C11.87 17 11.74 17 11.61 17.04L10 13.8C10.45 13.35 10.75 12.71 10.75 12C10.75 11.3 10.46 10.67 10 10.21L11.61 6.96C11.74 7 11.87 7 12 7C12.13 7 12.26 7 12.39 6.96L14 10.21C13.54 10.66 13.25 11.3 13.25 12C13.25 13.38 14.37 14.5 15.75 14.5C15.88 14.5 16 14.5 16.13 14.46L17.76 17.71C17.29 18.16 17 18.8 17 19.5C17 20.88 18.12 22 19.5 22S22 20.88 22 19.5C22 18.12 20.88 17 19.5 17M4.5 20.5C3.95 20.5 3.5 20.05 3.5 19.5S3.95 18.5 4.5 18.5 5.5 18.95 5.5 19.5 5.05 20.5 4.5 20.5M13 19.5C13 20.05 12.55 20.5 12 20.5S11 20.05 11 19.5 11.45 18.5 12 18.5 13 18.95 13 19.5M7.25 12C7.25 11.45 7.7 11 8.25 11S9.25 11.45 9.25 12 8.8 13 8.25 13 7.25 12.55 7.25 12M11 4.5C11 3.95 11.45 3.5 12 3.5S13 3.95 13 4.5 12.55 5.5 12 5.5 11 5.05 11 4.5M14.75 12C14.75 11.45 15.2 11 15.75 11S16.75 11.45 16.75 12 16.3 13 15.75 13 14.75 12.55 14.75 12M19.5 20.5C18.95 20.5 18.5 20.05 18.5 19.5S18.95 18.5 19.5 18.5 20.5 18.95 20.5 19.5 20.05 20.5 19.5 20.5Z"/></svg> Dependency Updates
 
     {{#commits}}
-      {{#ifCommitBreaking .}}{{else}}
-        {{#ifCommitType . type="feat"}}
-          {{#ifCommitScope . scope="deps"}}
+      {{#ifCommitDependency .}}
 - {{{commitDescription .}}}&nbsp;&nbsp;([{{subString hash 0 6}}](https://github.com/jgremmen/zbdd/commit/{{hashFull}}))
-          {{/ifCommitScope}}
-        {{/ifCommitType}}
-      {{/ifCommitBreaking}}
+      {{/ifCommitDependency}}
     {{/commits}}
-  {{/ifContainsTypeAndScope}}
+  {{/ifContainsDependency}}
 
 
-  {{#ifContainsType commits type="docs"}}
+  {{#ifContainsDocumentation commits}}
 ### <svg xmlns="http://www.w3.org/2000/svg" style="vertical-align:top;" height="1em" viewBox="4 2 18 20"><path fill="currentColor" d="M6,2A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2H6M6,4H13V9H18V20H6V4M8,12V14H16V12H8M8,16V18H13V16H8Z" /></svg> Documentation
 
     {{#commits}}
-      {{#ifCommitType . type="docs"}}
-- {{#eachCommitScope .}} **{{.}}** {{/eachCommitScope}} {{{commitDescription .}}}&nbsp;&nbsp;([{{subString hash 0 6}}](https://github.com/jgremmen/zbdd/commit/{{hashFull}}))
-      {{/ifCommitType}}
+      {{#ifCommitDocumentation .}}
+- {{{commitDescription .}}}&nbsp;&nbsp;([{{subString hash 0 6}}](https://github.com/jgremmen/zbdd/commit/{{hashFull}}))
+      {{/ifCommitDocumentation}}
     {{/commits}}
-  {{/ifContainsType}}
+  {{/ifContainsDocumentation}}
 
 
 {{/ifReleaseTag}}
