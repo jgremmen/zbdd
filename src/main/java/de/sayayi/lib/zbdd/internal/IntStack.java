@@ -29,7 +29,7 @@ import static java.util.Arrays.copyOf;
  * @author Jeroen Gremmen
  * @since 0.6.0
  */
-public final class IntStack
+final class IntStack
 {
   private int[] stack;
   private int stackSize;

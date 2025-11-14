@@ -20,7 +20,9 @@ import de.sayayi.lib.zbdd.exception.InvalidZbddException;
 import de.sayayi.lib.zbdd.internal.DefaultCapacityAdvisor;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 import java.util.Random;
 import java.util.TreeMap;
@@ -35,6 +37,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Jeroen Gremmen
  */
 @DisplayName("Basic zbdd operations")
+@TestMethodOrder(MethodOrderer.DisplayName.class)
 class ZbddTest
 {
   @Test
