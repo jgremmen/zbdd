@@ -480,6 +480,14 @@ public interface Zbdd
   @NotNull ZbddNodeInfo getZbddNodeInfo(int zbdd);
 
 
+  /**
+   * Returns a string representation of the set denoted by {@code zbdd}, using the currently associated
+   * {@link ZbddLiteralResolver}.
+   *
+   * @param zbdd  zbdd node
+   *
+   * @return  string representation of the set denoted by {@code zbdd}
+   */
   @Contract(value = "_ -> new", pure = true)
   @NotNull String toString(int zbdd);
 
