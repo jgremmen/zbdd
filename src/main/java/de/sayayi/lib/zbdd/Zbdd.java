@@ -523,6 +523,20 @@ public interface Zbdd
   int @NotNull [] calculateNodeDependency();
 
 
+  /**
+   * Returns an array of zbdd nodes, where each zbdd node represents a single cube in the given {@code zbdd}.
+   * <p>
+   * For an empty zbdd, the returned array is empty.
+   *
+   * @param zbdd  zbdd node
+   *
+   * @return  an array of single cube zbdd nodes, never {@code null}
+   *
+   * @since 0.6.0
+   */
+  int @NotNull [] asSingleCubeZbdds(int zbdd);
+
+
 
 
   /**

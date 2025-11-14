@@ -512,7 +512,19 @@ public class ZbddConcurrent implements Zbdd.Concurrent
   {
     lock.lock();
     try {
-      return this.zbdd.calculateNodeDependency();
+      return zbdd.calculateNodeDependency();
+    } finally {
+      lock.unlock();
+    }
+  }
+
+
+  @Override
+  public int @NotNull [] asSingleCubeZbdds(int zbdd)
+  {
+    lock.lock();
+    try {
+      return this.zbdd.asSingleCubeZbdds(zbdd);
     } finally {
       lock.unlock();
     }

@@ -388,8 +388,10 @@ class ZbddTest
 
       for(int elements = random.nextInt(7) + (random.nextBoolean() ? 1 : 0), e = 0; e < elements; e++)
       {
-        int elementMask, bits;
-        do { bits = bitCount(elementMask = random.nextInt() & 0xffff); } while(bits > 6);
+        int elementMask;
+        do {
+          elementMask = random.nextInt() & 0xffff;
+        } while(bitCount(elementMask) > 6);
 
         mask |= elementMask;
 
@@ -418,6 +420,65 @@ class ZbddTest
 
       final var _expectedSet = expectedSet;
       assertEquals(expectedSet, atomizedSet, () -> "expected result = " + zbdd.toString(_expectedSet));
+    }
+
+    System.out.println(zbdd.getStatistics());
+  }
+
+
+  @Test
+  @DisplayName("Operation 'asSingleCubeZbdds'")
+  void asSingleCubeZbdds()
+  {
+    final var zbdd = ZbddFactory.create();
+    final var variableToLiteralMap = new TreeMap<Integer,String>();
+    final var variables = new int[16];
+
+    for(int n = 0; n < 16; n++)
+      variableToLiteralMap.put(variables[n] = zbdd.createVar(), Character.toString((char)('a' + 15 - n)));
+
+    zbdd.setLiteralResolver(new ZbddLiteralResolver() {
+      @Override
+      public @NotNull String getLiteralName(int var) {
+        return variableToLiteralMap.get(var);
+      }
+
+      @Override
+      public @NotNull String getCubeName(int @NotNull [] cubeVars) {
+        return cubeVars.length == 0 ? "*" : stream(cubeVars).boxed().sorted((a,b) -> b - a).map(this::getLiteralName).collect(joining());
+      }
+    });
+
+    final var random = new Random();
+
+    for(int cycle = 1; cycle <= 500; cycle++)
+    {
+      var set = random.nextBoolean() ? Zbdd.base() : Zbdd.empty();
+
+      for(int elements = random.nextInt(7) + (random.nextBoolean() ? 1 : 0), e = 0; e < elements; e++)
+      {
+        int elementMask;
+        do {
+          elementMask = random.nextInt() & 0xffff;
+        } while(bitCount(elementMask) > 8);
+
+        final var set0 = zbdd.incRef(set);  // lock set
+        set = zbdd.union(set, zbddFromMask(zbdd, variables, elementMask));
+        zbdd.decRef(set0);  // release previous set
+      }
+
+      final var elementZbdds = zbdd.asSingleCubeZbdds(set);
+      assertEquals(zbdd.count(set), elementZbdds.length);
+
+      for(var elementZbdd: zbdd.incRef(elementZbdds))
+      {
+        assertEquals(1, zbdd.count(elementZbdd));
+        set = zbdd.difference(set, elementZbdd);
+      }
+
+      assertTrue(Zbdd.isEmpty(set));
+
+      zbdd.decRef(elementZbdds);
     }
 
     System.out.println(zbdd.getStatistics());

@@ -114,7 +114,7 @@ public class ZbddImpl implements Zbdd
 
   @Override
   public void registerCallback(@NotNull ZbddCallback callback) {
-    callbacks.add(callback);
+    callbacks.add(requireNonNull(callback));
   }
 
 
@@ -1225,7 +1225,7 @@ public class ZbddImpl implements Zbdd
   {
     __incRef(checkZbdd(zbdd, "zbdd"));
     try {
-      visitCubes0(visitor, new CubeVisitorStack(max(__getVar(zbdd), 0)), zbdd);
+      visitCubes0(visitor, new IntStack(__getVar(zbdd)), zbdd);
     } finally {
       __decRef(zbdd);
     }
@@ -1233,10 +1233,10 @@ public class ZbddImpl implements Zbdd
 
 
   @Contract(mutates = "param2")
-  private void visitCubes0(@NotNull CubeVisitor visitor, @NotNull CubeVisitorStack vars, int zbdd)
+  private void visitCubes0(@NotNull CubeVisitor visitor, @NotNull IntStack vars, int zbdd)
   {
     if (zbdd == ZBDD_BASE)
-      visitor.visitCube(vars.getCube());
+      visitor.visitCube(vars.getIntArray());
     else if (zbdd != ZBDD_EMPTY)
     {
       final int offset = zbdd * NODE_RECORD_SIZE;
@@ -1361,36 +1361,25 @@ public class ZbddImpl implements Zbdd
   }
 
 
-
-
-  private static final class CubeVisitorStack
+  @Override
+  public int @NotNull [] asSingleCubeZbdds(int zbdd)
   {
-    private int[] stack;
-    private int stackSize;
+    final var elementZbdds = new IntStack(16);
 
+    try {
+      visitCubes(zbdd, cubeVars -> {
+        var r = ZBDD_BASE;
 
-    private CubeVisitorStack(int size) {
-      stack = new int[min(size, 24)];
+        for(var n = cubeVars.length; n-- > 0;)
+          r = __getNode(cubeVars[n], ZBDD_EMPTY, r);
+
+        __incRef(elementZbdds.push(r));
+      });
+    } finally {
+      elementZbdds.forEach(this::__decRef);
     }
 
-
-    private void push(int value)
-    {
-      if (stackSize == stack.length)
-        stack = copyOf(stack, stackSize * 3 / 2);
-
-      stack[stackSize++] = value;
-    }
-
-
-    private void pop() {
-      stackSize--;
-    }
-
-
-    private int @NotNull [] getCube() {
-      return copyOf(stack, stackSize);
-    }
+    return elementZbdds.getIntArray();
   }
 
 
