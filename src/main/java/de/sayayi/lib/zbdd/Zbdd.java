@@ -384,14 +384,87 @@ public interface Zbdd
   int gc();
 
 
+  /**
+   * Increments the reference count for the given {@code zbdd}.
+   * <p>
+   * When a new zbdd is constructed (see {@link #getNode(int, int, int)}) the capacity advisor may suggest garbage
+   * collection to free unused zbdd noodes before the decision is made to increase the node capacity. All zbdd nodes
+   * that have an incremented reference count are protected from garabage collection.
+   * <p>
+   * All functions in this interface that accept one or more zbdds as a parameter will protect those zbdds by
+   * internally increasing the reference count on entry and decreasing it on exit.
+   *
+   * @param zbdd  zbdd node
+   *
+   * @return  zbdd node
+   *
+   * @see #gc()
+   * @see #incRef(int[])
+   * @see #decRef(int)
+   */
   @Contract(value = "_ -> param1", mutates = "this")
   @MustBeInvokedByOverriders
   int incRef(int zbdd);
 
 
+  /**
+   * Increase the reference count for all zbdd nodes in {@code zbdds}.
+   *
+   * @param zbdds  array of zbdd nodes, not {@code null}
+   *
+   * @return  zbdds
+   *
+   * @see #incRef(int)
+   *
+   * @since 0.5.1
+   */
+  @Contract(mutates = "this")
+  @MustBeInvokedByOverriders
+  default int @NotNull [] incRef(int @NotNull [] zbdds)
+  {
+    for(var zbdd: zbdds)
+      incRef(zbdd);
+
+    return zbdds;
+  }
+
+
+  /**
+   * Decrements the reference count for the given {@code zbdd}.
+   *
+   * @param zbdd  zbdd node
+   *
+   * @return  zbdd node
+   *
+   * @see #gc()
+   * @see #incRef(int)
+   * @see #decRef(int[])
+   */
   @Contract(value = "_ -> param1", mutates = "this")
   @MustBeInvokedByOverriders
   int decRef(int zbdd);
+
+
+  /**
+   * Decrease the reference count for all zbdd nodes in {@code zbdds}.
+   *
+   * @param zbdds  array of zbdd nodes, not {@code null}
+   *
+   * @return  zbdds
+   *
+   * @see #decRef(int)
+   * 
+   * @since 0.5.1
+   */
+  @Contract(mutates = "this")
+  @MustBeInvokedByOverriders
+  default int @NotNull [] decRef(int @NotNull [] zbdds)
+  {
+    for(var zbdd: zbdds)
+      decRef(zbdd);
+
+    return zbdds;
+  }
 
 
   /**
