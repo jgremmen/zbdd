@@ -49,7 +49,7 @@ public interface ZbddLiteralResolver
   /**
    * Return the string representation of a cube.
    *
-   * @param cubeVars  zbdd variables
+   * @param cubeVars  zbdd variables, sorted in descending order
    *
    * @return  cube name, never {@code null}
    */
