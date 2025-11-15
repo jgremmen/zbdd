@@ -184,6 +184,7 @@ public class SudokuTest
       }
 
       System.out.println();
+      return false;
     });
 
     zbdd.gc();

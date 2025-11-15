@@ -499,8 +499,10 @@ public interface Zbdd
    *
    * @param zbdd     zbdd node
    * @param visitor  cube visitor, not {@code null}
+   *
+   * @return {@code false} if the {@code visitor} has aborted the continuation, {@code true} otherwise
    */
-  void visitCubes(int zbdd, @NotNull CubeVisitor visitor);
+  boolean visitCubes(int zbdd, @NotNull CubeVisitor visitor);
 
 
   /**
@@ -510,9 +512,11 @@ public interface Zbdd
    * @param zbdd     zbdd node
    * @param visitor  zbdd visitor, not {@code null}
    *
+   * @return {@code false} if the {@code visitor} has aborted the continuation, {@code true} otherwise
+   *
    * @since 0.6.0
    */
-  void visitCubeZbdds(int zbdd, @NotNull ZbddVisitor visitor);
+  boolean visitCubeZbdds(int zbdd, @NotNull ZbddVisitor visitor);
 
 
   /**
@@ -566,10 +570,12 @@ public interface Zbdd
      *
      * @param vars  cube variables or empty array, never {@code null}
      *
+     * @return  {@code true} to continue visiting, {@code false} to abort
+     *
      * @see #visitCubes(int, CubeVisitor)
      * @see #base()
      */
-    void visitCube(int @NotNull [] vars);
+    boolean visitCube(int @NotNull [] vars);
   }
 
 
@@ -590,9 +596,11 @@ public interface Zbdd
      *
      * @param zbdd  zbdd node representing a single cube
      *
+     * @return  {@code true} to continue visiting, {@code false} to abort
+     *
      * @see #visitCubeZbdds(int, ZbddVisitor)
      */
-    void visitZbdd(int zbdd);
+    boolean visitZbdd(int zbdd);
   }
 
 

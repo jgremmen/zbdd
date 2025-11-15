@@ -496,11 +496,11 @@ public class ZbddConcurrent implements Zbdd.Concurrent
 
 
   @Override
-  public void visitCubes(int zbdd, @NotNull CubeVisitor visitor)
+  public boolean visitCubes(int zbdd, @NotNull CubeVisitor visitor)
   {
     lock.lock();
     try {
-      this.zbdd.visitCubes(zbdd, visitor);
+      return this.zbdd.visitCubes(zbdd, visitor);
     } finally {
       lock.unlock();
     }
@@ -508,11 +508,11 @@ public class ZbddConcurrent implements Zbdd.Concurrent
 
 
   @Override
-  public void visitCubeZbdds(int zbdd, @NotNull ZbddVisitor visitor)
+  public boolean visitCubeZbdds(int zbdd, @NotNull ZbddVisitor visitor)
   {
     lock.lock();
     try {
-      this.zbdd.visitCubeZbdds(zbdd, visitor);
+      return this.zbdd.visitCubeZbdds(zbdd, visitor);
     } finally {
       lock.unlock();
     }

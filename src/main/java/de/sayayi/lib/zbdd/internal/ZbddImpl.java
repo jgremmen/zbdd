@@ -1214,51 +1214,64 @@ public class ZbddImpl implements Zbdd
     final var s = new StringJoiner(", ", "{ ", " }");
     final var resolver = getLiteralResolver();
 
-    visitCubes(zbdd, cube -> s.add(resolver.getCubeName(cube)));
+    visitCubes(zbdd, cube -> {
+      s.add(resolver.getCubeName(cube));
+      return true;
+    });
 
     return s.toString();
   }
 
 
   @Override
-  public void visitCubes(int zbdd, @NotNull CubeVisitor visitor)
+  public boolean visitCubeZbdds(int zbdd, @NotNull ZbddVisitor visitor)
+  {
+    requireNonNull(visitor, "visitor must not be null");
+
+    return visitCubes(zbdd, cubeVars -> visitor.visitZbdd(createZbddFromCubeVars(cubeVars)));
+  }
+
+
+  @Override
+  public boolean visitCubes(int zbdd, @NotNull CubeVisitor visitor)
   {
     requireNonNull(visitor, "visitor must not be null");
 
     __incRef(checkZbdd(zbdd, "zbdd"));
     try {
-      visitCubes0(visitor, new IntStack(__getVar(zbdd)), zbdd);
+      return visitCubes0(visitor, new IntStack(__getVar(zbdd)), zbdd);
     } finally {
       __decRef(zbdd);
     }
   }
 
 
-  @Override
-  public void visitCubeZbdds(int zbdd, @NotNull ZbddVisitor visitor)
-  {
-    requireNonNull(visitor, "visitor must not be null");
-    visitCubes(zbdd, cubeVars -> visitor.visitZbdd(createZbddFromCubeVars(cubeVars)));
-  }
-
-
   @Contract(mutates = "param2")
-  private void visitCubes0(@NotNull CubeVisitor visitor, @NotNull IntStack vars, int zbdd)
+  private boolean visitCubes0(@NotNull CubeVisitor visitor, @NotNull IntStack vars, int zbdd)
   {
-    if (zbdd == BASE)
-      visitor.visitCube(vars.getIntArray());
-    else if (zbdd != EMPTY)
+    boolean result;
+
+    if (zbdd == EMPTY)
+      result = true;
+    else if (zbdd == BASE)
+      result = visitor.visitCube(vars.getIntArray());
+    else
     {
       final int offset = zbdd * NODE_RECORD_SIZE;
 
       // walk 1-branch
       vars.push(nodes[offset + _VAR]);
-      visitCubes0(visitor, vars, nodes[offset + _P1]);
+      result = visitCubes0(visitor, vars, nodes[offset + _P1]);
       vars.pop();
 
-      // walk 0-branch
-      visitCubes0(visitor, vars, nodes[offset + _P0]);
+      if (result)
+      {
+        // walk 0-branch
+        result = visitCubes0(visitor, vars, nodes[offset + _P0]);
+      }
     }
+
+    return result;
   }
 
 
@@ -1377,7 +1390,10 @@ public class ZbddImpl implements Zbdd
     final var cubeZbdds = new IntStack(16);
 
     try {
-      visitCubeZbdds(zbdd, cubeZbdd -> __incRef(cubeZbdds.push(cubeZbdd)));
+      visitCubeZbdds(zbdd, cubeZbdd -> {
+        __incRef(cubeZbdds.push(cubeZbdd));
+        return true;
+      });
     } finally {
       cubeZbdds.forEach(this::__decRef);
     }

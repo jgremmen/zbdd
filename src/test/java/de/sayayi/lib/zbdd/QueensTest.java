@@ -119,9 +119,15 @@ class QueensTest
     System.out.println("Queens " + n + "x" + n + "  (" + solutions + ")");
     System.out.println("  " + zbdd.getStatistics());
 
-    var nameResolver = zbdd.getLiteralResolver();
     if (n < 9)
-      zbdd.visitCubes(solution, cube -> System.out.println("  " + nameResolver.getCubeName(cube)));
+    {
+      var nameResolver = zbdd.getLiteralResolver();
+
+      zbdd.visitCubes(solution, cube -> {
+        System.out.println("  " + nameResolver.getCubeName(cube));
+        return true;
+      });
+    }
 
     System.out.println(zbdd.getZbddCache());
     System.out.println();
