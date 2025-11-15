@@ -70,7 +70,7 @@ javadoc {
     linksOffline "https://javadoc.io/doc/org.jetbrains/annotations/${resolvedJetbrainsAnnotationsVersion}/",
                  'gradle/javadocs/jetbrains-annotations'
 
-    encoding 'UTF-8'
+    encoding = 'UTF-8'
 
     group('ZBDD Core API', ['de.sayayi.lib.zbdd'])
     group('ZBDD Cache API (Experimental)', ['de.sayayi.lib.zbdd.cache'])
@@ -81,6 +81,8 @@ javadoc {
   }
 
   failOnError = false
+
+  logging.captureStandardError(LogLevel.INFO)
 }
 
 
