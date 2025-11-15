@@ -532,7 +532,7 @@ public interface Zbdd
    *
    * @since 0.3.1
    */
-  @Contract(value = "-> new")
+  @Contract(value = "-> new", mutates = "this")
   int @NotNull [] calculateNodeDependency();
 
 
