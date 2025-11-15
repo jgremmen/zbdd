@@ -109,7 +109,7 @@ public class ZbddCachedImpl extends ZbddImpl implements WithCache
     final int top = __getVar(zbdd);
 
     if (top < var)
-      return ZBDD_EMPTY;
+      return EMPTY;
 
     if (top == var)
       return getP1(zbdd);
@@ -132,7 +132,7 @@ public class ZbddCachedImpl extends ZbddImpl implements WithCache
     final int top = __getVar(zbdd);
 
     if (top < var)
-      return __getNode(var, ZBDD_EMPTY, zbdd);
+      return __getNode(var, EMPTY, zbdd);
 
     int r = zbddCache.getResult(CHANGE, zbdd, var);
     if (r == MIN_VALUE)
@@ -167,9 +167,9 @@ public class ZbddCachedImpl extends ZbddImpl implements WithCache
   @Contract(mutates = "this")
   protected int __union(int p, int q)
   {
-    if (q == ZBDD_EMPTY || p == q)
+    if (q == EMPTY || p == q)
       return p;
-    if (p == ZBDD_EMPTY)
+    if (p == EMPTY)
       return q;
 
     if (__getVar(p) > __getVar(q))
@@ -193,8 +193,8 @@ public class ZbddCachedImpl extends ZbddImpl implements WithCache
   @Contract(mutates = "this")
   protected int __intersect(int p, int q)
   {
-    if (p == ZBDD_EMPTY || q == ZBDD_EMPTY)
-      return ZBDD_EMPTY;
+    if (p == EMPTY || q == EMPTY)
+      return EMPTY;
     if (p == q)
       return p;
 
@@ -213,9 +213,9 @@ public class ZbddCachedImpl extends ZbddImpl implements WithCache
   @Contract(mutates = "this")
   protected int __difference(int p, int q)
   {
-    if (p == ZBDD_EMPTY || p == q)
-      return ZBDD_EMPTY;
-    if (q == ZBDD_EMPTY)
+    if (p == EMPTY || p == q)
+      return EMPTY;
+    if (q == EMPTY)
       return p;
 
     int r = zbddCache.getResult(DIFFERENCE, p, q);
@@ -233,11 +233,11 @@ public class ZbddCachedImpl extends ZbddImpl implements WithCache
   @Contract(mutates = "this")
   protected int __multiply(int p, int q)
   {
-    if (p == ZBDD_EMPTY || q == ZBDD_EMPTY)
-      return ZBDD_EMPTY;
-    if (p == ZBDD_BASE)
+    if (p == EMPTY || q == EMPTY)
+      return EMPTY;
+    if (p == BASE)
       return q;
-    if (q == ZBDD_BASE)
+    if (q == BASE)
       return p;
 
     if (__getVar(p) > __getVar(q))
@@ -262,10 +262,10 @@ public class ZbddCachedImpl extends ZbddImpl implements WithCache
   protected int __divide(int p, int q)
   {
     if (p < 2)
-      return ZBDD_EMPTY;
+      return EMPTY;
     if (p == q)
-      return ZBDD_BASE;
-    if (q == ZBDD_BASE)
+      return BASE;
+    if (q == BASE)
       return p;
 
     int r = zbddCache.getResult(DIVIDE, p, q);
@@ -299,7 +299,7 @@ public class ZbddCachedImpl extends ZbddImpl implements WithCache
   protected int __atomize(int zbdd)
   {
     if (zbdd < 2)
-      return ZBDD_EMPTY;
+      return EMPTY;
 
     int r = zbddCache.getResult(ATOMIZE, zbdd);
     if (r == MIN_VALUE)
@@ -317,7 +317,7 @@ public class ZbddCachedImpl extends ZbddImpl implements WithCache
   protected int __removeBase(int zbdd)
   {
     if (zbdd < 2)
-      return ZBDD_EMPTY;
+      return EMPTY;
 
     int r = zbddCache.getResult(REMOVE_BASE, zbdd);
     if (r == MIN_VALUE)

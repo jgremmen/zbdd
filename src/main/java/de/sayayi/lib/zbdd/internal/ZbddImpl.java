@@ -91,8 +91,8 @@ public class ZbddImpl implements Zbdd
     nodesCapacity = max(capacityAdvisor.getInitialCapacity(), 8);
     nodes = new int[nodesCapacity * NODE_RECORD_SIZE];
 
-    initTerminalNode(ZBDD_EMPTY);
-    initTerminalNode(ZBDD_BASE);
+    initTerminalNode(EMPTY);
+    initTerminalNode(BASE);
 
     statistics = new Statistics();
     callbacks = new ArrayList<>();
@@ -237,7 +237,7 @@ public class ZbddImpl implements Zbdd
   @Override
   @Contract(mutates = "this")
   public int cube(int var) {
-    return __getNode(checkVar(var), ZBDD_EMPTY, ZBDD_BASE);
+    return __getNode(checkVar(var), EMPTY, BASE);
   }
 
 
@@ -270,11 +270,11 @@ public class ZbddImpl implements Zbdd
     if (n >= 2)
       sort(cubeVars = copyOf(cubeVars, n));
 
-    int r = ZBDD_BASE;
+    int r = BASE;
 
     for(int var: cubeVars)
       if (checkVar(var) != __getVar(r))
-        r = __getNode(var, ZBDD_EMPTY, r);
+        r = __getNode(var, EMPTY, r);
 
     return r;
   }
@@ -351,7 +351,7 @@ public class ZbddImpl implements Zbdd
     final int top = __getVar(zbdd);
 
     if (top < var)
-      return ZBDD_EMPTY;
+      return EMPTY;
 
     if (top == var)
       return __getP1(zbdd);
@@ -381,7 +381,7 @@ public class ZbddImpl implements Zbdd
     final int top = __getVar(zbdd);
 
     if (top < var)
-      return __getNode(var, ZBDD_EMPTY, zbdd);
+      return __getNode(var, EMPTY, zbdd);
 
     __incRef(zbdd);
 
@@ -451,9 +451,9 @@ public class ZbddImpl implements Zbdd
   @Contract(mutates = "this")
   protected int __union(int p, int q)
   {
-    if (q == ZBDD_EMPTY || p == q)
+    if (q == EMPTY || p == q)
       return p;
-    if (p == ZBDD_EMPTY)
+    if (p == EMPTY)
       return q;
 
     int p_var = __getVar(p);
@@ -503,8 +503,8 @@ public class ZbddImpl implements Zbdd
   @Contract(mutates = "this")
   protected int __intersect(int p, int q)
   {
-    if (p == ZBDD_EMPTY || q == ZBDD_EMPTY)
-      return ZBDD_EMPTY;
+    if (p == EMPTY || q == EMPTY)
+      return EMPTY;
     if (p == q)
       return p;
 
@@ -544,9 +544,9 @@ public class ZbddImpl implements Zbdd
   @Contract(mutates = "this")
   protected int __difference(int p, int q)
   {
-    if (p == ZBDD_EMPTY || p == q)
-      return ZBDD_EMPTY;
-    if (q == ZBDD_EMPTY)
+    if (p == EMPTY || p == q)
+      return EMPTY;
+    if (q == EMPTY)
       return p;
 
     final int p_var = __getVar(p);
@@ -585,11 +585,11 @@ public class ZbddImpl implements Zbdd
   @Contract(mutates = "this")
   protected int __multiply(int p, int q)
   {
-    if (p == ZBDD_EMPTY || q == ZBDD_EMPTY)
-      return ZBDD_EMPTY;
-    if (p == ZBDD_BASE)
+    if (p == EMPTY || q == EMPTY)
+      return EMPTY;
+    if (p == BASE)
       return q;
-    if (q == ZBDD_BASE)
+    if (q == BASE)
       return p;
 
     int p_var = __getVar(p);
@@ -646,10 +646,10 @@ public class ZbddImpl implements Zbdd
   protected int __divide(int p, int q)
   {
     if (p < 2)
-      return ZBDD_EMPTY;
+      return EMPTY;
     if (p == q)
-      return ZBDD_BASE;
-    if (q == ZBDD_BASE)
+      return BASE;
+    if (q == BASE)
       return p;
 
     __incRef(p);
@@ -668,7 +668,7 @@ public class ZbddImpl implements Zbdd
     final int r1 = __divide(__decRef(p1), q1);
     final int r;
 
-    if (r1 != ZBDD_EMPTY && q0 != ZBDD_EMPTY)
+    if (r1 != EMPTY && q0 != EMPTY)
     {
       __incRef(r1);
 
@@ -721,13 +721,13 @@ public class ZbddImpl implements Zbdd
   protected int __atomize(int zbdd)
   {
     if (zbdd < 2)
-      return ZBDD_EMPTY;
+      return EMPTY;
 
     final int p0_atomized = __incRef(__atomize(__getP0(__incRef(zbdd))));  // lock zbdd, p0_atomized
     final int p1_atomized = __atomize(__getP1(zbdd));
 
     final int p0 = __atomize_union(__decRef(p0_atomized), p1_atomized);  // release p0_atomized
-    final int r = __getNode(__getVar(zbdd), p0, ZBDD_BASE);
+    final int r = __getNode(__getVar(zbdd), p0, BASE);
 
     __decRef(zbdd);  // release zbdd
 
@@ -741,7 +741,7 @@ public class ZbddImpl implements Zbdd
   {
     // trivial cases: remove base from union
     if (p < 2)
-      return q < 2 ? ZBDD_EMPTY : q;
+      return q < 2 ? EMPTY : q;
     if (q < 2 || p == q)
       return p;
 
@@ -759,7 +759,7 @@ public class ZbddImpl implements Zbdd
     __incRef(q);  // lock q
 
     final int p0 = __atomize_union(p_var < q_var ? p : __getP0(p), __getP0(q));
-    final int r = __getNode(q_var, p0, ZBDD_BASE);
+    final int r = __getNode(q_var, p0, BASE);
 
     __decRef(q);  // release q
     __decRef(p);  // release p
@@ -779,7 +779,7 @@ public class ZbddImpl implements Zbdd
   protected int __removeBase(int zbdd)
   {
     if (zbdd < 2)
-      return ZBDD_EMPTY;
+      return EMPTY;
 
     __incRef(zbdd);
 
@@ -810,7 +810,7 @@ public class ZbddImpl implements Zbdd
 
   @Contract(mutates = "this")
   protected boolean __contains(int p, int q) {
-    return p != ZBDD_EMPTY && q != ZBDD_EMPTY && (p == q || __intersect(p, q) == q);
+    return p != EMPTY && q != EMPTY && (p == q || __intersect(p, q) == q);
   }
 
 
@@ -827,7 +827,7 @@ public class ZbddImpl implements Zbdd
     statistics.nodeLookups++;
 
     // suppress 0's
-    if (p1 == ZBDD_EMPTY)
+    if (p1 == EMPTY)
     {
       statistics.nodeLookupHitCount++;
       return p0;
@@ -1245,9 +1245,9 @@ public class ZbddImpl implements Zbdd
   @Contract(mutates = "param2")
   private void visitCubes0(@NotNull CubeVisitor visitor, @NotNull IntStack vars, int zbdd)
   {
-    if (zbdd == ZBDD_BASE)
+    if (zbdd == BASE)
       visitor.visitCube(vars.getIntArray());
-    else if (zbdd != ZBDD_EMPTY)
+    else if (zbdd != EMPTY)
     {
       final int offset = zbdd * NODE_RECORD_SIZE;
 
@@ -1397,10 +1397,10 @@ public class ZbddImpl implements Zbdd
    */
   protected int createZbddFromCubeVars(int @NotNull [] cubeVars)
   {
-    var r = ZBDD_BASE;
+    var r = BASE;
 
     for(var n = cubeVars.length; n-- > 0;)
-      r = __getNode(cubeVars[n], ZBDD_EMPTY, r);
+      r = __getNode(cubeVars[n], EMPTY, r);
 
     return r;
   }

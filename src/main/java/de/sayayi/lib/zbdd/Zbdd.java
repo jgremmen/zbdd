@@ -35,8 +35,8 @@ import java.util.function.Function;
  */
 public interface Zbdd
 {
-  int ZBDD_EMPTY = 0;
-  int ZBDD_BASE = 1;
+  int EMPTY = 0;
+  int BASE = 1;
 
 
   /**
@@ -100,7 +100,7 @@ public interface Zbdd
    */
   @Contract(pure = true)
   static boolean isEmpty(int zbdd) {
-    return zbdd == ZBDD_EMPTY;
+    return zbdd == EMPTY;
   }
 
 
@@ -109,7 +109,7 @@ public interface Zbdd
    */
   @Contract(pure = true)
   static boolean isBase(int zbdd) {
-    return zbdd == ZBDD_BASE;
+    return zbdd == BASE;
   }
 
 
@@ -162,7 +162,7 @@ public interface Zbdd
    */
   @Contract(pure = true)
   static int empty() {
-    return ZBDD_EMPTY;
+    return EMPTY;
   }
 
 
@@ -175,7 +175,7 @@ public interface Zbdd
    */
   @Contract(pure = true)
   static int base() {
-    return ZBDD_BASE;
+    return BASE;
   }
 
 
