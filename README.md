@@ -1,32 +1,28 @@
 ## Introduction to the ZBDD Java Library
 
 ### Introduction
-[Zero-Suppressed Binary Decision Diagrams (ZBDDs)][1], introduced by Shin Ichi Minato, are a compact data structure for
-representing and manipulating large collections of sets or combinations from a universe of variables. Each ZBDD is a 
-directed acyclic graph where nodes correspond to variables, and edges indicate the absence (0-edge) or presence (1-edge)
-of a variable in a combination, with zero-suppression rules eliminating redundant nodes to optimize for sparse datasets.
-This enables efficient storage and computation for tasks such as enumerating subsets, performing algebraic operations 
-on set families, and solving combinatorial problems in areas like optimization and data analysis.
+[Zero-Suppressed Binary Decision Diagrams (ZBDDs)][1], cooked up by Shin Ichi Minato, are a slick way to store and 
+mess with huge piles of sets or combos picked from a bunch of variables. Think of each ZBDD as a directed graph without 
+loops: nodes stand for variables, edges say whether a variable is in (1-edge) or out (0-edge) of a combo, and 
+zero-suppression kicks out useless nodes to keep things lean, perfect for sparse data. This setup makes it fast and 
+light on memory for stuff like listing subsets, doing set-family math, or cracking combo problems in optimization and 
+data crunching.
 
 ### ZBDD Library
-This Java library offers a robust implementation of ZBDDs, supporting essential operations for constructing and 
-querying these structures. The basic operations include creating an empty ZBDD, generating a base ZBDD 
-(representing the empty set), changing variable assignments, extracting subsets where a variable is absent (subset0) or 
-present (subset1), computing differences (diff), unions, intersections, and counting the number of combinations.
+This Java library gives you a solid ZBDD setup with all the key moves for building and poking at these structures. The 
+basics let you whip up an empty ZBDD, make a base one (just the empty set), flip variable assignments, pull subsets 
+where a variable is missing (subset0) or there (subset1), figure diffs, unions, intersections, and count combos.
 
-Beyond these fundamentals, the library provides advanced algebraic capabilities: multiply for calculating the product 
-of two ZBDD sets, divide for determining the quotient, and modulo for finding the remainder. It also includes 
-removeBase to exclude the base element from a ZBDD set, and atomize to produce a new ZBDD containing only the
-single-variable elements present in the original.
+On top of that, you get fancier algebra: multiply to smash two ZBDD sets together into a product, divide for the 
+quotient, and modulo for the leftover. There’s removeBase to ditch the base element from a set, and atomize to spit out
+a fresh ZBDD holding only the single-variable bits from the original.
 
-The library includes a factory mechanism for instantiating either regular or cached ZBDD
-instances, enhancing performance through memoization where needed. Additionally, the factory allows wrapping any ZBDD 
-instance to make it thread-safe, supporting concurrent applications without compromising integrity.
+The library comes with a factory to spin up regular or cached ZBDDs, speeding things up with memoization when it helps. 
+Plus, the factory can wrap any ZBDD to make it thread-safe, so you can run it in parallel without things falling apart.
 
 ### Test Suite
-The library's comprehensive test suite demonstrates its practical efficacy through real-world combinatorial challenges.
-E.g. solutions to the n-Queens problem across grid sizes from 1x1 to 13x13 and Sudoku puzzles spanning 
-easy to extreme difficulty levels.
+The library’s beefy test suite shows it in action on real combo headaches, like solving n-Queens on boards from 1×1 to
+13×13, plus Sudoku puzzles from easy breezy to downright brutal.
 
 <img src="doc/image/test-suite-elapsed-time.png" title="n-Queens and Sudoku timing" width="450px">
 
