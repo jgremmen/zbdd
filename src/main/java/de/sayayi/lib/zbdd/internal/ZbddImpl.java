@@ -1223,12 +1223,22 @@ public class ZbddImpl implements Zbdd
   @Override
   public void visitCubes(int zbdd, @NotNull CubeVisitor visitor)
   {
+    requireNonNull(visitor, "visitor must not be null");
+
     __incRef(checkZbdd(zbdd, "zbdd"));
     try {
       visitCubes0(visitor, new IntStack(__getVar(zbdd)), zbdd);
     } finally {
       __decRef(zbdd);
     }
+  }
+
+
+  @Override
+  public void visitCubeZbdds(int zbdd, @NotNull ZbddVisitor visitor)
+  {
+    requireNonNull(visitor, "visitor must not be null");
+    visitCubes(zbdd, cubeVars -> visitor.visitZbdd(createZbddFromCubeVars(cubeVars)));
   }
 
 
@@ -1364,22 +1374,35 @@ public class ZbddImpl implements Zbdd
   @Override
   public int @NotNull [] asSingleCubeZbdds(int zbdd)
   {
-    final var elementZbdds = new IntStack(16);
+    final var cubeZbdds = new IntStack(16);
 
     try {
-      visitCubes(zbdd, cubeVars -> {
-        var r = ZBDD_BASE;
-
-        for(var n = cubeVars.length; n-- > 0;)
-          r = __getNode(cubeVars[n], ZBDD_EMPTY, r);
-
-        __incRef(elementZbdds.push(r));
-      });
+      visitCubeZbdds(zbdd, cubeZbdd -> __incRef(cubeZbdds.push(cubeZbdd)));
     } finally {
-      elementZbdds.forEach(this::__decRef);
+      cubeZbdds.forEach(this::__decRef);
     }
 
-    return elementZbdds.getIntArray();
+    return cubeZbdds.getIntArray();
+  }
+
+
+  /**
+   * Create a zbdd representing a set with a single cube.
+   *
+   * @param cubeVars  cube vars in decsending order, not {@code null}
+   *
+   * @return  zbdd representing a set with the cube as single element
+   *
+   * @since 0.6.0
+   */
+  protected int createZbddFromCubeVars(int @NotNull [] cubeVars)
+  {
+    var r = ZBDD_BASE;
+
+    for(var n = cubeVars.length; n-- > 0;)
+      r = __getNode(cubeVars[n], ZBDD_EMPTY, r);
+
+    return r;
   }
 
 

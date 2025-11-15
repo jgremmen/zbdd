@@ -508,6 +508,18 @@ public class ZbddConcurrent implements Zbdd.Concurrent
 
 
   @Override
+  public void visitCubeZbdds(int zbdd, @NotNull ZbddVisitor visitor)
+  {
+    lock.lock();
+    try {
+      this.zbdd.visitCubeZbdds(zbdd, visitor);
+    } finally {
+      lock.unlock();
+    }
+  }
+
+
+  @Override
   public int @NotNull [] calculateNodeDependency()
   {
     lock.lock();

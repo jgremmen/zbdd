@@ -493,13 +493,26 @@ public interface Zbdd
 
 
   /**
-   * Visit all cubes in the given {@code zbdd}. For each cube {@link CubeVisitor#visitCube(int[]) visitCube(int[])}
-   * is invoked. For the {@link #base()} node, {@code visitCube} is invoked with an empty array.
+   * Visit all cubes in the set represented by {@code zbdd}. For each cube
+   * {@link CubeVisitor#visitCube(int[]) visitCube(int[])} is invoked. For the {@link #base()} node,
+   * {@code visitCube} is invoked with an empty array.
    *
    * @param zbdd     zbdd node
    * @param visitor  cube visitor, not {@code null}
    */
   void visitCubes(int zbdd, @NotNull CubeVisitor visitor);
+
+
+  /**
+   * Visit all elements in the set represented by {@code zbdd}. For each element {@link ZbddVisitor#visitZbdd(int)}
+   * is invoked. The zbdd node passed to this function represents a set with only the element visited.
+   *
+   * @param zbdd     zbdd node
+   * @param visitor  zbdd visitor, not {@code null}
+   *
+   * @since 0.6.0
+   */
+  void visitCubeZbdds(int zbdd, @NotNull ZbddVisitor visitor);
 
 
   /**
@@ -557,6 +570,29 @@ public interface Zbdd
      * @see #base()
      */
     void visitCube(int @NotNull [] vars);
+  }
+
+
+
+
+  /**
+   * Zbdd node visitor interface to be used with {@link #visitCubeZbdds(int, ZbddVisitor)}.
+   *
+   * @since 0.6.0
+   */
+  @FunctionalInterface
+  interface ZbddVisitor
+  {
+    /**
+     * This method is invoked for each zbdd node representing a single cube in the zbdd set.
+     * <p>
+     * The zbdd node has no increased reference count.
+     *
+     * @param zbdd  zbdd node representing a single cube
+     *
+     * @see #visitCubeZbdds(int, ZbddVisitor)
+     */
+    void visitZbdd(int zbdd);
   }
 
 
