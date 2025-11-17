@@ -263,18 +263,17 @@ public class ZbddImpl implements Zbdd
   public int cube(int @NotNull ... cubeVars)
   {
     final int n = cubeVars.length;
-
-    if (n == 0)
-      return Zbdd.base();
-
-    if (n >= 2)
-      sort(cubeVars = copyOf(cubeVars, n));
-
     int r = BASE;
 
-    for(int var: cubeVars)
-      if (checkVar(var) != __getVar(r))
-        r = __getNode(var, EMPTY, r);
+    if (n > 0)
+    {
+      if (n >= 2)
+        sort(cubeVars = copyOf(cubeVars, n));
+
+      for(int i = 0, topVar = -1, var; i < n; i++)
+        if ((var = cubeVars[i]) != topVar)
+          r = __getNode(topVar = checkVar(var), EMPTY, r);
+    }
 
     return r;
   }
@@ -1228,7 +1227,14 @@ public class ZbddImpl implements Zbdd
   {
     requireNonNull(visitor, "visitor must not be null");
 
-    return visitCubes(zbdd, cubeVars -> visitor.visitZbdd(createZbddFromCubeVars(cubeVars)));
+    return visitCubes(zbdd, cubeVars -> {
+      var cubeZbdd = BASE;
+
+      for(var n = cubeVars.length; n-- > 0;)
+        cubeZbdd = __getNode(cubeVars[n], EMPTY, cubeZbdd);
+
+      return visitor.visitZbdd(cubeZbdd);
+    });
   }
 
 
@@ -1399,26 +1405,6 @@ public class ZbddImpl implements Zbdd
     }
 
     return cubeZbdds.getIntArray();
-  }
-
-
-  /**
-   * Create a zbdd representing a set with a single cube.
-   *
-   * @param cubeVars  cube vars in decsending order, not {@code null}
-   *
-   * @return  zbdd representing a set with the cube as single element
-   *
-   * @since 0.6.0
-   */
-  protected int createZbddFromCubeVars(int @NotNull [] cubeVars)
-  {
-    var r = BASE;
-
-    for(var n = cubeVars.length; n-- > 0;)
-      r = __getNode(cubeVars[n], EMPTY, r);
-
-    return r;
   }
 
 
