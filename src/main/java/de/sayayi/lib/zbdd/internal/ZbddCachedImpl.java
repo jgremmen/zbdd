@@ -47,18 +47,9 @@ public class ZbddCachedImpl extends ZbddImpl implements WithCache
     setZbddCache(zbddCache);
 
     registerCallback(new ZbddCallback() {
-      @Override public void beforeClear() { clearZbddCache(); }
-      @Override public void beforeGc() { clearZbddCache(); }
+      @Override public void beforeClear() { zbddCache.clear(); }
+      @Override public void beforeGc() { zbddCache.clear(); }
     });
-  }
-
-
-  private void clearZbddCache()
-  {
-    try {
-      zbddCache.clear();
-    } catch(Exception ignored) {
-    }
   }
 
 

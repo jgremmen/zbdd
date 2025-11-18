@@ -365,6 +365,7 @@ public interface Zbdd
 
 
   @Contract(mutates = "this")
+  @MustBeInvokedByOverriders
   int getNode(int var, int p0, int p1);
 
 
