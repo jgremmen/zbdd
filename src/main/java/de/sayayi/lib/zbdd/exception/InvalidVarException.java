@@ -20,29 +20,56 @@ import org.jetbrains.annotations.NotNull;
 
 
 /**
- * Zbdd related exception.
+ * Zbdd related exception stating that the {@code var} is outside the valid range.
  *
  * @author Jeroen Gremmen
  */
 public final class InvalidVarException extends ZbddException
 {
-  private final int invalidVar;
+  private final int var;
+  private final int highBoundVar;
 
 
   /**
    * Construct a zbdd exception with the given {@code message}.
    *
-   * @param message  exception message, not {@code null}
+   * @param var           invalid var
+   * @param highBoundVar  high bound var
+   * @param message       exception message, not {@code null}
    */
-  public InvalidVarException(int invalidVar, @NotNull String message)
+  public InvalidVarException(int var, int highBoundVar, @NotNull String message)
   {
     super(message);
-    this.invalidVar = invalidVar;
+
+    this.var = var;
+    this.highBoundVar = highBoundVar;
   }
 
 
   @Contract(pure = true)
-  public int getInvalidVar() {
-    return invalidVar;
+  public int getVar() {
+    return var;
+  }
+
+
+  /**
+   * Return the lowest possible var.
+   *
+   * @return  low bound var
+   */
+  @Contract(pure = true)
+  public int getLowBoundVar() {
+    return 1;
+  }
+
+
+  /**
+   * Return the highest possible var.
+   *
+   * @return  high bound var
+   */
+  @Contract(pure = true)
+  public int getHighBoundVar() {
+    return highBoundVar;
   }
 }

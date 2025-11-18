@@ -15,18 +15,20 @@
  */
 package de.sayayi.lib.zbdd.exception;
 
+import de.sayayi.lib.zbdd.Zbdd;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 
 /**
- * Zbdd related exception stating that the {@code zbdd} is not valid or unknown.
+ * Zbdd related exception stating that the {@code zbdd} is outside the valid range.
  *
  * @author Jeroen Gremmen
+ * @since 0.6.0
  */
-public class InvalidZbddException extends ZbddException
+public class ZbddOutOfRangeException extends InvalidZbddException
 {
-  private final int zbdd;
+  private final int highBoundZbdd;
 
 
   /**
@@ -34,20 +36,31 @@ public class InvalidZbddException extends ZbddException
    *
    * @param message  exception message, not {@code null}
    */
-  public InvalidZbddException(int zbdd, @NotNull String message)
+  public ZbddOutOfRangeException(int zbdd, int highBoundZbdd, @NotNull String message)
   {
-    super(message);
-    this.zbdd = zbdd;
+    super(zbdd, message);
+    this.highBoundZbdd = highBoundZbdd;
   }
 
 
   /**
-   * Return the invalid zbdd.
+   * Return the lowest possible zbdd.
    *
-   * @return  invalid zbdd
+   * @return  low bound zbdd
    */
   @Contract(pure = true)
-  public int getZbdd() {
-    return zbdd;
+  public int getLowBoundZbdd() {
+    return Zbdd.BASE;
+  }
+
+
+  /**
+   * Return the highest possible zbdd.
+   *
+   * @return  high bound zbdd
+   */
+  @Contract(pure = true)
+  public int getHighBoundZbdd() {
+    return highBoundZbdd;
   }
 }
