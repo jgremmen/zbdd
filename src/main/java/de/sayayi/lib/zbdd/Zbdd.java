@@ -211,7 +211,7 @@ public interface Zbdd
    *   String s = zbdd.toString(singleton);  // = "{ v1.v3 }"
    * </pre>
    *
-   * @param cubeVars  valid variables
+   * @param cubeVars  an array of valid variables
    *
    * @return  zbdd set with {@code cubeVars} as its only element
    */

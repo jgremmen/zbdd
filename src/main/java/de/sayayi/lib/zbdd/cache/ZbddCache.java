@@ -58,6 +58,8 @@ public interface ZbddCache
 
   /**
    * Clears the cache.
+   * <p>
+   * Implementing classes must assure that this method does not throw any exceptions.
    */
   @Contract(mutates = "this")
   void clear();
