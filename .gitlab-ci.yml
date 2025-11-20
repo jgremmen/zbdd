@@ -19,7 +19,7 @@ build:
   stage: build
   tags:
     - docker
-  script: ./gradlew clean build
+  script: ./gradlew clean build --configuration-cache
   artifacts:
     name: "zbdd-artifacts"
     paths:
