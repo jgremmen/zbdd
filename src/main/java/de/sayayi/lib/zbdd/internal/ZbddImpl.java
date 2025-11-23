@@ -296,15 +296,24 @@ public class ZbddImpl implements Zbdd
   @Contract(pure = true)
   protected final boolean __hasCubeWithVar(int zbdd, int var)
   {
-    final int top = __getVar(zbdd);
+    final int zbddVar = __getVar(zbdd);
 
-    if (var > top)
-      return false;
+    if (var <= zbddVar)
+    {
+      final var stack = new IntStack(zbddVar);
 
-    return
-        top == var ||
-        __hasCubeWithVar(__getP0(zbdd), var) ||
-        __hasCubeWithVar(__getP1(zbdd), var);
+      for(stack.pushIfNotLeafNode(zbdd); !stack.isEmpty();)
+      {
+        final var offset = stack.pop() * NODE_RECORD_SIZE;
+        if (nodes[offset + _VAR] == var)
+          return true;
+
+        stack.pushIfNotLeafNode(nodes[offset + _P0]);
+        stack.pushIfNotLeafNode(nodes[offset + _P1]);
+      }
+    }
+
+    return false;
   }
 
 
@@ -416,9 +425,21 @@ public class ZbddImpl implements Zbdd
     if (zbdd < 2)
       return zbdd;
 
-    final int offset = zbdd * NODE_RECORD_SIZE;
+    final var stack = new IntStack(nodes[zbdd * NODE_RECORD_SIZE + _VAR] + 1);
+    var count = 0;
 
-    return __count(nodes[offset + _P0]) + __count(nodes[offset + _P1]);
+    for(stack.push(zbdd); !stack.isEmpty();)
+      if ((zbdd = stack.pop()) == BASE)
+        count++;
+      else if (zbdd > 1)
+      {
+        final var offset = zbdd * NODE_RECORD_SIZE;
+
+        stack.pushIfNotEmptyZbdd(nodes[offset + _P0]);
+        stack.pushIfNotEmptyZbdd(nodes[offset + _P1]);
+      }
+
+    return count;
   }
 
 
@@ -1269,7 +1290,7 @@ public class ZbddImpl implements Zbdd
       // walk 1-branch
       vars.push(nodes[offset + _VAR]);
       result = visitCubes0(visitor, vars, nodes[offset + _P1]);
-      vars.pop();
+      vars.drop();
 
       if (result)
       {

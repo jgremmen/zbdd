@@ -51,8 +51,36 @@ final class IntStack
 
 
   @Contract(mutates = "this")
-  void pop() {
+  void pushIfNotEmptyZbdd(int zbdd)
+  {
+    if (zbdd > 0)
+      push(zbdd);
+  }
+
+
+  @Contract(mutates = "this")
+  void pushIfNotLeafNode(int zbdd)
+  {
+    if (zbdd > 1)
+      push(zbdd);
+  }
+
+
+  @Contract(mutates = "this")
+  int pop() {
+    return stack[--stackSize];
+  }
+
+
+  @Contract(mutates = "this")
+  void drop() {
     stackSize--;
+  }
+
+
+  @Contract(pure = true)
+  boolean isEmpty() {
+    return stackSize == 0;
   }
 
 
