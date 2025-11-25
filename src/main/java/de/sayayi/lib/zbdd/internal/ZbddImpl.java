@@ -1263,43 +1263,38 @@ public class ZbddImpl implements Zbdd
   @Override
   public boolean visitCubes(int zbdd, @NotNull CubeVisitor visitor)
   {
+    if (zbdd == EMPTY)
+      return true;
+
     requireNonNull(visitor, "visitor must not be null");
 
     __incRef(checkZbdd(zbdd, "zbdd"));
     try {
-      return visitCubes0(visitor, new IntStack(__getVar(zbdd)), zbdd);
+      return __visitCubes(new VisitCubesContext(visitor, new IntStack(__getVar(zbdd)), zbdd));
     } finally {
       __decRef(zbdd);
     }
   }
 
 
-  @Contract(mutates = "param2")
-  private boolean visitCubes0(@NotNull CubeVisitor visitor, @NotNull IntStack vars, int zbdd)
+  protected boolean __visitCubes(@NotNull VisitCubesContext context)
   {
-    boolean result;
+    if (context.zbdd == EMPTY)
+      return true;
 
-    if (zbdd == EMPTY)
-      result = true;
-    else if (zbdd == BASE)
-      result = visitor.visitCube(vars.getIntArray());
-    else
-    {
-      final int offset = zbdd * NODE_RECORD_SIZE;
+    if (context.zbdd == BASE)
+      return context.visitor.visitCube(context.vars.getIntArray());
 
-      // walk 1-branch
-      vars.push(nodes[offset + _VAR]);
-      result = visitCubes0(visitor, vars, nodes[offset + _P1]);
-      vars.drop();
+    final var offset = context.zbdd * NODE_RECORD_SIZE;
 
-      if (result)
-      {
-        // walk 0-branch
-        result = visitCubes0(visitor, vars, nodes[offset + _P0]);
-      }
-    }
+    // walk 1-branch
+    context.vars.push(nodes[offset + _VAR]);
+    if (!__visitCubes(context.withZbdd(nodes[offset + _P1])))
+      return false;
+    context.vars.drop();
 
-    return result;
+    // walk 0-branch
+    return __visitCubes(context.withZbdd(nodes[offset + _P0]));
   }
 
 
@@ -1427,6 +1422,32 @@ public class ZbddImpl implements Zbdd
     }
 
     return cubeZbdds.getIntArray();
+  }
+
+
+
+
+  protected static final class VisitCubesContext
+  {
+    private final CubeVisitor visitor;
+    private final IntStack vars;
+    private int zbdd;
+
+
+    protected VisitCubesContext(@NotNull CubeVisitor visitor, @NotNull IntStack vars, int zbdd)
+    {
+      this.visitor = visitor;
+      this.vars = vars;
+      this.zbdd = zbdd;
+    }
+
+
+    @Contract(value = "_ -> this", mutates = "this")
+    protected @NotNull VisitCubesContext withZbdd(int zbdd)
+    {
+      this.zbdd = zbdd;
+      return this;
+    }
   }
 
 
