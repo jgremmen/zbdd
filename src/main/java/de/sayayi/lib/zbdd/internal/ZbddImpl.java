@@ -1284,7 +1284,7 @@ public class ZbddImpl implements Zbdd
   }
 
 
-  protected boolean __visitCubes(@NotNull VisitCubesContext context)
+  private boolean __visitCubes(@NotNull VisitCubesContext context)
   {
     if (context.zbdd == EMPTY)
       return true;
@@ -1434,14 +1434,14 @@ public class ZbddImpl implements Zbdd
 
 
 
-  protected static final class VisitCubesContext
+  private static final class VisitCubesContext
   {
     private final CubeVisitor visitor;
     private final IntStack vars;
     private int zbdd;
 
 
-    protected VisitCubesContext(@NotNull CubeVisitor visitor, @NotNull IntStack vars, int zbdd)
+    private VisitCubesContext(@NotNull CubeVisitor visitor, @NotNull IntStack vars, int zbdd)
     {
       this.visitor = visitor;
       this.vars = vars;
@@ -1450,7 +1450,7 @@ public class ZbddImpl implements Zbdd
 
 
     @Contract(value = "_ -> this", mutates = "this")
-    protected @NotNull VisitCubesContext withZbdd(int zbdd)
+    private @NotNull VisitCubesContext withZbdd(int zbdd)
     {
       this.zbdd = zbdd;
       return this;
