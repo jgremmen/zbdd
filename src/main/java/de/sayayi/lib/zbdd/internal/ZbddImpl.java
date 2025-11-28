@@ -450,8 +450,8 @@ public class ZbddImpl implements Zbdd
   @Contract(mutates = "this")
   public int union(int... p)
   {
-    for(var pn: p)
-      __incRef(checkZbdd(pn, "p"));
+    for(var i = 0; i < p.length; i++)
+      __incRef(checkZbdd(p[i], "p[" + i + ']'));
 
     var r = p[0];
 
