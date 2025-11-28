@@ -337,7 +337,8 @@ public class ZbddImpl implements Zbdd
 
     __incRef(zbdd);
 
-    final int p0 = __incRef(__subset0(__getP0(zbdd), var));
+    final int p0 = __subset0(__getP0(zbdd), var);
+    __incRef(p0);
     final int p1 = __subset0(__getP1(zbdd), var);
     final int r = __getNode(top, __decRef(p0), p1);
 
@@ -367,7 +368,8 @@ public class ZbddImpl implements Zbdd
 
     __incRef(zbdd);
 
-    final int p0 = __incRef(__subset1(__getP0(zbdd), var));
+    final int p0 = __subset1(__getP0(zbdd), var);
+    __incRef(p0);
     final int p1 = __subset1(__getP1(zbdd), var);
     final int r = __getNode(top, __decRef(p0), p1);
 
@@ -400,7 +402,8 @@ public class ZbddImpl implements Zbdd
       r = __getNode(var, __getP1(zbdd), __getP0(zbdd));
     else
     {
-      final int p0 = __incRef(__change(__getP0(zbdd), var));
+      final int p0 = __change(__getP0(zbdd), var);
+      __incRef(p0);
       final int p1 = __change(__getP1(zbdd), var);
 
       r = __getNode(top, __decRef(p0), p1);
@@ -501,7 +504,8 @@ public class ZbddImpl implements Zbdd
     else
     {
       // p_var = q_var
-      final int p0 = __incRef(__union(__getP0(p), __getP0(q)));
+      final int p0 = __union(__getP0(p), __getP0(q));
+      __incRef(p0);
       final int p1 = __union(__getP1(p), __getP1(q));
 
       r = __getNode(p_var, __decRef(p0), p1);
@@ -542,7 +546,8 @@ public class ZbddImpl implements Zbdd
       r = __intersect(p, __getP0(q));
     else
     {
-      final int p0 = __incRef(__intersect(__getP0(p), __getP0(q)));
+      final int p0 = __intersect(__getP0(p), __getP0(q));
+      __incRef(p0);
       final int p1 = __intersect(__getP1(p), __getP1(q));
 
       r = __getNode(p_var, __decRef(p0), p1);
@@ -583,7 +588,8 @@ public class ZbddImpl implements Zbdd
       r = __getNode(p_var, __difference(__getP0(p), q), __getP1(p));
     else
     {
-      final int p0 = __incRef(__difference(__getP0(p), __getP0(q)));
+      final int p0 = __difference(__getP0(p), __getP0(q));
+      __incRef(p0);
       final int p1 = __difference(__getP1(p), __getP1(q));
 
       r = __getNode(p_var, __decRef(p0), p1);
@@ -744,7 +750,8 @@ public class ZbddImpl implements Zbdd
     if (zbdd < 2)
       return EMPTY;
 
-    final int p0_atomized = __incRef(__atomize(__getP0(__incRef(zbdd))));  // lock zbdd, p0_atomized
+    final int p0_atomized = __atomize(__getP0(__incRef(zbdd)));  // lock zbdd, p0_atomized
+    __incRef(p0_atomized);
     final int p1_atomized = __atomize(__getP1(zbdd));
 
     final int p0 = __atomize_union(__decRef(p0_atomized), p1_atomized);  // release p0_atomized
