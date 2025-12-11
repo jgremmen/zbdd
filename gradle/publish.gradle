@@ -89,21 +89,16 @@ tasks.register('publishToProjectLocalRepository') {
 
 tasks.register('release-zbdd-artifacts') {
   group = 'release'
+  description = "Release ${version} artifacts to Maven Central Repository."
 
   inputs.property('snapshot', snapshot)
 
   dependsOn 'publishToProjectLocalRepository'
 
   if (snapshot)
-  {
-    description = "Release Zbdd snapshot artifacts to Maven Central Repository."
-
     dependsOn 'publishOSSRHPublicationToMavenCentralSnapshotRepository'
-  }
   else
   {
-    description = "Release Zbdd artifacts to Maven Central Repository."
-
     dependsOn 'zipMavenCentralPortalPublication'
     dependsOn 'validateMavenCentralPortalPublication'
     dependsOn 'releaseMavenCentralPortalPublication'
