@@ -91,8 +91,8 @@ public final class ZbddFastCache implements ZbddCache
   {
     lookup1Count++;
 
-    final int slotIndex = hash1(operation, p) * SLOT_CHAIN_SIZE1;
-    final int operationNumber = operation.ordinal() + 1;
+    final var slotIndex = hash1(operation, p) * SLOT_CHAIN_SIZE1;
+    final var operationNumber = operation.ordinal() + 1;
 
     for(int i = slotIndex, n = 0, op; n < CHAIN_CAPACITY && (op = cache1[i]) != 0; i += SLOT_ENTRY_SIZE1, n++)
       if (operationNumber == op && cache1[i + 1] == p)
@@ -100,7 +100,7 @@ public final class ZbddFastCache implements ZbddCache
         // move the entry to the front of the chain
         if (n >= CHAIN_CAPACITY / 2)
         {
-          var tmp = new int[SLOT_ENTRY_SIZE1];
+          final var tmp = new int[SLOT_ENTRY_SIZE1];
 
           arraycopy(cache1, i, tmp, 0, SLOT_ENTRY_SIZE1);
           arraycopy(cache1, slotIndex, cache1, slotIndex + SLOT_ENTRY_SIZE1, n * SLOT_ENTRY_SIZE1);
@@ -121,8 +121,8 @@ public final class ZbddFastCache implements ZbddCache
   @Override
   public void putResult(@NotNull Operation1 operation, int p, int result)
   {
-    final int slotIndex = hash1(operation, p) * SLOT_CHAIN_SIZE1;
-    final int operationNumber = operation.ordinal() + 1;
+    final var slotIndex = hash1(operation, p) * SLOT_CHAIN_SIZE1;
+    final var operationNumber = operation.ordinal() + 1;
     int n = 0, i = slotIndex, op;
 
     for(; n < CHAIN_CAPACITY && (op = cache1[i]) != 0; i += SLOT_ENTRY_SIZE1, n++)
@@ -149,8 +149,8 @@ public final class ZbddFastCache implements ZbddCache
   {
     lookup2Count++;
 
-    final int slotIndex = hash2(operation, p1, p2) * SLOT_CHAIN_SIZE2;
-    final int operationNumber = operation.ordinal() + 1;
+    final var slotIndex = hash2(operation, p1, p2) * SLOT_CHAIN_SIZE2;
+    final var operationNumber = operation.ordinal() + 1;
 
     for(int i = slotIndex, n = 0, op; n < CHAIN_CAPACITY && (op = cache2[i]) != 0; i += SLOT_ENTRY_SIZE2, n++)
       if (operationNumber == op && cache2[i + 1] == p1 && cache2[i + 2] == p2)
@@ -158,7 +158,7 @@ public final class ZbddFastCache implements ZbddCache
         // move the entry to the front of the chain
         if (n >= CHAIN_CAPACITY / 2)
         {
-          var tmp = new int[SLOT_ENTRY_SIZE2];
+          final var tmp = new int[SLOT_ENTRY_SIZE2];
 
           arraycopy(cache2, i, tmp, 0, SLOT_ENTRY_SIZE2);
           arraycopy(cache2, slotIndex, cache2, slotIndex + SLOT_ENTRY_SIZE2, n * SLOT_ENTRY_SIZE2);
@@ -179,8 +179,8 @@ public final class ZbddFastCache implements ZbddCache
   @Override
   public void putResult(@NotNull Operation2 operation, int p1, int p2, int result)
   {
-    final int slotIndex = hash2(operation, p1, p2) * SLOT_CHAIN_SIZE2;
-    final int operationNumber = operation.ordinal() + 1;
+    final var slotIndex = hash2(operation, p1, p2) * SLOT_CHAIN_SIZE2;
+    final var operationNumber = operation.ordinal() + 1;
     int n = 0, i = slotIndex, op;
 
     for(; n < CHAIN_CAPACITY && (op = cache2[i]) != 0; i += SLOT_ENTRY_SIZE2, n++)

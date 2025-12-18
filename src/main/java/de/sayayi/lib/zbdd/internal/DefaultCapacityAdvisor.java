@@ -58,7 +58,7 @@ public enum DefaultCapacityAdvisor implements ZbddCapacityAdvisor
   @Override
   public boolean isGCRequired(@NotNull ZbddStatistics statistics)
   {
-    final int capacity = statistics.getNodesCapacity();
+    final var capacity = statistics.getNodesCapacity();
 
     // capacity > 250000
     // dead nodes > 10% of total capacity

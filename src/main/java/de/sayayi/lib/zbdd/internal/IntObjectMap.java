@@ -90,7 +90,7 @@ final class IntObjectMap
   @Contract(mutates = "this")
   void put(int key, @NotNull Object value)
   {
-    final int idx = indexOf(key);
+    final var idx = indexOf(key);
     if (values[idx] != null)
       throw new IllegalStateException();
 

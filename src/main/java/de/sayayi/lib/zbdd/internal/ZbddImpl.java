@@ -105,7 +105,7 @@ public class ZbddImpl implements Zbdd
 
   private void initTerminalNode(int zbdd)
   {
-    final int offset = zbdd * NODE_RECORD_SIZE;
+    final var offset = zbdd * NODE_RECORD_SIZE;
 
     nodes[offset + _VAR] = -1;
     nodes[offset + _P0] = zbdd;

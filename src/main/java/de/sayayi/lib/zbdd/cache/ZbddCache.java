@@ -33,6 +33,7 @@ public interface ZbddCache
    *
    * @return  {@link Integer#MIN_VALUE} if the result is not cached. Oherwise the cached result is returned
    */
+  @Contract(pure = true)
   int getResult(@NotNull Operation1 operation, int p);
 
 
@@ -45,6 +46,7 @@ public interface ZbddCache
    *
    * @return  {@link Integer#MIN_VALUE} if the result is not cached. Oherwise the cached result is returned
    */
+  @Contract(pure = true)
   int getResult(@NotNull Operation2 operation, int p1, int p2);
 
 
