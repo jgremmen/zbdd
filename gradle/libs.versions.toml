@@ -2,7 +2,7 @@
 # zbdd version
 zbdd = '0.6.0-SNAPSHOT'
 
-jetbrains-annotations = '[24.0,26.1)'
+jetbrains-annotations = '[24.0,26.2)'
 junit = '5.14.+'
 
 [libraries]
