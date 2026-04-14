@@ -14,15 +14,7 @@ layout.buildDirectory = '.build'
 
 java {
   toolchain {
-    languageVersion = JavaLanguageVersion.of(11)
-  }
-}
-
-
-javadoc {
-  // javadoc 8 has various problems -> use javadoc 17
-  javadocTool = javaToolchains.javadocToolFor {
-    languageVersion = JavaLanguageVersion.of(17)
+    languageVersion = JavaLanguageVersion.of(21)
   }
 }
 
