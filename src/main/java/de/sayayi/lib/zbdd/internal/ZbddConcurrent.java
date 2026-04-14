@@ -34,12 +34,17 @@ import java.util.function.Function;
  * @author Jeroen Gremmen
  * @since 0.5.0
  */
-public class ZbddConcurrent implements Zbdd.Concurrent
+public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcurrent.WithCache
 {
   protected final Zbdd zbdd;
   protected final Lock lock;
 
 
+  /**
+   * Creates a new concurrent wrapper around the given zbdd instance.
+   *
+   * @param zbdd  zbdd instance to wrap, not {@code null}
+   */
   public ZbddConcurrent(@NotNull Zbdd zbdd)
   {
     this.zbdd = zbdd;
@@ -545,6 +550,9 @@ public class ZbddConcurrent implements Zbdd.Concurrent
 
 
 
+  /**
+   * Thread-safe delegate for {@link ZbddNodeInfo} that acquires the lock for every access.
+   */
   private final class ZbddNodeInfoDelegate implements ZbddNodeInfo
   {
     private final ZbddNodeInfo nodeInfo;
@@ -642,8 +650,16 @@ public class ZbddConcurrent implements Zbdd.Concurrent
 
 
 
-  public static class WithCache extends ZbddConcurrent implements Zbdd.WithCache
+  /**
+   * Thread-safe wrapper for a cached zbdd instance, combining {@link Zbdd.Concurrent} and {@link Zbdd.WithCache}.
+   */
+  public static final class WithCache extends ZbddConcurrent implements Zbdd.WithCache
   {
+    /**
+     * Creates a new concurrent wrapper around the given cached zbdd instance.
+     *
+     * @param zbdd  cached zbdd instance to wrap, not {@code null}
+     */
     public WithCache(@NotNull Zbdd.WithCache zbdd) {
       super(zbdd);
     }

@@ -28,13 +28,14 @@ import static java.util.Locale.US;
 
 
 /**
- * Fast zbdd cache implementation.
+ * A high-performance {@link ZbddCache} implementation optimized for speed with minimal memory overhead.
  *
  * @author Jeroen Gremmen
  * @since 0.1.3
  */
 public final class ZbddFastCache implements ZbddCache
 {
+  /** The minimum allowed cache size. */
   public static final int MIN_CACHE_SIZE = 1024;
 
   private static final int CHAIN_CAPACITY = 8;
@@ -58,11 +59,20 @@ public final class ZbddFastCache implements ZbddCache
   private int lookupHitCount;
 
 
+  /**
+   * Creates a new cache with the {@linkplain #MIN_CACHE_SIZE minimum cache size}.
+   */
   public ZbddFastCache() {
     this(MIN_CACHE_SIZE);
   }
 
 
+  /**
+   * Creates a new cache with the given size. If the given {@code size} is less than {@link #MIN_CACHE_SIZE},
+   * the minimum cache size is used instead.
+   *
+   * @param size  requested cache size
+   */
   public ZbddFastCache(int size)
   {
     slots = max(size, MIN_CACHE_SIZE) / (SLOT_CHAIN_SIZE1 + SLOT_CHAIN_SIZE2);
@@ -215,6 +225,11 @@ public final class ZbddFastCache implements ZbddCache
   }
 
 
+  /**
+   * Returns a string representation of this cache, showing the hit ratio and capacity usage.
+   *
+   * @return  string representation of this cache
+   */
   public String toString()
   {
     return getClass().getSimpleName() + "[hits=" +

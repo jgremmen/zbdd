@@ -25,7 +25,8 @@ import org.jetbrains.annotations.NotNull;
 
 
 /**
- * Zbdd factory.
+ * Factory for creating {@link Zbdd} instances with various configurations, including support for operation caching
+ * and thread-safe (concurrent) access.
  *
  * @author Jeroen Gremmen
  * @since 0.5.0
@@ -89,12 +90,30 @@ public final class ZbddFactory
   }
 
 
+  /**
+   * Wraps the given {@code zbdd} instance to make it thread-safe. If the instance is already concurrent,
+   * it is returned as-is.
+   *
+   * @param zbdd  zbdd instance to wrap, not {@code null}
+   *
+   * @return  thread-safe zbdd instance, never {@code null}
+   */
   @Contract(value = "_ -> new", pure = true)
   public static @NotNull Zbdd.Concurrent asConcurrent(@NotNull Zbdd zbdd) {
     return zbdd instanceof Zbdd.Concurrent ? (Zbdd.Concurrent)zbdd : new ZbddConcurrent(zbdd);
   }
 
 
+  /**
+   * Wraps the given cached {@code zbdd} instance to make it thread-safe while preserving cache support. If the
+   * instance is already concurrent, it is returned as-is.
+   *
+   * @param zbdd  cached zbdd instance to wrap, not {@code null}
+   *
+   * @return  thread-safe cached zbdd instance, never {@code null}
+   *
+   * @param <T>  return type that is both concurrent and cached
+   */
   @Contract(value = "_ -> new", pure = true)
   @SuppressWarnings("unchecked")
   public static <T extends Zbdd.Concurrent & Zbdd.WithCache> @NotNull T asConcurrent(@NotNull Zbdd.WithCache zbdd) {

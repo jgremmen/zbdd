@@ -20,12 +20,13 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.function.IntConsumer;
 
-import static java.lang.Math.max;
-import static java.lang.Math.min;
+import static java.lang.Math.clamp;
 import static java.util.Arrays.copyOf;
 
 
 /**
+ * A simple, growable stack of {@code int} values used internally by ZBDD operations.
+ *
  * @author Jeroen Gremmen
  * @since 0.6.0
  */
@@ -35,11 +36,23 @@ final class IntStack
   private int stackSize;
 
 
+  /**
+   * Creates a new stack with the given initial capacity.
+   *
+   * @param size  initial capacity (clamped to the range 0–24)
+   */
   IntStack(int size) {
-    stack = new int[min(max(size, 0), 24)];
+    stack = new int[clamp(size, 0, 24)];
   }
 
 
+  /**
+   * Pushes a value onto the stack.
+   *
+   * @param value  value to push
+   *
+   * @return  the pushed value
+   */
   @Contract(value = "_ -> param1", mutates = "this")
   int push(int value)
   {
@@ -50,6 +63,11 @@ final class IntStack
   }
 
 
+  /**
+   * Pushes the given zbdd onto the stack if it is not the empty zbdd.
+   *
+   * @param zbdd  zbdd node
+   */
   @Contract(mutates = "this")
   void pushIfNotEmptyZbdd(int zbdd)
   {
@@ -58,6 +76,11 @@ final class IntStack
   }
 
 
+  /**
+   * Pushes the given zbdd onto the stack if it is not a leaf node (empty or base).
+   *
+   * @param zbdd  zbdd node
+   */
   @Contract(mutates = "this")
   void pushIfNotLeafNode(int zbdd)
   {
@@ -66,30 +89,53 @@ final class IntStack
   }
 
 
+  /**
+   * Removes and returns the top value from the stack.
+   *
+   * @return  the value at the top of the stack
+   */
   @Contract(mutates = "this")
   int pop() {
     return stack[--stackSize];
   }
 
 
+  /**
+   * Removes the top value from the stack without returning it.
+   */
   @Contract(mutates = "this")
   void drop() {
     stackSize--;
   }
 
 
+  /**
+   * Tells whether the stack is empty.
+   *
+   * @return  {@code true} if the stack contains no elements, {@code false} otherwise
+   */
   @Contract(pure = true)
   boolean isEmpty() {
     return stackSize == 0;
   }
 
 
+  /**
+   * Returns the stack contents as an {@code int} array.
+   *
+   * @return  array containing all values currently on the stack, never {@code null}
+   */
   @Contract(pure = true)
   int @NotNull [] getIntArray() {
     return copyOf(stack, stackSize);
   }
 
 
+  /**
+   * Iterates over all values on the stack from top to bottom.
+   *
+   * @param consumer  consumer to receive each value, not {@code null}
+   */
   void forEach(@NotNull IntConsumer consumer)
   {
     for(var i = stackSize - 1; i >= 0; i--)

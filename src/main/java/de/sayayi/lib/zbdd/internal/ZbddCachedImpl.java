@@ -39,6 +39,12 @@ public class ZbddCachedImpl extends ZbddImpl implements WithCache
   private ZbddCache zbddCache;
 
 
+  /**
+   * Creates a new cached zbdd instance with the given capacity advisor and cache.
+   *
+   * @param capacityAdvisor  capacity advisor, not {@code null}
+   * @param zbddCache        zbdd cache to use for memoization, not {@code null}
+   */
   @Contract(mutates = "param2")
   public ZbddCachedImpl(@NotNull ZbddCapacityAdvisor capacityAdvisor, @NotNull ZbddCache zbddCache)
   {

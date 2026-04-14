@@ -22,15 +22,21 @@
  * <p>
  * Exception hierarchy:
  * <ul>
- *   <li>{@link de.sayayi.lib.zbdd.exception.ZbddException} - Base runtime
- *       exception for all ZBDD-related errors.</li>
- *   <li>{@link de.sayayi.lib.zbdd.exception.InvalidVarException} - Thrown when
- *       an invalid variable identifier is used in a ZBDD operation.</li>
- *   <li>{@link de.sayayi.lib.zbdd.exception.InvalidZbddException} - Thrown when
- *       an invalid or corrupted ZBDD reference is encountered.</li>
- *   <li>{@link de.sayayi.lib.zbdd.exception.ZbddOutOfRangeException} - Thrown
- *       when an operation would exceed the valid range of ZBDD values or
- *       internal capacity limits.</li>
+ *   <li>
+ *     {@link de.sayayi.lib.zbdd.exception.ZbddException} - Base runtime exception for all ZBDD-related errors.
+ *   </li>
+ *   <li>
+ *     {@link de.sayayi.lib.zbdd.exception.InvalidVarException} - Thrown when an invalid variable identifier is used
+ *     in a ZBDD operation.
+ *   </li>
+ *   <li>
+ *     {@link de.sayayi.lib.zbdd.exception.InvalidZbddException} - Thrown when an invalid or corrupted ZBDD
+ *     reference is encountered.
+ *   </li>
+ *   <li>
+ *     {@link de.sayayi.lib.zbdd.exception.ZbddOutOfRangeException} - Thrown when an operation would exceed the valid
+ *     range of ZBDD values or internal capacity limits.
+ *   </li>
  * </ul>
  * <p>
  * All exceptions in this package extend {@link java.lang.RuntimeException}, allowing them to be caught and handled

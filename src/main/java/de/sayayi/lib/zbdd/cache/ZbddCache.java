@@ -20,18 +20,22 @@ import org.jetbrains.annotations.NotNull;
 
 
 /**
+ * Cache interface for storing and retrieving results of ZBDD operations, enabling memoization to improve performance.
+ *
  * @author Jeroen Gremmen
  * @since 0.1.3
+ *
+ * @see de.sayayi.lib.zbdd.ZbddFactory#createCached(ZbddCache)
  */
 public interface ZbddCache
 {
   /**
    * Retrieve the result from the cache.
    *
-   * @param operation  zbdd operation
+   * @param operation  zbdd operation, not {@code null}
    * @param p          operation parameter
    *
-   * @return  {@link Integer#MIN_VALUE} if the result is not cached. Oherwise the cached result is returned
+   * @return  {@link Integer#MIN_VALUE} if the result is not cached, otherwise the cached result is returned
    */
   @Contract(pure = true)
   int getResult(@NotNull Operation1 operation, int p);
@@ -40,20 +44,35 @@ public interface ZbddCache
   /**
    * Retrieve the result from the cache.
    *
-   * @param operation  zbdd operation
+   * @param operation  zbdd operation, not {@code null}
    * @param p1         1st operation parameter
    * @param p2         2nd operation parameter
    *
-   * @return  {@link Integer#MIN_VALUE} if the result is not cached. Oherwise the cached result is returned
+   * @return  {@link Integer#MIN_VALUE} if the result is not cached, otherwise the cached result is returned
    */
   @Contract(pure = true)
   int getResult(@NotNull Operation2 operation, int p1, int p2);
 
 
+  /**
+   * Store the result of a single-parameter operation in the cache.
+   *
+   * @param operation  zbdd operation, not {@code null}
+   * @param p          operation parameter
+   * @param result     result to cache
+   */
   @Contract(mutates = "this")
   void putResult(@NotNull Operation1 operation, int p, int result);
 
 
+  /**
+   * Store the result of a two-parameter operation in the cache.
+   *
+   * @param operation  zbdd operation, not {@code null}
+   * @param p1         1st operation parameter
+   * @param p2         2nd operation parameter
+   * @param result     result to cache
+   */
   @Contract(mutates = "this")
   void putResult(@NotNull Operation2 operation, int p1, int p2, int result);
 

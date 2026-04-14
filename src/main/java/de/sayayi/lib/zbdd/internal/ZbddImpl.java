@@ -42,12 +42,10 @@ import static java.util.Objects.requireNonNull;
 
 
 /**
- * <a href="https://en.wikipedia.org/wiki/Zero-suppressed_decision_diagram">
- *   Zero-suppressed decision diagram
- * </a>
- * on Wikipedia.
+ * Core implementation of the {@link Zbdd} interface.
  * <p>
- * This class is not thread-safe.
+ * This class is not thread-safe. Use {@link de.sayayi.lib.zbdd.ZbddFactory#asConcurrent(Zbdd)} to obtain a
+ * thread-safe wrapper.
  *
  * @author Jeroen Gremmen
  */
@@ -57,7 +55,7 @@ public class ZbddImpl implements Zbdd
   private static final int GC_VAR_MARK_MASK = 0x8000_0000;
   private static final int NODE_RECORD_SIZE = 6;
 
-  /** Maximum number of nodes. */
+  /** Maximum number of nodes supported by a single zbdd instance. */
   public static final int MAX_NODES = MAX_VALUE / NODE_RECORD_SIZE;
 
   private static final int _VAR = 0;       // variable number
@@ -84,6 +82,11 @@ public class ZbddImpl implements Zbdd
   private @NotNull ZbddLiteralResolver literalResolver = var -> "v" + var;
 
 
+  /**
+   * Creates a new zbdd instance with the given capacity advisor.
+   *
+   * @param capacityAdvisor  capacity advisor, not {@code null}
+   */
   public ZbddImpl(@NotNull ZbddCapacityAdvisor capacityAdvisor)
   {
     this.capacityAdvisor = capacityAdvisor;
@@ -291,6 +294,8 @@ public class ZbddImpl implements Zbdd
 
 
   /**
+   * Internal implementation of {@link #hasCubeWithVar(int, int)} without parameter validation.
+   *
    * @since 0.3.1
    */
   @Contract(pure = true)
@@ -324,6 +329,9 @@ public class ZbddImpl implements Zbdd
   }
 
 
+  /**
+   * Internal implementation of {@link #subset0(int, int)} without parameter validation.
+   */
   @Contract(mutates = "this")
   protected int __subset0(int zbdd, int var)
   {
@@ -355,6 +363,9 @@ public class ZbddImpl implements Zbdd
   }
 
 
+  /**
+   * Internal implementation of {@link #subset1(int, int)} without parameter validation.
+   */
   @Contract(mutates = "this")
   protected int __subset1(int zbdd, int var)
   {
@@ -386,6 +397,9 @@ public class ZbddImpl implements Zbdd
   }
 
 
+  /**
+   * Internal implementation of {@link #change(int, int)} without parameter validation.
+   */
   @Contract(mutates = "this")
   protected int __change(int zbdd, int var)
   {
@@ -415,6 +429,13 @@ public class ZbddImpl implements Zbdd
   }
 
 
+  /**
+   * Returns the number of cubes in the given zbdd.
+   *
+   * @param zbdd  valid zbdd
+   *
+   * @return  number of cubes >= 0
+   */
   @Override
   @Contract(pure = true)
   public int count(int zbdd) {
@@ -422,6 +443,9 @@ public class ZbddImpl implements Zbdd
   }
 
 
+  /**
+   * Internal implementation of {@link #count(int)} without parameter validation.
+   */
   @Contract(pure = true)
   protected int __count(int zbdd)
   {
@@ -472,6 +496,9 @@ public class ZbddImpl implements Zbdd
   }
 
 
+  /**
+   * Internal implementation of {@link #union(int, int)} without parameter validation.
+   */
   @Contract(mutates = "this")
   protected int __union(int p, int q)
   {
@@ -525,6 +552,9 @@ public class ZbddImpl implements Zbdd
   }
 
 
+  /**
+   * Internal implementation of {@link #intersect(int, int)} without parameter validation.
+   */
   @Contract(mutates = "this")
   protected int __intersect(int p, int q)
   {
@@ -567,6 +597,9 @@ public class ZbddImpl implements Zbdd
   }
 
 
+  /**
+   * Internal implementation of {@link #difference(int, int)} without parameter validation.
+   */
   @Contract(mutates = "this")
   protected int __difference(int p, int q)
   {
@@ -609,6 +642,9 @@ public class ZbddImpl implements Zbdd
   }
 
 
+  /**
+   * Internal implementation of {@link #multiply(int, int)} without parameter validation.
+   */
   @Contract(mutates = "this")
   protected int __multiply(int p, int q)
   {
@@ -669,6 +705,9 @@ public class ZbddImpl implements Zbdd
   }
 
 
+  /**
+   * Internal implementation of {@link #divide(int, int)} without parameter validation.
+   */
   @Contract(mutates = "this")
   protected int __divide(int p, int q)
   {
@@ -722,6 +761,9 @@ public class ZbddImpl implements Zbdd
   }
 
 
+  /**
+   * Internal implementation of {@link #modulo(int, int)} without parameter validation.
+   */
   @Contract(mutates = "this")
   protected int __modulo(int p, int q)
   {
@@ -744,6 +786,9 @@ public class ZbddImpl implements Zbdd
   }
 
 
+  /**
+   * Internal implementation of {@link #atomize(int)} without parameter validation.
+   */
   @Contract(mutates = "this")
   protected int __atomize(int zbdd)
   {
@@ -803,6 +848,9 @@ public class ZbddImpl implements Zbdd
   }
 
 
+  /**
+   * Internal implementation of {@link #removeBase(int)} without parameter validation.
+   */
   @Contract(mutates = "this")
   protected int __removeBase(int zbdd)
   {
@@ -836,6 +884,9 @@ public class ZbddImpl implements Zbdd
   }
 
 
+  /**
+   * Internal implementation of {@link #contains(int, int)} without parameter validation.
+   */
   @Contract(mutates = "this")
   protected boolean __contains(int p, int q) {
     return p != EMPTY && q != EMPTY && (p == q || __intersect(p, q) == q);
@@ -849,6 +900,9 @@ public class ZbddImpl implements Zbdd
   }
 
 
+  /**
+   * Internal implementation of {@link #getNode(int, int, int)} without parameter validation.
+   */
   @Contract(mutates = "this")
   protected int __getNode(int var, int p0, int p1)
   {
@@ -1136,6 +1190,9 @@ public class ZbddImpl implements Zbdd
   }
 
 
+  /**
+   * Internal implementation of {@link #incRef(int)} without parameter validation.
+   */
   @Contract(value = "_ -> param1", mutates = "this")
   protected int __incRef(final int zbdd)
   {
@@ -1169,6 +1226,9 @@ public class ZbddImpl implements Zbdd
   }
 
 
+  /**
+   * Internal implementation of {@link #decRef(int)} without parameter validation.
+   */
   @Contract(value = "_ -> param1", mutates = "this")
   protected int __decRef(final int zbdd)
   {
@@ -1198,6 +1258,17 @@ public class ZbddImpl implements Zbdd
   }
 
 
+  /**
+   * Validates the given zbdd node and returns it, or throws an exception if it is invalid.
+   *
+   * @param zbdd   zbdd node to validate
+   * @param param  parameter name for the exception message, not {@code null}
+   *
+   * @return  the validated zbdd node
+   *
+   * @throws ZbddOutOfRangeException  if the zbdd node is out of range
+   * @throws InvalidZbddException     if the zbdd node is not valid
+   */
   @Contract(value = "_, _ -> param1")
   @MustBeInvokedByOverriders
   protected int checkZbdd(int zbdd, @NotNull String param)
@@ -1218,6 +1289,15 @@ public class ZbddImpl implements Zbdd
   }
 
 
+  /**
+   * Validates the given variable and returns it, or throws an exception if it is invalid.
+   *
+   * @param var  variable to validate
+   *
+   * @return  the validated variable
+   *
+   * @throws InvalidVarException  if the variable is not valid
+   */
   @Contract(value = "_ -> param1")
   @MustBeInvokedByOverriders
   protected int checkVar(int var)
@@ -1434,6 +1514,9 @@ public class ZbddImpl implements Zbdd
 
 
 
+  /**
+   * Context object used during cube visitation to track the current state.
+   */
   private static final class VisitCubesContext
   {
     private final CubeVisitor visitor;
@@ -1460,6 +1543,9 @@ public class ZbddImpl implements Zbdd
 
 
 
+  /**
+   * Live statistics for this zbdd instance.
+   */
   private final class Statistics implements ZbddStatistics
   {
     private int nodeLookups;
@@ -1557,6 +1643,9 @@ public class ZbddImpl implements Zbdd
 
 
 
+  /**
+   * Live view delegate for a zbdd node, providing access to its properties.
+   */
   private final class ZbddNodeInfoDelegate implements ZbddNodeInfo
   {
     private final int zbdd;

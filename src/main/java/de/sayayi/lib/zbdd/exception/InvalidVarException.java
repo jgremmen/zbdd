@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 
 
 /**
- * Zbdd related exception stating that the {@code var} is outside the valid range.
+ * Thrown when an invalid variable identifier is used in a ZBDD operation.
  *
  * @author Jeroen Gremmen
  */
@@ -46,6 +46,11 @@ public final class InvalidVarException extends ZbddException
   }
 
 
+  /**
+   * Returns the invalid variable that caused this exception.
+   *
+   * @return  invalid variable
+   */
   @Contract(pure = true)
   public int getVar() {
     return var;

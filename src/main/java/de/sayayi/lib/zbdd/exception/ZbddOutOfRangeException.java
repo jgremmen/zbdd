@@ -32,9 +32,11 @@ public class ZbddOutOfRangeException extends InvalidZbddException
 
 
   /**
-   * Construct a zbdd exception with the given {@code message}.
+   * Construct a zbdd out-of-range exception.
    *
-   * @param message  exception message, not {@code null}
+   * @param zbdd           the zbdd node that is out of range
+   * @param highBoundZbdd  the highest valid zbdd node
+   * @param message        exception message, not {@code null}
    */
   public ZbddOutOfRangeException(int zbdd, int highBoundZbdd, @NotNull String message)
   {

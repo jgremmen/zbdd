@@ -19,7 +19,7 @@ import org.jetbrains.annotations.NotNull;
 
 
 /**
- * Zbdd related exception.
+ * Base runtime exception for all ZBDD-related errors.
  *
  * @author Jeroen Gremmen
  */

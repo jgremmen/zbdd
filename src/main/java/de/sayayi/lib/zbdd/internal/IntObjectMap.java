@@ -42,6 +42,7 @@ final class IntObjectMap
   private int size;
 
 
+  /** Creates a new empty map with a default initial capacity. */
   IntObjectMap() {
     ensureCapacity(16);
   }
@@ -87,6 +88,14 @@ final class IntObjectMap
   }
 
 
+  /**
+   * Associates the given {@code value} with the given {@code key}.
+   *
+   * @param key    key
+   * @param value  value to associate with the key, not {@code null}
+   *
+   * @throws IllegalStateException  if the key is already present
+   */
   @Contract(mutates = "this")
   void put(int key, @NotNull Object value)
   {
@@ -102,6 +111,13 @@ final class IntObjectMap
   }
 
 
+  /**
+   * Returns the value associated with the given {@code key}, or {@code null} if the key is not present.
+   *
+   * @param key  key
+   *
+   * @return  associated value or {@code null}
+   */
   @Contract(pure = true)
   Object get(int key) {
     return values[indexOf(key)];
@@ -127,6 +143,11 @@ final class IntObjectMap
   }
 
 
+  /**
+   * Returns a string representation of this map.
+   *
+   * @return  string representation
+   */
   @Override
   public String toString()
   {

@@ -25,9 +25,24 @@ import java.util.function.Function;
 
 
 /**
- * <a href="https://en.wikipedia.org/wiki/Zero-suppressed_decision_diagram">
- *   Zero-suppressed decision diagram
- * </a>
+ * Zero-suppressed Binary Decision Diagram (ZBDD) data structure for efficient representation and manipulation
+ * of sets of combinations (families of sets).
+ * <p>
+ * A ZBDD is a compact data structure that efficiently represents and manipulates sets of combinations, particularly
+ * useful for problems involving combinatorial constraints, set operations, and sparse data. Unlike traditional BDDs,
+ * ZBDDs are optimized for sparse sets where most variables are absent.
+ * <p>
+ * This interface provides operations for:
+ * <ul>
+ *   <li>Creating and managing variables (literals)</li>
+ *   <li>Building sets of combinations (cubes)</li>
+ *   <li>Performing set operations (union, intersection, difference, etc.)</li>
+ *   <li>Querying and traversing the ZBDD structure</li>
+ *   <li>Memory management through reference counting and garbage collection</li>
+ * </ul>
+ * <p>
+ * See also:
+ * <a href="https://en.wikipedia.org/wiki/Zero-suppressed_decision_diagram">Zero-suppressed decision diagram</a>
  * on Wikipedia.
  *
  * @author Jeroen Gremmen
@@ -35,7 +50,10 @@ import java.util.function.Function;
  */
 public interface Zbdd
 {
+  /** Constant representing the empty ZBDD set (contains no elements). */
   int EMPTY = 0;
+
+  /** Constant representing the base ZBDD set (contains only the empty combination). */
   int BASE = 1;
 
 
@@ -105,6 +123,12 @@ public interface Zbdd
 
 
   /**
+   * Tells if the zbdd set identified by {@code zbdd} is the base set.
+   *
+   * @param zbdd  zbdd node
+   *
+   * @return  {@code true} if the set is the base set, {@code false} otherwise
+   *
    * @see #base()
    */
   @Contract(pure = true)
@@ -220,71 +244,191 @@ public interface Zbdd
 
 
   /**
+   * Tells if the given zbdd set contains at least one cube that includes the specified variable.
+   *
+   * @param zbdd  zbdd node
+   * @param var   variable to check for
+   *
+   * @return  {@code true} if the zbdd set contains at least one cube with the given variable, {@code false} otherwise
+   *
    * @since 0.3.1
    */
   @Contract(pure = true)
   boolean hasCubeWithVar(int zbdd, int var);
 
 
+  /**
+   * Returns a zbdd representing the subset where the given variable is absent (0-branch).
+   * <p>
+   * This operation extracts all combinations from the zbdd where {@code var} does not appear.
+   *
+   * @param zbdd  zbdd node
+   * @param var   variable to filter out
+   *
+   * @return  zbdd node representing the 0-subset
+   */
   @Contract(mutates = "this")
   int subset0(int zbdd, int var);
 
 
+  /**
+   * Returns a zbdd representing the subset where the given variable is present (1-branch).
+   * <p>
+   * This operation extracts all combinations from the zbdd where {@code var} appears, with the variable removed
+   * from each combination.
+   *
+   * @param zbdd  zbdd node
+   * @param var   variable to filter by
+   *
+   * @return  zbdd node representing the 1-subset
+   */
   @Contract(mutates = "this")
   int subset1(int zbdd, int var);
 
 
+  /**
+   * Returns a zbdd where the given variable is toggled in all combinations.
+   * <p>
+   * For each combination, if the variable is present it will be removed, and if absent it will be added.
+   *
+   * @param zbdd  zbdd node
+   * @param var   variable to toggle
+   *
+   * @return  zbdd node with the variable toggled
+   */
   @Contract(mutates = "this")
   int change(int zbdd, int var);
 
 
   /**
-   * Returns the number of cubes in the given {@code zbdd}.
+   * Returns the number of cubes (combinations) in the given {@code zbdd}.
    *
-   * @param zbdd  zbdd
+   * @param zbdd  zbdd node
    *
-   * @return  cube count
+   * @return  number of combinations in the zbdd set
    */
   @Contract(pure = true)
   int count(int zbdd);
 
 
+  /**
+   * Computes the union of multiple zbdd sets.
+   * <p>
+   * The result contains all combinations that appear in at least one of the input zbdd sets.
+   *
+   * @param p  array of zbdd nodes to union
+   *
+   * @return  zbdd node representing the union of all input sets
+   */
   @Contract(mutates = "this")
   int union(int... p);
 
 
+  /**
+   * Computes the union of two zbdd sets.
+   * <p>
+   * The result contains all combinations that appear in either {@code p} or {@code q}.
+   *
+   * @param p  first zbdd node
+   * @param q  second zbdd node
+   *
+   * @return  zbdd node representing the union of {@code p} and {@code q}
+   */
   @Contract(mutates = "this")
   int union(int p, int q);
 
 
+  /**
+   * Computes the intersection of two zbdd sets.
+   * <p>
+   * The result contains only combinations that appear in both {@code p} and {@code q}.
+   *
+   * @param p  first zbdd node
+   * @param q  second zbdd node
+   *
+   * @return  zbdd node representing the intersection of {@code p} and {@code q}
+   */
   @Contract(mutates = "this")
   int intersect(int p, int q);
 
 
+  /**
+   * Computes the set difference between two zbdd sets.
+   * <p>
+   * The result contains combinations that appear in {@code p} but not in {@code q}.
+   *
+   * @param p  zbdd node to subtract from
+   * @param q  zbdd node to subtract
+   *
+   * @return  zbdd node representing {@code p} minus {@code q}
+   */
   @Contract(mutates = "this")
   int difference(int p, int q);
 
 
+  /**
+   * Computes the product (Cartesian product) of two zbdd sets.
+   * <p>
+   * The result contains combinations formed by combining each combination from {@code p} with each combination from
+   * {@code q}.
+   *
+   * @param p  first zbdd node
+   * @param q  second zbdd node
+   *
+   * @return  zbdd node representing the product of {@code p} and {@code q}
+   */
   @Contract(mutates = "this")
   int multiply(int p, int q);
 
 
+  /**
+   * Computes the quotient of two zbdd sets.
+   * <p>
+   * The result contains combinations that, when multiplied with {@code q}, produce combinations in {@code p}.
+   *
+   * @param p  dividend zbdd node
+   * @param q  divisor zbdd node
+   *
+   * @return  zbdd node representing the quotient
+   */
   @Contract(mutates = "this")
   int divide(int p, int q);
 
 
+  /**
+   * Computes the remainder of division of two zbdd sets.
+   * <p>
+   * The result is {@code p} minus ({@code divide(p, q)} multiplied by {@code q}).
+   *
+   * @param p  dividend zbdd node
+   * @param q  divisor zbdd node
+   *
+   * @return  zbdd node representing the remainder
+   */
   @Contract(mutates = "this")
   int modulo(int p, int q);
 
 
+  /**
+   * Extracts all individual variables that occur in any combination of the given {@code zbdd} and returns a new zbdd
+   * where each variable forms its own single-variable cube.
+   * <p>
+   * For example, if the input zbdd represents {@code { a.b, b.c }}, the result is {@code { a, b, c }}.
+   *
+   * @param zbdd  zbdd node to atomize
+   *
+   * @return  zbdd node where each variable from the input is a separate single-variable cube
+   */
   @Contract(mutates = "this")
   int atomize(int zbdd);
 
 
   /**
    * Removes the base element from the given {@code zbdd}.
+   * <p>
+   * The base element represents the empty combination. This operation removes it from the set.
    *
-   * @param zbdd  zbdd
+   * @param zbdd  zbdd node
    *
    * @return  zbdd node representing {@code zbdd} without {@link #base()}
    */
@@ -293,10 +437,12 @@ public interface Zbdd
 
 
   /**
-   * Tells if the given zbdd set {@code q} is contained in zbdd  {@code p}.
+   * Tells if the given zbdd set {@code q} is contained in zbdd {@code p}.
+   * <p>
+   * A zbdd set {@code q} is contained in {@code p} if every combination in {@code q} is also in {@code p}.
    *
-   * @param p  provided zbdd set to test
-   * @param q  zbdd set which is expected to be part of zbdd set {@code p}
+   * @param p  zbdd set to test
+   * @param q  zbdd set which is expected to be a subset of {@code p}
    *
    * @return  {@code true} if both zbdd sets {@code p} and {@code q} are not empty and zbdd set {@code q} is
    *          contained in zbdd set {@code p}, {@code false} otherwise
@@ -344,10 +490,12 @@ public interface Zbdd
 
   /**
    * Returns the zbdd node for the 0-branch of the given {@code zbdd} node.
+   * <p>
+   * The 0-branch represents all combinations where the variable at this node is absent.
    *
    * @param zbdd  zbdd node
    *
-   * @return  zbdd node for the 1-branch
+   * @return  zbdd node for the 0-branch
    */
   @Contract(pure = true)
   int getP0(int zbdd);
@@ -355,6 +503,8 @@ public interface Zbdd
 
   /**
    * Returns the zbdd node for the 1-branch of the given {@code zbdd} node.
+   * <p>
+   * The 1-branch represents all combinations where the variable at this node is present.
    *
    * @param zbdd  zbdd node
    *
@@ -364,6 +514,18 @@ public interface Zbdd
   int getP1(int zbdd);
 
 
+  /**
+   * Creates or retrieves a zbdd node with the given variable and branches.
+   * <p>
+   * This is the fundamental operation for constructing zbdd nodes. It ensures that identical nodes are shared
+   * (canonical representation).
+   *
+   * @param var  variable for the node
+   * @param p0   zbdd node for the 0-branch (variable absent)
+   * @param p1   zbdd node for the 1-branch (variable present)
+   *
+   * @return  zbdd node identifier
+   */
   @Contract(mutates = "this")
   @MustBeInvokedByOverriders
   int getNode(int var, int p0, int p1);
@@ -371,6 +533,9 @@ public interface Zbdd
 
   /**
    * Perform garbage collection on the internal zbdd structure.
+   * <p>
+   * This method frees all unreferenced zbdd nodes and updates statistics. Nodes with a reference count greater than
+   * zero are protected from garbage collection.
    * <p>
    * After garbage collection, all dead and not referenced nodes have been freed and the statistics have been updated
    * accordingly.
@@ -388,9 +553,12 @@ public interface Zbdd
   /**
    * Increments the reference count for the given {@code zbdd}.
    * <p>
+   * Reference counting protects zbdd nodes from garbage collection. This is useful when you want to keep certain
+   * nodes alive across multiple operations.
+   * <p>
    * When a new zbdd is constructed (see {@link #getNode(int, int, int)}) the capacity advisor may suggest garbage
-   * collection to free unused zbdd noodes before the decision is made to increase the node capacity. All zbdd nodes
-   * that have an incremented reference count are protected from garabage collection.
+   * collection to free unused zbdd nodes before the decision is made to increase the node capacity. All zbdd nodes
+   * that have an incremented reference count are protected from garbage collection.
    * <p>
    * All functions in this interface that accept one or more zbdds as a parameter will protect those zbdds by
    * internally increasing the reference count on entry and decreasing it on exit.
@@ -410,6 +578,8 @@ public interface Zbdd
 
   /**
    * Increase the reference count for all zbdd nodes in {@code zbdds}.
+   * <p>
+   * This is a convenience method for incrementing reference counts on multiple nodes at once.
    *
    * @param zbdds  array of zbdd nodes, not {@code null}
    *
@@ -432,6 +602,8 @@ public interface Zbdd
 
   /**
    * Decrements the reference count for the given {@code zbdd}.
+   * <p>
+   * When the reference count reaches zero, the node becomes eligible for garbage collection.
    *
    * @param zbdd  zbdd node
    *
@@ -448,6 +620,8 @@ public interface Zbdd
 
   /**
    * Decrease the reference count for all zbdd nodes in {@code zbdds}.
+   * <p>
+   * This is a convenience method for decrementing reference counts on multiple nodes at once.
    *
    * @param zbdds  array of zbdd nodes, not {@code null}
    *

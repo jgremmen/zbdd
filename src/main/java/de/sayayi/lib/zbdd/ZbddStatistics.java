@@ -19,7 +19,8 @@ import org.jetbrains.annotations.Contract;
 
 
 /**
- * Zbdd statistics.
+ * Provides a live view of the statistics for a {@link Zbdd} instance, including node capacity, usage, garbage
+ * collection activity, and node lookup performance.
  *
  * @author Jeroen Gremmen
  *
@@ -54,12 +55,22 @@ public interface ZbddStatistics
   int getDeadNodes();
 
 
+  /**
+   * Returns the number of available nodes, which is the sum of free and dead nodes.
+   *
+   * @return  available node count
+   */
   @Contract(pure = true)
   default int getAvailableNodes() {
     return getFreeNodes() + getDeadNodes();
   }
 
 
+  /**
+   * Returns the number of occupied (actively used) nodes.
+   *
+   * @return  occupied node count
+   */
   @Contract(pure = true)
   default int getOccupiedNodes() {
     return getNodesCapacity() - getAvailableNodes();
@@ -75,16 +86,31 @@ public interface ZbddStatistics
   int getNodeLookups();
 
 
+  /**
+   * Returns the number of node lookups that resulted in a cache hit.
+   *
+   * @return  node lookup hit count
+   */
   @Contract(pure = true)
   int getNodeLookupHitCount();
 
 
+  /**
+   * Returns the ratio of node lookups that resulted in a cache hit.
+   *
+   * @return  hit ratio in the range {@code 0.0} to {@code 1.0}
+   */
   @Contract(pure = true)
   default double getNodeLookupHitRatio() {
     return getNodeLookupHitCount() / (double)getNodeLookups();
   }
 
 
+  /**
+   * Returns the ratio of node lookups that resulted in a cache miss.
+   *
+   * @return  miss ratio in the range {@code 0.0} to {@code 1.0}
+   */
   @Contract(pure = true)
   default double getNodeLookupMissRatio() {
     return 1.0 - getNodeLookupHitRatio();
@@ -116,6 +142,7 @@ public interface ZbddStatistics
    *
    * @since 0.5.0
    */
+  @Contract(pure = true)
   int getCapacityIncreaseCount();
 
 

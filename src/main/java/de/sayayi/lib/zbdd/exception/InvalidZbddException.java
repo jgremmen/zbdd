@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 
 
 /**
- * Zbdd related exception stating that the {@code zbdd} is not valid or unknown.
+ * Thrown when an invalid or corrupted ZBDD reference is encountered.
  *
  * @author Jeroen Gremmen
  */
@@ -30,8 +30,9 @@ public class InvalidZbddException extends ZbddException
 
 
   /**
-   * Construct a zbdd exception with the given {@code message}.
+   * Construct an invalid zbdd exception.
    *
+   * @param zbdd     the invalid zbdd node
    * @param message  exception message, not {@code null}
    */
   public InvalidZbddException(int zbdd, @NotNull String message)
