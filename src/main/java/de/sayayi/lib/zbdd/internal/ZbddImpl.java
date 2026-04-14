@@ -50,7 +50,7 @@ import static java.util.Objects.requireNonNull;
  * @author Jeroen Gremmen
  */
 @SuppressWarnings("DuplicatedCode")
-public class ZbddImpl implements Zbdd
+public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 {
   private static final int GC_VAR_MARK_MASK = 0x8000_0000;
   private static final int NODE_RECORD_SIZE = 6;

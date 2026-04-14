@@ -16,6 +16,9 @@
 package de.sayayi.lib.zbdd;
 
 import de.sayayi.lib.zbdd.cache.ZbddCache;
+import de.sayayi.lib.zbdd.internal.ZbddCachedImpl;
+import de.sayayi.lib.zbdd.internal.ZbddConcurrent;
+import de.sayayi.lib.zbdd.internal.ZbddImpl;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.MustBeInvokedByOverriders;
 import org.jetbrains.annotations.NotNull;
@@ -48,7 +51,7 @@ import java.util.function.Function;
  * @author Jeroen Gremmen
  * @since 0.5.0
  */
-public interface Zbdd
+public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
 {
   /** Constant representing the empty ZBDD set (contains no elements). */
   int EMPTY = 0;
@@ -830,7 +833,7 @@ public interface Zbdd
    * @author Jeroen Gremmen
    * @since 0.5.0
    */
-  interface WithCache extends Zbdd
+  sealed interface WithCache extends Zbdd permits ZbddCachedImpl, ZbddConcurrent.WithCache
   {
     /**
      * Returns the current zbdd cache instance used for caching.
@@ -859,7 +862,7 @@ public interface Zbdd
    * @author Jeroen Gremmen
    * @since 0.5.0
    */
-  interface Concurrent extends Zbdd
+  sealed interface Concurrent extends Zbdd permits ZbddConcurrent
   {
     /**
      * Perform operations within a locked context, acting like one atomic operation.

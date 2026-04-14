@@ -34,7 +34,7 @@ import static java.util.Objects.requireNonNull;
  * @since 0.5.0
  */
 @SuppressWarnings("DuplicatedCode")
-public class ZbddCachedImpl extends ZbddImpl implements WithCache
+public final class ZbddCachedImpl extends ZbddImpl implements WithCache
 {
   private ZbddCache zbddCache;
 
