@@ -48,4 +48,3 @@
  * single-variable elements from the original.
  */
 package de.sayayi.lib.zbdd;
-

@@ -34,4 +34,3 @@
  * performance improvements for applications that perform repetitive or complex ZBDD operations.
  */
 package de.sayayi.lib.zbdd.cache;
-

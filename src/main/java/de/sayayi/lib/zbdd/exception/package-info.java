@@ -43,4 +43,3 @@
  * as needed without requiring explicit declaration in method signatures.
  */
 package de.sayayi.lib.zbdd.exception;
-
