@@ -310,11 +310,15 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
       for(stack.pushIfNotLeafNode(zbdd); !stack.isEmpty();)
       {
         final var offset = stack.pop() * NODE_RECORD_SIZE;
-        if (nodes[offset + _VAR] == var)
-          return true;
+        final var currentVar = nodes[offset + _VAR];
 
-        stack.pushIfNotLeafNode(nodes[offset + _P0]);
-        stack.pushIfNotLeafNode(nodes[offset + _P1]);
+        if (currentVar > var)
+        {
+          stack.pushIfNotLeafNode(nodes[offset + _P0]);
+          stack.pushIfNotLeafNode(nodes[offset + _P1]);
+        }
+        else if (currentVar == var)
+          return true;
       }
     }
 

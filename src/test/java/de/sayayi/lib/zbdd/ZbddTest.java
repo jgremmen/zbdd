@@ -74,6 +74,63 @@ class ZbddTest
 
 
   @Test
+  @DisplayName("Operation 'hasCubeWithVar'")
+  void hasCubeWithVar()
+  {
+    final var zbdd = ZbddFactory.create();
+    final var v1 = zbdd.createVar();
+    final var v2 = zbdd.createVar();
+    final var v3 = zbdd.createVar();
+    final var v4 = zbdd.createVar();
+    final var v5 = zbdd.createVar();
+    final var v6 = zbdd.createVar();
+    final var v7 = zbdd.createVar();
+    final var v8 = zbdd.createVar();
+
+    // empty and base have no variables
+    assertFalse(zbdd.hasCubeWithVar(Zbdd.empty(), v1));
+    assertFalse(zbdd.hasCubeWithVar(Zbdd.base(), v1));
+
+    // build a zbdd with 6 cubes: { v1.v3.v5, v2.v4, v3.v6.v7, v1.v8, v4.v5.v6, v2.v3 }
+    var r = zbdd.incRef(zbdd.cube(v1, v3, v5));
+    r = zbdd.incRef(zbdd.union(r, zbdd.cube(v2, v4)));
+    r = zbdd.incRef(zbdd.union(r, zbdd.cube(v3, v6, v7)));
+    r = zbdd.incRef(zbdd.union(r, zbdd.cube(v1, v8)));
+    r = zbdd.incRef(zbdd.union(r, zbdd.cube(v4, v5, v6)));
+    r = zbdd.union(r, zbdd.cube(v2, v3));
+
+    assertEquals(6, zbdd.count(r));
+
+    // v1 appears in cubes: v1.v3.v5, v1.v8
+    assertTrue(zbdd.hasCubeWithVar(r, v1));
+    // v2 appears in cubes: v2.v4, v2.v3
+    assertTrue(zbdd.hasCubeWithVar(r, v2));
+    // v3 appears in cubes: v1.v3.v5, v3.v6.v7, v2.v3
+    assertTrue(zbdd.hasCubeWithVar(r, v3));
+    // v4 appears in cubes: v2.v4, v4.v5.v6
+    assertTrue(zbdd.hasCubeWithVar(r, v4));
+    // v5 appears in cubes: v1.v3.v5, v4.v5.v6
+    assertTrue(zbdd.hasCubeWithVar(r, v5));
+    // v6 appears in cubes: v3.v6.v7, v4.v5.v6
+    assertTrue(zbdd.hasCubeWithVar(r, v6));
+    // v7 appears only in cube: v3.v6.v7
+    assertTrue(zbdd.hasCubeWithVar(r, v7));
+    // v8 appears only in cube: v1.v8
+    assertTrue(zbdd.hasCubeWithVar(r, v8));
+
+    // remove variable v7 from the zbdd
+    int withoutV7 = zbdd.subset0(r, v7);  // removes cubes with v7
+    assertFalse(zbdd.hasCubeWithVar(withoutV7, v7));
+    assertTrue(zbdd.hasCubeWithVar(withoutV7, v6));  // v6 still in v4.v5.v6
+
+    // remove variable v8 from the zbdd
+    var withoutV8 = zbdd.subset0(r, v8);  // removes cubes with v8
+    assertFalse(zbdd.hasCubeWithVar(withoutV8, v8));
+    assertTrue(zbdd.hasCubeWithVar(withoutV8, v1));  // v1 still in v1.v3.v5
+  }
+
+
+  @Test
   @DisplayName("Operation 'count'")
   void count()
   {
