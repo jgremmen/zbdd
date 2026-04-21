@@ -1257,8 +1257,11 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
 
   @Override
-  public boolean isValidZbdd(int zbdd) {
-    return zbdd >= 0 && zbdd < nodesCapacity && (zbdd < 2 || nodes[zbdd * NODE_RECORD_SIZE + _VAR] > 0);
+  public boolean isValidZbdd(int zbdd)
+  {
+    return zbdd < 2
+        ? zbdd >= 0
+        : zbdd < nodesCapacity && nodes[zbdd * NODE_RECORD_SIZE + _VAR] > 0;
   }
 
 

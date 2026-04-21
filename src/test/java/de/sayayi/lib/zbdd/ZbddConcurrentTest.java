@@ -28,8 +28,7 @@ public class ZbddConcurrentTest
     final var state1Complete = new CountDownLatch(1);
     final var state2Complete = new CountDownLatch(1);
 
-    final var executor = newFixedThreadPool(2);
-    try {
+    try(final var executor = newFixedThreadPool(2)) {
       final var future = executor.submit(() -> {
         state1Complete.countDown();  // unlocks 2nd thread
         state2Complete.await();  // wait for it to finish
@@ -48,8 +47,6 @@ public class ZbddConcurrentTest
 
       assertEquals(InvalidZbddException.class,
           assertThrowsExactly(ExecutionException.class, future::get).getCause().getClass());
-    } finally {
-      executor.shutdown();
     }
   }
 
@@ -64,8 +61,7 @@ public class ZbddConcurrentTest
     final var state1Complete = new CountDownLatch(1);
     final var state2Complete = new CountDownLatch(1);
 
-    final var executor = newFixedThreadPool(2);
-    try {
+    try(final var executor = newFixedThreadPool(2)) {
       executor.submit(() -> {
         System.out.println("start gc thread");
         System.out.println("wait for zbdd operation thread to be on stand-by...");
@@ -105,8 +101,6 @@ public class ZbddConcurrentTest
 
       assertTrue(zbdd.isValidZbdd(cube));
       assertEquals(1, future.get());
-    } finally {
-      executor.shutdown();
     }
   }
 }

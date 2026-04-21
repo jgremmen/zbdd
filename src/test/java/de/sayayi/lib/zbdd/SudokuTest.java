@@ -318,42 +318,12 @@ public class SudokuTest
 
 
 
-  private static class GridCellValue
+  private record GridCellValue(int col, int row, int value)
   {
-    final int col;
-    final int row;
-    final int value;
-
-
-    GridCellValue(int col, int row, int value) {
-      this.col = col;
-      this.row = row;
-      this.value = value;
-    }
-
-
     @Override
-    public boolean equals(Object o)
-    {
-      if (!(o instanceof GridCellValue))
-        return false;
-
-      final var that = (GridCellValue)o;
-
-      return col == that.col && row == that.row && value == that.value;
-    }
-
-
-    @Override
-    public int hashCode() {
-      return (col * 31 + row) * 31 + value;
-    }
-
-
-    @Override
-    public String toString() {
-      return "(" + col + "," + row + ") = " + value;
-    }
+    public @NotNull String toString() {
+        return "(" + col + "," + row + ") = " + value;
+      }
   }
 
 
@@ -370,6 +340,7 @@ public class SudokuTest
     @Override
     public @NotNull String getCubeName(int @NotNull [] cubeVars)
     {
+      //noinspection TextBlockMigration
       final var sudoku = (
           "\n" +
           "?????????\n" +

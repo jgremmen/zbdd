@@ -151,6 +151,7 @@ class QueensTest
 
 
 
+  @SuppressWarnings("ClassCanBeRecord")
   private static final class SimpleCapacityAdvisor implements ZbddCapacityAdvisor
   {
     private final int initialSize;
