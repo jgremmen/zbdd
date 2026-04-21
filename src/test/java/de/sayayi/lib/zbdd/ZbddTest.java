@@ -45,9 +45,9 @@ class ZbddTest
   @SuppressWarnings("ConstantConditions")
   void createVar()
   {
-    Zbdd zbdd = ZbddFactory.create();
-    int var = zbdd.createVar();
-    int r = zbdd.cube(var);
+    final var zbdd = ZbddFactory.create();
+    final var var = zbdd.createVar();
+    final var r = zbdd.cube(var);
 
     assertTrue(var > 0);
     assertTrue(r >= 2);
@@ -64,9 +64,9 @@ class ZbddTest
   @DisplayName("Operation 'change'")
   void change()
   {
-    Zbdd zbdd = ZbddFactory.create();
-    int var = zbdd.createVar();
-    int r = zbdd.cube(var);
+    final var zbdd = ZbddFactory.create();
+    final var var = zbdd.createVar();
+    final var r = zbdd.cube(var);
 
     assertEquals(Zbdd.empty(), zbdd.change(Zbdd.empty(), var));
     assertEquals(r, zbdd.change(Zbdd.base(), var));
@@ -119,12 +119,12 @@ class ZbddTest
     assertTrue(zbdd.hasCubeWithVar(r, v8));
 
     // remove variable v7 from the zbdd
-    int withoutV7 = zbdd.subset0(r, v7);  // removes cubes with v7
+    final var withoutV7 = zbdd.subset0(r, v7);  // removes cubes with v7
     assertFalse(zbdd.hasCubeWithVar(withoutV7, v7));
     assertTrue(zbdd.hasCubeWithVar(withoutV7, v6));  // v6 still in v4.v5.v6
 
     // remove variable v8 from the zbdd
-    var withoutV8 = zbdd.subset0(r, v8);  // removes cubes with v8
+    final var withoutV8 = zbdd.subset0(r, v8);  // removes cubes with v8
     assertFalse(zbdd.hasCubeWithVar(withoutV8, v8));
     assertTrue(zbdd.hasCubeWithVar(withoutV8, v1));  // v1 still in v1.v3.v5
   }
@@ -134,62 +134,146 @@ class ZbddTest
   @DisplayName("Operation 'count'")
   void count()
   {
-    Zbdd zbdd = ZbddFactory.create();
-    int a = zbdd.createVar();
-    int b = zbdd.createVar();
-    int c = zbdd.createVar();
+    final var zbdd = ZbddFactory.create();
+    final var a = zbdd.createVar();
+    final var b = zbdd.createVar();
+    final var c = zbdd.createVar();
 
     zbdd.setLiteralResolver(var -> var == a ? "a" : var == b ? "b" : "c");
 
-    int ab = zbdd.cube(a, b);
-    int ac = zbdd.cube(a, c);
-    int r = zbdd.union(ab, zbdd.cube(b), zbdd.cube(c), ac, Zbdd.base());
+    final var ab = zbdd.cube(a, b);
+    final var ac = zbdd.cube(a, c);
+    final var r = zbdd.union(ab, zbdd.cube(b), zbdd.cube(c), ac, Zbdd.base());
 
     assertEquals(5, zbdd.count(r));
   }
 
 
   @Test
-  void subset1Test1()
+  @DisplayName("Operation 'subset0'")
+  void subset0()
   {
-    Zbdd zbdd = ZbddFactory.create();
-    int c = zbdd.createVar();
-    int x1 = zbdd.createVar();
-    int x2 = zbdd.createVar();
+    final var zbdd = ZbddFactory.create();
+    final var v1 = zbdd.createVar();
+    final var v2 = zbdd.createVar();
+    final var v3 = zbdd.createVar();
+    final var v4 = zbdd.createVar();
+    final var v5 = zbdd.createVar();
+    final var v6 = zbdd.createVar();
+    final var v7 = zbdd.createVar();
+    final var v8 = zbdd.createVar();
 
-    zbdd.setLiteralResolver(var -> var == c ? "container" : var == x1 ? "x1" : "x2");
+    // trivial cases
+    assertEquals(Zbdd.empty(), zbdd.subset0(Zbdd.empty(), v1));
+    assertEquals(Zbdd.base(), zbdd.subset0(Zbdd.base(), v1));
 
-    int dependency = zbdd.cube(c, x1, x2);
-    int containerSubset = zbdd.subset1(dependency, c);
+    // single cube without the variable returns itself
+    final var c_v2v3 = zbdd.cube(v2, v3);
+    assertEquals(c_v2v3, zbdd.subset0(c_v2v3, v1));
 
-    assertEquals(1, zbdd.count(containerSubset));
-    assertEquals(x2, zbdd.getVar(containerSubset));
+    // single cube with the variable returns empty
+    assertEquals(Zbdd.empty(), zbdd.subset0(c_v2v3, v2));
+
+    // build zbdd r = { v1.v2.v5, v3.v4.v8, v2.v6, v1.v7.v8, v5.v6.v7, v3.v8 }
+    final var c1 = zbdd.incRef(zbdd.cube(v1, v2, v5));   // v1.v2.v5
+    final var c2 = zbdd.incRef(zbdd.cube(v3, v4, v8));   // v3.v4.v8
+    final var c3 = zbdd.incRef(zbdd.cube(v2, v6));        // v2.v6
+    final var c4 = zbdd.incRef(zbdd.cube(v1, v7, v8));   // v1.v7.v8
+    final var c5 = zbdd.incRef(zbdd.cube(v5, v6, v7));   // v5.v6.v7
+    final var c6 = zbdd.incRef(zbdd.cube(v3, v8));        // v3.v8
+    final var r = zbdd.incRef(zbdd.union(c1, c2, c3, c4, c5, c6));
+
+    assertEquals(6, zbdd.count(r));
+
+    // subset0(r, v1) -> cubes without v1: { v3.v4.v8, v2.v6, v5.v6.v7, v3.v8 }
+    final var r0_v1 = zbdd.incRef(zbdd.subset0(r, v1));
+    assertEquals(4, zbdd.count(r0_v1));
+    assertTrue(zbdd.contains(r0_v1, c2));
+    assertTrue(zbdd.contains(r0_v1, c3));
+    assertTrue(zbdd.contains(r0_v1, c5));
+    assertTrue(zbdd.contains(r0_v1, c6));
+    assertFalse(zbdd.contains(r0_v1, c1));
+    assertFalse(zbdd.contains(r0_v1, c4));
+
+    // subset0(r, v8) -> cubes without v8: { v1.v2.v5, v2.v6, v5.v6.v7 }
+    final var r0_v8 = zbdd.incRef(zbdd.subset0(r, v8));
+    assertEquals(3, zbdd.count(r0_v8));
+    assertTrue(zbdd.contains(r0_v8, c1));
+    assertTrue(zbdd.contains(r0_v8, c3));
+    assertTrue(zbdd.contains(r0_v8, c5));
+
+    // subset0(r, v4) -> removes only v3.v4.v8, leaving 5 cubes
+    final var r0_v4 = zbdd.incRef(zbdd.subset0(r, v4));
+    assertEquals(5, zbdd.count(r0_v4));
+    assertFalse(zbdd.contains(r0_v4, c2));
+
+    // subset0 with a variable not in any cube returns the original set
+    assertEquals(r, zbdd.subset0(r, zbdd.createVar()));
   }
 
 
   @Test
-  void subset1Test2()
+  @DisplayName("Operation 'subset1'")
+  void subset1()
   {
-    Zbdd zbdd = ZbddFactory.create();
-    int c = zbdd.createVar();
-    int x1 = zbdd.createVar();
-    int x2 = zbdd.createVar();
+    final var zbdd = ZbddFactory.create();
+    final var v1 = zbdd.createVar();
+    final var v2 = zbdd.createVar();
+    final var v3 = zbdd.createVar();
+    final var v4 = zbdd.createVar();
+    final var v5 = zbdd.createVar();
+    final var v6 = zbdd.createVar();
+    final var v7 = zbdd.createVar();
+    final var v8 = zbdd.createVar();
 
-    zbdd.setLiteralResolver(var -> var == c ? "container" : var == x1 ? "x1" : "x2");
+    // trivial cases
+    assertEquals(Zbdd.empty(), zbdd.subset1(Zbdd.empty(), v1));
+    assertEquals(Zbdd.empty(), zbdd.subset1(Zbdd.base(), v1));
 
-    int dependency1 = zbdd.cube(c, x1, x2);
-    int dependency2 = zbdd.cube(c, x2);
-    int union = zbdd.union(zbdd.cube(x1), dependency1, dependency2, zbdd.cube(c));
+    // single cube with the variable returns the cube minus that variable
+    final var c_v2v3 = zbdd.cube(v2, v3);
+    assertEquals(zbdd.incRef(zbdd.cube(v3)), zbdd.subset1(c_v2v3, v2));
 
-    assertEquals(4, zbdd.count(union));
+    // single cube without the variable returns empty
+    assertEquals(Zbdd.empty(), zbdd.subset1(c_v2v3, v1));
 
-    int clear = zbdd.subset1(union, c);
+    // build zbdd r = { v1.v2.v5, v3.v4.v8, v2.v6, v1.v7.v8, v5.v6.v7, v3.v8 }
+    final var c1 = zbdd.incRef(zbdd.cube(v1, v2, v5));   // v1.v2.v5
+    final var c2 = zbdd.incRef(zbdd.cube(v3, v4, v8));   // v3.v4.v8
+    final var c3 = zbdd.incRef(zbdd.cube(v2, v6));        // v2.v6
+    final var c4 = zbdd.incRef(zbdd.cube(v1, v7, v8));   // v1.v7.v8
+    final var c5 = zbdd.incRef(zbdd.cube(v5, v6, v7));   // v5.v6.v7
+    final var c6 = zbdd.incRef(zbdd.cube(v3, v8));        // v3.v8
+    final var r = zbdd.incRef(zbdd.union(c1, c2, c3, c4, c5, c6));
 
-    assertEquals(3, zbdd.count(clear));
+    assertEquals(6, zbdd.count(r));
 
-    int clearWithoutBase = zbdd.difference(clear, Zbdd.base());
+    // subset1(r, v1) -> cubes with v1, with v1 removed: { v2.v5, v7.v8 }
+    final var r1_v1 = zbdd.incRef(zbdd.subset1(r, v1));
+    assertEquals(2, zbdd.count(r1_v1));
+    assertTrue(zbdd.contains(r1_v1, zbdd.cube(v2, v5)));
+    assertTrue(zbdd.contains(r1_v1, zbdd.cube(v7, v8)));
 
-    assertEquals(2, zbdd.count(clearWithoutBase));
+    // subset1(r, v8) -> cubes with v8, with v8 removed: { v3.v4, v1.v7, v3 }
+    final var r1_v8 = zbdd.incRef(zbdd.subset1(r, v8));
+    assertEquals(3, zbdd.count(r1_v8));
+    assertTrue(zbdd.contains(r1_v8, zbdd.cube(v3, v4)));
+    assertTrue(zbdd.contains(r1_v8, zbdd.cube(v1, v7)));
+    assertTrue(zbdd.contains(r1_v8, zbdd.cube(v3)));
+
+    // subset1(r, v6) -> cubes with v6, with v6 removed: { v2, v5.v7 }
+    final var r1_v6 = zbdd.incRef(zbdd.subset1(r, v6));
+    assertEquals(2, zbdd.count(r1_v6));
+    assertTrue(zbdd.contains(r1_v6, zbdd.cube(v2)));
+    assertTrue(zbdd.contains(r1_v6, zbdd.cube(v5, v7)));
+
+    // subset1(r, v4) -> only v3.v4.v8 contains v4, result: { v3.v8 }
+    final var r1_v4 = zbdd.incRef(zbdd.subset1(r, v4));
+    assertEquals(1, zbdd.count(r1_v4));
+    assertEquals(zbdd.cube(v3, v8), r1_v4);
+
+    // subset1 with a variable not in any cube returns empty
+    assertEquals(Zbdd.empty(), zbdd.subset1(r, zbdd.createVar()));
   }
 
 
@@ -197,18 +281,18 @@ class ZbddTest
   @DisplayName("Operation 'multiply'")
   void multiply()
   {
-    Zbdd zbdd = ZbddFactory.create();
+    final var zbdd = ZbddFactory.create();
 
-    int a = zbdd.createVar();
-    int b = zbdd.createVar();
-    int c = zbdd.createVar();
+    final var a = zbdd.createVar();
+    final var b = zbdd.createVar();
+    final var c = zbdd.createVar();
 
     zbdd.setLiteralResolver(var -> var == a ? "a" : var == b ? "b" : "c");
 
-    int ab = zbdd.cube(a, b);
-    int p = zbdd.union(ab, zbdd.cube(b), zbdd.cube(c));
-    int q = zbdd.union(ab, Zbdd.base());
-    int r = zbdd.multiply(p, q);
+    final var ab = zbdd.cube(a, b);
+    final var p = zbdd.union(ab, zbdd.cube(b), zbdd.cube(c));
+    final var q = zbdd.union(ab, Zbdd.base());
+    final var r = zbdd.multiply(p, q);
 
     assertEquals(3, zbdd.count(p));
     assertEquals(2, zbdd.count(q));
@@ -221,26 +305,26 @@ class ZbddTest
   @DisplayName("Operation 'difference'")
   void difference()
   {
-    Zbdd zbdd = ZbddFactory.create();
+    final var zbdd = ZbddFactory.create();
 
-    int a = zbdd.createVar();
-    int b = zbdd.createVar();
-    int c = zbdd.createVar();
-    int d = zbdd.createVar();
+    final var a = zbdd.createVar();
+    final var b = zbdd.createVar();
+    final var c = zbdd.createVar();
+    final var d = zbdd.createVar();
 
     zbdd.setLiteralResolver(var -> var == a ? "a" : var == b ? "b" : var == c ? "c" : "d");
 
     // { d, bc, ac, b, a } - { bc, ab, a, ø } = { d, ac, b }
-    int _ac = zbdd.incRef(zbdd.cube(a, c));
-    int _ab = zbdd.incRef(zbdd.cube(a, b));
-    int _bc = zbdd.incRef(zbdd.cube(b, c));
-    int _a = zbdd.incRef(zbdd.cube(a));
-    int _b = zbdd.incRef(zbdd.cube(b));
-    int _d = zbdd.incRef(zbdd.cube(d));
+    final var _ac = zbdd.incRef(zbdd.cube(a, c));
+    final var _ab = zbdd.incRef(zbdd.cube(a, b));
+    final var _bc = zbdd.incRef(zbdd.cube(b, c));
+    final var _a = zbdd.incRef(zbdd.cube(a));
+    final var _b = zbdd.incRef(zbdd.cube(b));
+    final var _d = zbdd.incRef(zbdd.cube(d));
 
-    int p = zbdd.incRef(zbdd.union(_ac, _bc, _a, _b, _d));
-    int q = zbdd.incRef(zbdd.union(_bc, _ab, _a, Zbdd.base()));
-    int r = zbdd.difference(p, q);
+    final var p = zbdd.incRef(zbdd.union(_ac, _bc, _a, _b, _d));
+    final var q = zbdd.incRef(zbdd.union(_bc, _ab, _a, Zbdd.base()));
+    final var r = zbdd.difference(p, q);
 
     assertEquals(3, zbdd.count(r));
     assertTrue(zbdd.contains(r, _ac));
@@ -253,17 +337,17 @@ class ZbddTest
   @DisplayName("Operation 'removeBase'")
   void removeBase()
   {
-    Zbdd zbdd = ZbddFactory.create();
-    int a = zbdd.createVar();
-    int b = zbdd.createVar();
-    int c = zbdd.createVar();
+    final var zbdd = ZbddFactory.create();
+    final var a = zbdd.createVar();
+    final var b = zbdd.createVar();
+    final var c = zbdd.createVar();
 
     zbdd.setLiteralResolver(var -> var == a ? "a" : var == b ? "b" : "c");
 
-    int ab = zbdd.cube(a, b);
-    int ac = zbdd.cube(a, c);
-    int ab_ac_b_c = zbdd.union(ab, zbdd.cube(b), zbdd.cube(c), ac);
-    int r = zbdd.union(ab_ac_b_c, Zbdd.base());
+    final var ab = zbdd.cube(a, b);
+    final var ac = zbdd.cube(a, c);
+    final var ab_ac_b_c = zbdd.union(ab, zbdd.cube(b), zbdd.cube(c), ac);
+    final var r = zbdd.union(ab_ac_b_c, Zbdd.base());
 
     assertEquals(ab_ac_b_c, zbdd.removeBase(r));
     assertEquals(zbdd.cube(a), zbdd.removeBase(zbdd.subset1(ab_ac_b_c, c)));
@@ -275,17 +359,17 @@ class ZbddTest
   @DisplayName("Operation 'contains'")
   void contains()
   {
-    Zbdd zbdd = ZbddFactory.create();
-    int a = zbdd.createVar();
-    int b = zbdd.createVar();
-    int c = zbdd.createVar();
+    final var zbdd = ZbddFactory.create();
+    final var a = zbdd.createVar();
+    final var b = zbdd.createVar();
+    final var c = zbdd.createVar();
 
     zbdd.setLiteralResolver(var -> var == a ? "a" : var == b ? "b" : "c");
 
-    int ab = zbdd.cube(a, b);
-    int ac = zbdd.cube(a, c);
-    int ab_ac_b_c = zbdd.union(ab, zbdd.cube(b), zbdd.cube(c), ac);
-    int r = zbdd.union(ab_ac_b_c, Zbdd.base());
+    final var ab = zbdd.cube(a, b);
+    final var ac = zbdd.cube(a, c);
+    final var ab_ac_b_c = zbdd.union(ab, zbdd.cube(b), zbdd.cube(c), ac);
+    final var r = zbdd.union(ab_ac_b_c, Zbdd.base());
 
     assertFalse(zbdd.contains(r, Zbdd.empty()));
     assertTrue(zbdd.contains(r, Zbdd.base()));
@@ -301,17 +385,17 @@ class ZbddTest
   @DisplayName("Cartesian product")
   void cartesianProduct()
   {
-    Zbdd zbdd = ZbddFactory.create(DefaultCapacityAdvisor.INSTANCE);
+    final var zbdd = ZbddFactory.create(DefaultCapacityAdvisor.INSTANCE);
 
-    int a = zbdd.createVar();
-    int b = zbdd.createVar();
-    int c = zbdd.createVar();
-    int d = zbdd.createVar();
-    int e = zbdd.createVar();
+    final var a = zbdd.createVar();
+    final var b = zbdd.createVar();
+    final var c = zbdd.createVar();
+    final var d = zbdd.createVar();
+    final var e = zbdd.createVar();
 
     zbdd.setLiteralResolver(var -> var == a ? "a" : var == b ? "b" : var == c ? "c" : var == d ? "d" : "e");
 
-    int r = zbdd.getNode(a, Zbdd.base(), Zbdd.base());
+    var r = zbdd.getNode(a, Zbdd.base(), Zbdd.base());
     r = zbdd.getNode(b, r, r);
     r = zbdd.getNode(c, r, r);
     r = zbdd.getNode(d, r, r);
@@ -325,12 +409,12 @@ class ZbddTest
   @DisplayName("Valid zbdd")
   void isValidZbdd()
   {
-    ZbddCapacityAdvisor advisor = DefaultCapacityAdvisor.INSTANCE;
-    Zbdd zbdd = ZbddFactory.create(advisor);
+    final var advisor = DefaultCapacityAdvisor.INSTANCE;
+    final var zbdd = ZbddFactory.create(advisor);
 
-    int a = zbdd.createVar();
-    int b = zbdd.createVar();
-    int c = zbdd.createVar();
+    final var a = zbdd.createVar();
+    final var b = zbdd.createVar();
+    final var c = zbdd.createVar();
 
     zbdd.setLiteralResolver(var -> var == a ? "a" : var == b ? "b" : "c");
 
@@ -349,11 +433,11 @@ class ZbddTest
   @DisplayName("Valid var")
   void isValidVar()
   {
-    Zbdd zbdd = ZbddFactory.create();
+    final var zbdd = ZbddFactory.create();
 
-    int a = zbdd.createVar();
-    int b = zbdd.createVar();
-    int c = zbdd.createVar();
+    final var a = zbdd.createVar();
+    final var b = zbdd.createVar();
+    final var c = zbdd.createVar();
 
     zbdd.setLiteralResolver(var -> var == a ? "a" : var == b ? "b" : "c");
 
@@ -369,20 +453,20 @@ class ZbddTest
   @DisplayName("Zbdd node info")
   void getZbddNodeInfo()
   {
-    Zbdd zbdd = ZbddFactory.create();
+    final var zbdd = ZbddFactory.create();
 
-    int a = zbdd.createVar();
-    int b = zbdd.createVar();
-    int c = zbdd.createVar();
+    final var a = zbdd.createVar();
+    final var b = zbdd.createVar();
+    final var c = zbdd.createVar();
 
     zbdd.setLiteralResolver(var -> var == a ? "a" : var == b ? "b" : "c");
 
-    int _a = zbdd.incRef(zbdd.cube(a));
-    int _ac = zbdd.incRef(zbdd.cube(a, c));
-    int _b = zbdd.incRef(zbdd.cube(b));
-    int _ac_b = zbdd.union(_ac, _b);
+    final var _a = zbdd.incRef(zbdd.cube(a));
+    final var _ac = zbdd.incRef(zbdd.cube(a, c));
+    final var _b = zbdd.incRef(zbdd.cube(b));
+    final var _ac_b = zbdd.union(_ac, _b);
 
-    var zbddNodeInfo = zbdd.getZbddNodeInfo(_ac_b);
+    final var zbddNodeInfo = zbdd.getZbddNodeInfo(_ac_b);
 
     //noinspection ResultOfMethodCallIgnored
     zbddNodeInfo.toString();
@@ -424,7 +508,7 @@ class ZbddTest
     final var variableToLiteralMap = new TreeMap<Integer,String>();
     final var variables = new int[16];
 
-    for(int n = 0; n < 16; n++)
+    for(var n = 0; n < 16; n++)
       variableToLiteralMap.put(variables[n] = zbdd.createVar(), Character.toString((char)('a' + 15 - n)));
 
     zbdd.setLiteralResolver(new ZbddLiteralResolver() {
@@ -441,7 +525,7 @@ class ZbddTest
 
     final var random = new Random();
 
-    for(int cycle = 1; cycle <= 500; cycle++)
+    for(var cycle = 1; cycle <= 500; cycle++)
     {
       var mask = 0;
       var set = random.nextBoolean() ? Zbdd.base() : Zbdd.empty();
@@ -463,7 +547,7 @@ class ZbddTest
       final var atomizedSet = zbdd.incRef(zbdd.atomize(zbdd.incRef(set)));  // lock set, atomizedSet
 
       var expectedSet = Zbdd.empty();
-      for(int b = 0; b < 16; b++)
+      for(var b = 0; b < 16; b++)
         if ((mask & (1 << b)) != 0)
         {
           final var expectedSet0 = zbdd.incRef(expectedSet);  // lock expectedSet
@@ -494,7 +578,7 @@ class ZbddTest
     final var variableToLiteralMap = new TreeMap<Integer,String>();
     final var variables = new int[16];
 
-    for(int n = 0; n < 16; n++)
+    for(var n = 0; n < 16; n++)
       variableToLiteralMap.put(variables[n] = zbdd.createVar(), Character.toString((char)('a' + 15 - n)));
 
     zbdd.setLiteralResolver(new ZbddLiteralResolver() {
@@ -511,7 +595,7 @@ class ZbddTest
 
     final var random = new Random();
 
-    for(int cycle = 1; cycle <= 500; cycle++)
+    for(var cycle = 1; cycle <= 500; cycle++)
     {
       var set = random.nextBoolean() ? Zbdd.base() : Zbdd.empty();
 
@@ -547,8 +631,8 @@ class ZbddTest
 
   private int zbddFromMask(@NotNull Zbdd zbdd, int[] variables, int mask)
   {
-    var bits = bitCount(mask);
-    var cubeVars = new int[bits];
+    final var bits = bitCount(mask);
+    final var cubeVars = new int[bits];
 
     for(int b = 0, i = 0; b < 16 && i < bits; b++)
       if ((mask & (1 << b)) != 0)
@@ -563,7 +647,7 @@ class ZbddTest
   @SuppressWarnings({"ConstantValue", "DataFlowIssue"})
   void zbddCallback()
   {
-    Zbdd zbdd = ZbddFactory.create();
+    final var zbdd = ZbddFactory.create();
 
     final int a = zbdd.createVar();
     final int b = zbdd.createVar();
