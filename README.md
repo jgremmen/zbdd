@@ -33,7 +33,8 @@ algebra — such as solving constraint satisfaction problems, configuration anal
 
 - **Core set operations** — `union`, `intersection`, `difference`, `subset0`, `subset1`, `change`, and `count`
 - **Algebraic operations** — `multiply` (Cartesian product), `divide` (quotient), and `modulo` (remainder)
-- **Set manipulation** — `cube`, `atomize`, `removeBase`, `contains`, and `hasCubeWithVar`
+- **Set manipulation** — `cube`, `atomize`, and `removeBase`
+- **Set queries** — `contains` and `hasCubeWithVar`
 - **Operation caching** — optional memoization of operation results via a pluggable cache (`ZbddCache`)
 - **Thread safety** — any ZBDD instance can be wrapped for concurrent access
 - **Memory management** — reference counting with automatic garbage collection of unused nodes
@@ -41,7 +42,7 @@ algebra — such as solving constraint satisfaction problems, configuration anal
 - **Traversal** — visitor-based cube and ZBDD-node traversal
 - **Statistics** — live view on node usage, capacity, lookup hit ratios, and GC activity
 - **Java Module System** — ships as module `de.sayayi.lib.zbdd`
-- **Zero runtime dependencies**
+- **No runtime dependencies**
 
 ---
 
@@ -57,7 +58,7 @@ algebra — such as solving constraint satisfaction problems, configuration anal
 
 ```groovy
 dependencies {
-  implementation 'de.sayayi.lib:zbdd:0.5.0'
+  implementation 'de.sayayi.lib:zbdd:0.6.0'
 }
 ```
 
@@ -67,7 +68,7 @@ dependencies {
 <dependency>
   <groupId>de.sayayi.lib</groupId>
   <artifactId>zbdd</artifactId>
-  <version>0.5.0</version>
+  <version>0.6.0</version>
 </dependency>
 ```
 
@@ -91,13 +92,13 @@ int c = zbdd.createVar();
 zbdd.setLiteralResolver(var -> var == a ? "a" : var == b ? "b" : "c");
 
 // Build cubes (combinations)
-int ab = zbdd.cube(a, b);   // the combination {a, b}
-int ac = zbdd.cube(a, c);   // the combination {a, c}
+int ab = zbdd.incRef(zbdd.cube(a, b));  // the combination {a, b}
+int ac = zbdd.incRef(zbdd.cube(a, c));  // the combination {a, c}
 
 // Perform set operations
 int set = zbdd.union(ab, ac, zbdd.cube(b));  // { a.b, a.c, b }
-System.out.println(zbdd.toString(set));       // "{ a.b, a.c, b }"
-System.out.println(zbdd.count(set));          // 3
+System.out.println(zbdd.toString(set));      // "{ a.b, a.c, b }"
+System.out.println(zbdd.count(set));         // 3
 ```
 
 ---
@@ -134,11 +135,11 @@ int x = zbdd.createVar();
 
 // Create a variable with an associated object
 int y = zbdd.createVar("my-label");
-String label = zbdd.getVarObject(y);   // "my-label"
+String label = zbdd.getVarObject(y);  // "my-label"
 
 // Build cubes (single combinations of variables)
-int cube1 = zbdd.cube(x);         // { x }
-int cube2 = zbdd.cube(x, y);      // { x.y }
+int cube1 = zbdd.cube(x);     // { x }
+int cube2 = zbdd.cube(x, y);  // { x.y }
 ```
 
 ### Set Operations
@@ -155,7 +156,8 @@ int cube2 = zbdd.cube(x, y);      // { x.y }
 | `subset1(zbdd, var)`            | Combinations where `var` is **present** (with `var` removed)         |
 | `change(zbdd, var)`             | Toggle `var` in all combinations                                     |
 | `contains(p, q)`                | Test whether `q` is a subset of `p`                                  |
-| `atomize(zbdd)`                 | Extract all individual variables as single-variable cubes             |
+| `hasCubeWithVar(zbdd, var)`     | Test whether any combination contains `var`                          |
+| `atomize(zbdd)`                 | Extract all individual variables as single-variable cubes            |
 | `removeBase(zbdd)`              | Remove the empty combination (base) from the set                     |
 | `count(zbdd)`                   | Number of combinations in the set                                    |
 
@@ -259,8 +261,8 @@ The test suite demonstrates the library on real-world combinatorial problems:
 
 - **N-Queens** — Solves the N-Queens problem for board sizes 1×1 through 13×13 using ZBDD-based constraint
   propagation with `subset0` and `change` operations.
-- **Sudoku** — Solves Sudoku puzzles ranging from easy to extreme difficulty (including AI Escargot) by
-  incrementally building a constraint-based ZBDD solution.
+- **Sudoku** — Solves Sudoku puzzles ranging from easy to extreme difficulty by incrementally building a 
+  constraint-based ZBDD solution.
 
 <img src="doc/image/test-suite-elapsed-time.png" title="N-Queens and Sudoku test suite timing" width="450px">
 
