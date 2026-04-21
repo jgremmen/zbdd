@@ -110,13 +110,13 @@ final class IntStack
 
 
   /**
-   * Tells whether the stack is empty.
+   * Tells whether the stack is not empty.
    *
-   * @return  {@code true} if the stack contains no elements, {@code false} otherwise
+   * @return  {@code true} if the stack contains at least one element, {@code false} otherwise
    */
   @Contract(pure = true)
-  boolean isEmpty() {
-    return stackSize == 0;
+  boolean isNotEmpty() {
+    return stackSize != 0;
   }
 
 

@@ -307,7 +307,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     {
       final var stack = new IntStack(zbddVar);
 
-      for(stack.pushIfNotLeafNode(zbdd); !stack.isEmpty();)
+      for(stack.pushIfNotLeafNode(zbdd); stack.isNotEmpty();)
       {
         final var offset = stack.pop() * NODE_RECORD_SIZE;
         final var currentVar = nodes[offset + _VAR];
@@ -459,7 +459,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     final var stack = new IntStack(nodes[zbdd * NODE_RECORD_SIZE + _VAR] + 1);
     var count = 0;
 
-    for(stack.push(zbdd); !stack.isEmpty();)
+    for(stack.push(zbdd); stack.isNotEmpty();)
       if ((zbdd = stack.pop()) == BASE)
         count++;
       else if (zbdd > 1)
