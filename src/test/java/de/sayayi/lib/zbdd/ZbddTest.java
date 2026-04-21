@@ -65,11 +65,71 @@ class ZbddTest
   void change()
   {
     final var zbdd = ZbddFactory.create();
-    final var var = zbdd.createVar();
-    final var r = zbdd.cube(var);
+    final var v1 = zbdd.createVar();
+    final var v2 = zbdd.createVar();
+    final var v3 = zbdd.createVar();
+    final var v4 = zbdd.createVar();
+    final var v5 = zbdd.createVar();
+    final var v6 = zbdd.createVar();
+    final var v7 = zbdd.createVar();
+    final var v8 = zbdd.createVar();
 
-    assertEquals(Zbdd.empty(), zbdd.change(Zbdd.empty(), var));
-    assertEquals(r, zbdd.change(Zbdd.base(), var));
+    // trivial cases
+    assertEquals(Zbdd.empty(), zbdd.change(Zbdd.empty(), v1));
+    assertEquals(zbdd.cube(v1), zbdd.change(Zbdd.base(), v1));
+    assertEquals(Zbdd.base(), zbdd.change(zbdd.cube(v1), v1));
+
+    // change toggles: applying twice is identity
+    final var single = zbdd.cube(v3, v5);
+    assertEquals(single, zbdd.change(zbdd.change(single, v2), v2));
+
+    // build zbdd r = { v1.v3.v5, v2.v4, v3.v6.v7, v1.v8, v4.v5.v6, v2.v3 }  (6 cubes, 8 vars)
+    final var r = zbdd.incRef(zbdd.union(
+        zbdd.incRef(zbdd.cube(v1, v3, v5)),
+        zbdd.incRef(zbdd.cube(v2, v4)),
+        zbdd.incRef(zbdd.cube(v3, v6, v7)),
+        zbdd.incRef(zbdd.cube(v1, v8)),
+        zbdd.incRef(zbdd.cube(v4, v5, v6)),
+        zbdd.incRef(zbdd.cube(v2, v3))
+    ));
+
+    assertEquals(6, zbdd.count(r));
+
+    // change(r, v8) toggles v8 in every cube:
+    //   v1.v3.v5     -> v1.v3.v5.v8  (v8 added)
+    //   v2.v4        -> v2.v4.v8     (v8 added)
+    //   v3.v6.v7     -> v3.v6.v7.v8  (v8 added)
+    //   v1.v8        -> v1           (v8 removed)
+    //   v4.v5.v6     -> v4.v5.v6.v8  (v8 added)
+    //   v2.v3        -> v2.v3.v8     (v8 added)
+    final var changed_v8 = zbdd.incRef(zbdd.change(r, v8));
+    assertEquals(6, zbdd.count(changed_v8));
+    assertTrue(zbdd.contains(changed_v8, zbdd.cube(v1, v3, v5, v8)));
+    assertTrue(zbdd.contains(changed_v8, zbdd.cube(v2, v4, v8)));
+    assertTrue(zbdd.contains(changed_v8, zbdd.cube(v3, v6, v7, v8)));
+    assertTrue(zbdd.contains(changed_v8, zbdd.cube(v1)));
+    assertTrue(zbdd.contains(changed_v8, zbdd.cube(v4, v5, v6, v8)));
+    assertTrue(zbdd.contains(changed_v8, zbdd.cube(v2, v3, v8)));
+
+    // change(r, v3) toggles v3 in every cube:
+    //   v1.v3.v5     -> v1.v5        (v3 removed)
+    //   v2.v4        -> v2.v3.v4     (v3 added)
+    //   v3.v6.v7     -> v6.v7        (v3 removed)
+    //   v1.v8        -> v1.v3.v8     (v3 added)
+    //   v4.v5.v6     -> v3.v4.v5.v6  (v3 added)
+    //   v2.v3        -> v2           (v3 removed)
+    final var changed_v3 = zbdd.incRef(zbdd.change(r, v3));
+    assertEquals(6, zbdd.count(changed_v3));
+    assertTrue(zbdd.contains(changed_v3, zbdd.cube(v1, v5)));
+    assertTrue(zbdd.contains(changed_v3, zbdd.cube(v2, v3, v4)));
+    assertTrue(zbdd.contains(changed_v3, zbdd.cube(v6, v7)));
+    assertTrue(zbdd.contains(changed_v3, zbdd.cube(v1, v3, v8)));
+    assertTrue(zbdd.contains(changed_v3, zbdd.cube(v3, v4, v5, v6)));
+    assertTrue(zbdd.contains(changed_v3, zbdd.cube(v2)));
+
+    // double change is identity
+    assertEquals(r, zbdd.change(zbdd.change(r, v3), v3));
+    assertEquals(r, zbdd.change(zbdd.change(r, v8), v8));
   }
 
 
