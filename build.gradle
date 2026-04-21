@@ -16,11 +16,18 @@ java {
   toolchain {
     languageVersion = JavaLanguageVersion.of(21)
   }
+
+  withSourcesJar()
+  withJavadocJar()
 }
 
 
 test {
   useJUnitPlatform()
+
+  javaLauncher = javaToolchains.launcherFor {
+    languageVersion = JavaLanguageVersion.of(21)
+  }
 }
 
 
@@ -98,13 +105,10 @@ tasks.withType(Jar).configureEach {
 }
 
 
-jar {
-  dependsOn test
-}
+jar.dependsOn test
 
 
 apply from: 'gradle/publish.gradle'
-apply from: 'gradle/changelog.gradle'
 
 
 clean {
