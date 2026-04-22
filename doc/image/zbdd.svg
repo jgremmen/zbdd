@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="60 0 180 280" preserveAspectRatio="none" height="280px">
+  <defs>
+    <style>
+      svg { --color: black; --bg-color: white; }
+    </style>
+    <marker id="vee" markerWidth="7" markerHeight="5" refX="3.5" refY="2.5" viewBox="0 0 7 5" orient="auto">
+      <polygon points="0,5 2.3333,2.5 0,0 7,2.5" fill="var(--color)"/>
+    </marker>
+  </defs>
+
+  <rect width="480" height="390" fill="var(--bg-color)"/>
+
+  <!-- Grid 8 wide x 7 high (cells alternating 60x60 and 60x50 in size) = 480x390
+  <path d="M0,60 l480,0 M0,110 l480,0 M0,170 l480,0 M0,220 l480,0 M0,280 l480,0 M0,330 l480,0
+           M60,0 l0,390 M120,0 l0,390 M180,0 l0,390 M240,0 l0,390 M300,0 l0,390 M360,0 l0,390 M420,0 l0,390"
+        stroke="lightgray" stroke-width=".4"/>
+  -->
+
+  <!-- Arrow "0": a(2,0) -> b(1,2) -->
+  <!--path d="M150,30 L90,140" stroke-width="27" stroke="lightgray"/-->
+  <line x1="140" y1="48" x2="104.5" y2="113.4" stroke="var(--color)" stroke-width="2.5" marker-end="url(#vee)"/>
+  <text x="124.5" y="62" text-anchor="end" font-family="sans-serif" font-size="16" font-weight="bold" fill="var(--color)">0</text>
+
+  <!-- Arrow "1": a(2,0) -> 1(3,4) -->
+  <!--path d="M150,30 L210,250" stroke-width="27" stroke="lightgray"/-->
+  <line x1="155.4" y1="49" x2="202.5" y2="222.5" stroke="var(--color)" stroke-width="2.5" marker-end="url(#vee)"/>
+  <text x="168.2" y="68" text-anchor="start" font-family="sans-serif" font-size="16" font-weight="bold" fill="var(--color)">1</text>
+
+  <!-- Arrow "0": b(1,2) -> 0(1,4) -->
+  <!--path d="M90,140 L90,250" stroke-width="27" stroke="lightgray"/-->
+  <line x1="90" y1="160" x2="90" y2="222.5" stroke="var(--color)" stroke-width="2.5" marker-end="url(#vee)"/>
+  <text x="81" y="183" text-anchor="end" font-family="sans-serif" font-size="16" font-weight="bold" fill="var(--color)">0</text>
+
+  <!-- Arrow "1": b(1,2) -> 1(3,4) -->
+  <!--path d="M90,140 L210,250" stroke-width="27" stroke="lightgray"/-->
+  <line x1="105" y1="153" x2="184.5" y2="226.7" stroke="var(--color)" stroke-width="2.5" marker-end="url(#vee)"/>
+  <text x="122" y="161" text-anchor="start" font-family="sans-serif" font-size="16" font-weight="bold" fill="var(--color)">1</text>
+
+  <!-- Zbdd node "a" at (2,0) = center (150,30) -->
+  <!--circle cx="150" cy="30" r="40" fill="none" stroke="lightgray" stroke-width=".5"/-->
+  <circle cx="150" cy="30" r="20" fill="none" stroke="var(--color)" stroke-width="3.5"/>
+  <text x="150" y="27.7" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="28" fill="var(--color)">a</text>
+
+  <!-- Zbdd node "b" at (1,2) = center (90,140) -->
+  <!--circle cx="90" cy="140" r="40" fill="none" stroke="lightgray" stroke-width=".5"/-->
+  <circle cx="90" cy="140" r="20" fill="none" stroke="var(--color)" stroke-width="3.5"/>
+  <text x="91" y="139" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="28" fill="var(--color)">b</text>
+
+  <!-- Zbdd leaf node "0" at (1,4) = center (90,250) -->
+  <rect x="72.5" y="232.5" width="35" height="35" fill="none" stroke="var(--color)" stroke-width="3.5"/>
+  <text x="90" y="250" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="28" fill="var(--color)">0</text>
+
+  <!-- Zbdd leaf node "1" at (3,4) = center (210,250) -->
+  <rect x="192.5" y="232.5" width="35" height="35" fill="none" stroke="var(--color)" stroke-width="3.5"/>
+  <text x="210" y="250" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="28" fill="var(--color)">1</text>
+</svg>
