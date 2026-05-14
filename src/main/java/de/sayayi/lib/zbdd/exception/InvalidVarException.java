@@ -20,7 +20,8 @@ import org.jetbrains.annotations.NotNull;
 
 
 /**
- * Thrown when an invalid variable identifier is used in a ZBDD operation.
+ * Thrown when an invalid variable identifier is used in a ZBDD operation. The valid range of variable identifiers
+ * is from {@link #getLowBoundVar()} to {@link #getHighBoundVar()} inclusive.
  *
  * @author Jeroen Gremmen
  */
@@ -31,10 +32,10 @@ public final class InvalidVarException extends ZbddException
 
 
   /**
-   * Construct a zbdd exception with the given {@code message}.
+   * Constructs an exception for an invalid variable identifier.
    *
-   * @param var           invalid var
-   * @param highBoundVar  high bound var
+   * @param var           the invalid variable identifier
+   * @param highBoundVar  the highest valid variable identifier
    * @param message       exception message, not {@code null}
    */
   public InvalidVarException(int var, int highBoundVar, @NotNull String message)
@@ -47,9 +48,9 @@ public final class InvalidVarException extends ZbddException
 
 
   /**
-   * Returns the invalid variable that caused this exception.
+   * Returns the invalid variable identifier that caused this exception.
    *
-   * @return  invalid variable
+   * @return  invalid variable identifier
    */
   @Contract(pure = true)
   public int getVar() {
@@ -58,9 +59,9 @@ public final class InvalidVarException extends ZbddException
 
 
   /**
-   * Return the lowest possible var.
+   * Returns the lowest valid variable identifier, which is always {@code 1}.
    *
-   * @return  low bound var
+   * @return  lowest valid variable identifier
    */
   @Contract(pure = true)
   public int getLowBoundVar() {
@@ -69,9 +70,9 @@ public final class InvalidVarException extends ZbddException
 
 
   /**
-   * Return the highest possible var.
+   * Returns the highest valid variable identifier at the time the exception was thrown.
    *
-   * @return  high bound var
+   * @return  highest valid variable identifier
    */
   @Contract(pure = true)
   public int getHighBoundVar() {

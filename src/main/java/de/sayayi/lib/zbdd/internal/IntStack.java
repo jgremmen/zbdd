@@ -64,9 +64,9 @@ final class IntStack
 
 
   /**
-   * Pushes the given zbdd onto the stack if it is not the empty zbdd.
+   * Pushes the given ZBDD node onto the stack if it is not the empty ZBDD node.
    *
-   * @param zbdd  zbdd node
+   * @param zbdd  ZBDD node
    */
   @Contract(mutates = "this")
   void pushIfNotEmptyZbdd(int zbdd)
@@ -77,9 +77,9 @@ final class IntStack
 
 
   /**
-   * Pushes the given zbdd onto the stack if it is not a leaf node (empty or base).
+   * Pushes the given ZBDD node onto the stack if it is not a leaf node (empty or base).
    *
-   * @param zbdd  zbdd node
+   * @param zbdd  ZBDD node
    */
   @Contract(mutates = "this")
   void pushIfNotLeafNode(int zbdd)

@@ -19,14 +19,19 @@ import org.jetbrains.annotations.NotNull;
 
 
 /**
- * Base runtime exception for all ZBDD-related errors.
+ * Base runtime exception for all ZBDD-related errors. All specific ZBDD exceptions extend this class, allowing
+ * callers to catch any ZBDD error with a single handler if desired.
  *
  * @author Jeroen Gremmen
+ *
+ * @see InvalidVarException
+ * @see InvalidZbddException
+ * @see ZbddOutOfRangeException
  */
 public class ZbddException extends RuntimeException
 {
   /**
-   * Construct a zbdd exception with the given {@code message}.
+   * Constructs a ZBDD exception with the given {@code message}.
    *
    * @param message  exception message, not {@code null}
    */

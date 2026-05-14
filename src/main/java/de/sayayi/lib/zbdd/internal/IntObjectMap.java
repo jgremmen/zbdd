@@ -24,7 +24,10 @@ import static java.lang.Integer.bitCount;
 
 
 /**
- * Minimalistic map implementation for mapping native {@code int} keys to an {@code Object}.
+ * Minimalistic open-addressing map implementation for mapping native {@code int} keys to object values. This map
+ * does not support {@code null} values or key removal.
+ * <p>
+ * This class is used internally by the ZBDD library and is not part of the public API.
  *
  * @author Jeroen Gremmen
  * @since 0.5.0

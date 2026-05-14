@@ -21,7 +21,8 @@ import org.jetbrains.annotations.NotNull;
 
 
 /**
- * Zbdd related exception stating that the {@code zbdd} is outside the valid range.
+ * Thrown when a ZBDD node reference is outside the valid range. The valid range of ZBDD node references
+ * is from {@link #getLowBoundZbdd()} to {@link #getHighBoundZbdd()} inclusive.
  *
  * @author Jeroen Gremmen
  * @since 0.6.0
@@ -32,10 +33,10 @@ public class ZbddOutOfRangeException extends InvalidZbddException
 
 
   /**
-   * Construct a zbdd out-of-range exception.
+   * Constructs an out-of-range exception for a ZBDD node reference.
    *
-   * @param zbdd           the zbdd node that is out of range
-   * @param highBoundZbdd  the highest valid zbdd node
+   * @param zbdd           the ZBDD node reference that is out of range
+   * @param highBoundZbdd  the highest valid ZBDD node reference
    * @param message        exception message, not {@code null}
    */
   public ZbddOutOfRangeException(int zbdd, int highBoundZbdd, @NotNull String message)
@@ -46,9 +47,9 @@ public class ZbddOutOfRangeException extends InvalidZbddException
 
 
   /**
-   * Return the lowest possible zbdd.
+   * Returns the lowest valid ZBDD node reference, which is {@link Zbdd#BASE}.
    *
-   * @return  low bound zbdd
+   * @return  lowest valid ZBDD node reference
    */
   @Contract(pure = true)
   public int getLowBoundZbdd() {
@@ -57,9 +58,9 @@ public class ZbddOutOfRangeException extends InvalidZbddException
 
 
   /**
-   * Return the highest possible zbdd.
+   * Returns the highest valid ZBDD node reference at the time the exception was thrown.
    *
-   * @return  high bound zbdd
+   * @return  highest valid ZBDD node reference
    */
   @Contract(pure = true)
   public int getHighBoundZbdd() {

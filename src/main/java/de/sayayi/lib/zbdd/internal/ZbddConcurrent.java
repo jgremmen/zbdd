@@ -29,7 +29,10 @@ import java.util.function.Function;
 
 
 /**
- * Wrapper implementation of {@link Zbdd.Concurrent} making the underlying {@link Zbdd}-instance thread safe.
+ * Thread-safe wrapper around a {@link Zbdd} instance. All operations are synchronized using a {@link ReentrantLock}
+ * to ensure safe concurrent access from multiple threads.
+ * <p>
+ * Instances are created through {@link de.sayayi.lib.zbdd.ZbddFactory#asConcurrent(Zbdd) ZbddFactory.asConcurrent}.
  *
  * @author Jeroen Gremmen
  * @since 0.5.0
@@ -41,9 +44,9 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
 
   /**
-   * Creates a new concurrent wrapper around the given zbdd instance.
+   * Creates a new concurrent wrapper around the given ZBDD instance.
    *
-   * @param zbdd  zbdd instance to wrap, not {@code null}
+   * @param zbdd  ZBDD instance to wrap, not {@code null}
    */
   public ZbddConcurrent(@NotNull Zbdd zbdd)
   {
@@ -52,6 +55,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public <T> T doAtomic(@NotNull Function<Zbdd,T> operation)
   {
@@ -64,6 +68,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public void doAtomic(@NotNull Consumer<Zbdd> operation)
   {
@@ -76,6 +81,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public void registerCallback(@NotNull ZbddCallback callback)
   {
@@ -88,6 +94,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public @NotNull ZbddLiteralResolver getLiteralResolver()
   {
@@ -100,6 +107,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public void setLiteralResolver(@NotNull ZbddLiteralResolver literalResolver)
   {
@@ -112,12 +120,14 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public @NotNull ZbddStatistics getStatistics() {
     return zbdd.getStatistics();  // no lock required
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public void clear()
   {
@@ -130,6 +140,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public int createVar()
   {
@@ -142,6 +153,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public int createVar(@NotNull Object varObject)
   {
@@ -154,6 +166,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public <T> T getVarObject(int var)
   {
@@ -166,6 +179,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public int cube(int var)
   {
@@ -178,6 +192,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public int cube(int @NotNull ... cubeVars)
   {
@@ -190,6 +205,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public boolean hasCubeWithVar(int zbdd, int var)
   {
@@ -202,6 +218,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public int subset0(int zbdd, int var)
   {
@@ -214,6 +231,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public int subset1(int zbdd, int var)
   {
@@ -225,6 +243,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
     }
   }
 
+  /** {@inheritDoc} */
   @Override
   public int change(int zbdd, int var)
   {
@@ -237,6 +256,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public int count(int zbdd)
   {
@@ -249,6 +269,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public int union(int... p)
   {
@@ -261,6 +282,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public int union(int p, int q)
   {
@@ -273,6 +295,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public int intersect(int p, int q)
   {
@@ -285,6 +308,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public int difference(int p, int q)
   {
@@ -297,6 +321,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public int multiply(int p, int q)
   {
@@ -309,6 +334,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public int divide(int p, int q)
   {
@@ -320,6 +346,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
     }
   }
 
+  /** {@inheritDoc} */
   @Override
   public int modulo(int p, int q)
   {
@@ -332,6 +359,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public int atomize(int zbdd)
   {
@@ -344,6 +372,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public int removeBase(int zbdd)
   {
@@ -356,6 +385,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public boolean contains(int p, int q)
   {
@@ -368,6 +398,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public boolean isValidZbdd(int zbdd)
   {
@@ -380,6 +411,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public boolean isValidVar(int var)
   {
@@ -392,6 +424,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public int getVar(int zbdd)
   {
@@ -404,6 +437,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public int getP0(int zbdd)
   {
@@ -416,6 +450,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public int getP1(int zbdd)
   {
@@ -428,6 +463,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public int getNode(int var, int p0, int p1)
   {
@@ -440,6 +476,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public int gc()
   {
@@ -452,6 +489,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public int incRef(int zbdd)
   {
@@ -464,6 +502,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public int decRef(int zbdd)
   {
@@ -476,6 +515,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public @NotNull ZbddNodeInfo getZbddNodeInfo(int zbdd)
   {
@@ -488,6 +528,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public @NotNull String toString(int zbdd)
   {
@@ -500,6 +541,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public boolean visitCubes(int zbdd, @NotNull CubeVisitor visitor)
   {
@@ -512,6 +554,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public boolean visitCubeZbdds(int zbdd, @NotNull ZbddVisitor visitor)
   {
@@ -524,6 +567,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public int @NotNull [] calculateNodeDependency()
   {
@@ -536,6 +580,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public int @NotNull [] asSingleCubeZbdds(int zbdd)
   {
@@ -651,26 +696,32 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
 
   /**
-   * Thread-safe wrapper for a cached zbdd instance, combining {@link Zbdd.Concurrent} and {@link Zbdd.WithCache}.
+   * Thread-safe wrapper for a cached ZBDD instance, combining {@link Zbdd.Concurrent} and {@link Zbdd.WithCache}
+   * capabilities.
+   * <p>
+   * Instances are created through
+   * {@link de.sayayi.lib.zbdd.ZbddFactory#asConcurrent(Zbdd.WithCache) ZbddFactory.asConcurrent}.
    */
   public static final class WithCache extends ZbddConcurrent implements Zbdd.WithCache
   {
     /**
-     * Creates a new concurrent wrapper around the given cached zbdd instance.
+     * Creates a new concurrent wrapper around the given cached ZBDD instance.
      *
-     * @param zbdd  cached zbdd instance to wrap, not {@code null}
+     * @param zbdd  cached ZBDD instance to wrap, not {@code null}
      */
     public WithCache(@NotNull Zbdd.WithCache zbdd) {
       super(zbdd);
     }
 
 
+    /** {@inheritDoc} */
     @Contract(pure = true)
     public @NotNull ZbddCache getZbddCache() {
       return ((Zbdd.WithCache)zbdd).getZbddCache();
     }
 
 
+    /** {@inheritDoc} */
     @Override
     public void setZbddCache(@NotNull ZbddCache zbddCache) {
       ((Zbdd.WithCache)zbdd).setZbddCache(zbddCache);

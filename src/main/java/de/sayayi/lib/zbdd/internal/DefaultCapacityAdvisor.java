@@ -21,29 +21,34 @@ import org.jetbrains.annotations.NotNull;
 
 
 /**
- * Default capacity advisor that starts with a low initial capacity and increases agressively by 150% each time
- * until the capacity has reached 500k zbdd nodes. From there it will increase by 30%.
+ * Default {@link ZbddCapacityAdvisor} implementation used when no custom advisor is provided to the
+ * {@link de.sayayi.lib.zbdd.ZbddFactory ZbddFactory}. It starts with a low initial capacity and grows
+ * aggressively at first, then more conservatively once the diagram reaches a larger size.
  *
  * @author Jeroen Gremmen
  * @since 0.5.0
  */
 public enum DefaultCapacityAdvisor implements ZbddCapacityAdvisor
 {
+  /** Singleton instance of this advisor. */
   INSTANCE;
 
 
+  /** {@inheritDoc} */
   @Override
   public int getInitialCapacity() {
     return 128;
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public int getMinimumFreeNodes(@NotNull ZbddStatistics statistics) {
     return statistics.getNodesCapacity() / 20;  // 5%
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public int adviseIncrement(@NotNull ZbddStatistics statistics)
   {
@@ -55,6 +60,7 @@ public enum DefaultCapacityAdvisor implements ZbddCapacityAdvisor
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public boolean isGCRequired(@NotNull ZbddStatistics statistics)
   {

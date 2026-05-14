@@ -21,6 +21,10 @@ import org.jetbrains.annotations.Contract;
 /**
  * Provides a live view of the statistics for a {@link Zbdd} instance, including node capacity, usage, garbage
  * collection activity, and node lookup performance.
+ * <p>
+ * All values returned by methods of this interface reflect the current state of the underlying ZBDD at the time
+ * of invocation. Because this is a live view, values may change between successive calls if the ZBDD is modified
+ * concurrently.
  *
  * @author Jeroen Gremmen
  *
@@ -29,36 +33,38 @@ import org.jetbrains.annotations.Contract;
 public interface ZbddStatistics
 {
   /**
-   * Returns the current node capacity.
+   * Returns the current maximum number of nodes that can be stored without requiring a capacity increase.
    *
-   * @return  node capacity
+   * @return  node capacity, always &gt; 0
    */
   @Contract(pure = true)
   int getNodesCapacity();
 
 
   /**
-   * Returns the number of free nodes.
+   * Returns the number of nodes that are currently not in use and available for immediate allocation.
    *
-   * @return  free node count
+   * @return  free node count, always &ge; 0
    */
   @Contract(pure = true)
   int getFreeNodes();
 
 
   /**
-   * Returns the current number of dead nodes.
+   * Returns the current number of dead nodes. Dead nodes are nodes that are no longer referenced but have not
+   * yet been reclaimed by garbage collection.
    *
-   * @return  dead node count
+   * @return  dead node count, always &ge; 0
    */
   @Contract(pure = true)
   int getDeadNodes();
 
 
   /**
-   * Returns the number of available nodes, which is the sum of free and dead nodes.
+   * Returns the number of available nodes, which is the sum of {@linkplain #getFreeNodes() free} and
+   * {@linkplain #getDeadNodes() dead} nodes. These nodes can potentially be reused without increasing capacity.
    *
-   * @return  available node count
+   * @return  available node count, always &ge; 0
    */
   @Contract(pure = true)
   default int getAvailableNodes() {
@@ -67,9 +73,10 @@ public interface ZbddStatistics
 
 
   /**
-   * Returns the number of occupied (actively used) nodes.
+   * Returns the number of occupied (actively used) nodes. This is the difference between the
+   * {@linkplain #getNodesCapacity() capacity} and the {@linkplain #getAvailableNodes() available} nodes.
    *
-   * @return  occupied node count
+   * @return  occupied node count, always &ge; 0
    */
   @Contract(pure = true)
   default int getOccupiedNodes() {
@@ -78,27 +85,29 @@ public interface ZbddStatistics
 
 
   /**
-   * Return the number of node lookups.
+   * Returns the total number of node lookups performed. A node lookup occurs when the ZBDD searches for an
+   * existing node matching a given variable and sub-nodes.
    *
-   * @return  number of node lookups
+   * @return  number of node lookups, always &ge; 0
    */
   @Contract(pure = true)
   int getNodeLookups();
 
 
   /**
-   * Returns the number of node lookups that resulted in a cache hit.
+   * Returns the number of node lookups that resulted in a cache hit, meaning an existing node was reused
+   * rather than creating a new one.
    *
-   * @return  node lookup hit count
+   * @return  node lookup hit count, always &ge; 0
    */
   @Contract(pure = true)
   int getNodeLookupHitCount();
 
 
   /**
-   * Returns the ratio of node lookups that resulted in a cache hit.
+   * Returns the ratio of node lookups that resulted in a cache hit. A higher ratio indicates better node reuse.
    *
-   * @return  hit ratio in the range {@code 0.0} to {@code 1.0}
+   * @return  hit ratio in the range {@code 0.0} to {@code 1.0}, or {@code NaN} if no lookups have been performed
    */
   @Contract(pure = true)
   default double getNodeLookupHitRatio() {
@@ -107,9 +116,9 @@ public interface ZbddStatistics
 
 
   /**
-   * Returns the ratio of node lookups that resulted in a cache miss.
+   * Returns the ratio of node lookups that resulted in a cache miss. A lower ratio indicates better node reuse.
    *
-   * @return  miss ratio in the range {@code 0.0} to {@code 1.0}
+   * @return  miss ratio in the range {@code 0.0} to {@code 1.0}, or {@code NaN} if no lookups have been performed
    */
   @Contract(pure = true)
   default double getNodeLookupMissRatio() {
@@ -118,27 +127,28 @@ public interface ZbddStatistics
 
 
   /**
-   * Returns the total number of garbage collection calls.
+   * Returns the total number of garbage collection runs that have been performed. Garbage collection reclaims
+   * dead nodes and makes them available for reuse.
    *
-   * @return  garbage collection count
+   * @return  garbage collection count, always &ge; 0
    */
   @Contract(pure = true)
   int getGCCount();
 
 
   /**
-   * Returns the cumulative number of nodes freed by garbage collection.
+   * Returns the cumulative number of nodes freed across all garbage collection runs.
    *
-   * @return  cumulative number of freed nodes
+   * @return  cumulative number of freed nodes, always &ge; 0
    */
   @Contract(pure = true)
   long getGCFreedNodes();
 
 
   /**
-   * Returns the number of capacity increases.
+   * Returns the number of times the internal node storage capacity has been increased to accommodate more nodes.
    *
-   * @return  number of capacity increases
+   * @return  number of capacity increases, always &ge; 0
    *
    * @since 0.5.0
    */
@@ -147,18 +157,20 @@ public interface ZbddStatistics
 
 
   /**
-   * Returns an estimation of the number of bytes used by the zbdd.
+   * Returns an estimation of the total number of bytes used by the ZBDD, including internal data structures
+   * and node storage.
    *
-   * @return  estimated memory usage in bytes
+   * @return  estimated memory usage in bytes, always &gt; 0
    */
   @Contract(pure = true)
   long getMemoryUsage();
 
 
   /**
-   * Returns the number of registered variables.
+   * Returns the number of variables that have been registered with the ZBDD. Variables are the building blocks
+   * used to construct combinations within the diagram.
    *
-   * @return  registered variable count
+   * @return  registered variable count, always &ge; 0
    */
   @Contract(pure = true)
   int getRegisteredVars();

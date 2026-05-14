@@ -34,6 +34,10 @@
  *     {@link de.sayayi.lib.zbdd.internal.ZbddConcurrent} - Thread-safe ZBDD implementation supporting concurrent
  *     access.
  *   </li>
+ *   <li>
+ *     {@link de.sayayi.lib.zbdd.internal.DefaultCapacityAdvisor} - Default
+ *     {@link de.sayayi.lib.zbdd.ZbddCapacityAdvisor} used when no custom advisor is provided.
+ *   </li>
  * </ul>
  */
 package de.sayayi.lib.zbdd.internal;

@@ -20,7 +20,8 @@ import org.jetbrains.annotations.NotNull;
 
 
 /**
- * Thrown when an invalid or corrupted ZBDD reference is encountered.
+ * Thrown when an invalid or corrupted ZBDD node reference is encountered during an operation. This typically
+ * indicates that a ZBDD node has been garbage collected or was never properly created.
  *
  * @author Jeroen Gremmen
  */
@@ -30,9 +31,9 @@ public class InvalidZbddException extends ZbddException
 
 
   /**
-   * Construct an invalid zbdd exception.
+   * Constructs an exception for an invalid ZBDD node reference.
    *
-   * @param zbdd     the invalid zbdd node
+   * @param zbdd     the invalid ZBDD node reference
    * @param message  exception message, not {@code null}
    */
   public InvalidZbddException(int zbdd, @NotNull String message)
@@ -43,9 +44,9 @@ public class InvalidZbddException extends ZbddException
 
 
   /**
-   * Return the invalid zbdd.
+   * Returns the invalid ZBDD node reference that caused this exception.
    *
-   * @return  invalid zbdd
+   * @return  invalid ZBDD node reference
    */
   @Contract(pure = true)
   public int getZbdd() {

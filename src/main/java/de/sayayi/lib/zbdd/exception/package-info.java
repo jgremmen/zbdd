@@ -21,25 +21,15 @@
  * different failure scenarios to enable precise error handling in client code.
  * <p>
  * Exception hierarchy:
- * <ul>
- *   <li>
- *     {@link de.sayayi.lib.zbdd.exception.ZbddException} - Base runtime exception for all ZBDD-related errors.
- *   </li>
- *   <li>
- *     {@link de.sayayi.lib.zbdd.exception.InvalidVarException} - Thrown when an invalid variable identifier is used
- *     in a ZBDD operation.
- *   </li>
- *   <li>
- *     {@link de.sayayi.lib.zbdd.exception.InvalidZbddException} - Thrown when an invalid or corrupted ZBDD
- *     reference is encountered.
- *   </li>
- *   <li>
- *     {@link de.sayayi.lib.zbdd.exception.ZbddOutOfRangeException} - Thrown when an operation would exceed the valid
- *     range of ZBDD values or internal capacity limits.
- *   </li>
- * </ul>
+ * <pre>
+ * {@link java.lang.RuntimeException}
+ *   └── {@link de.sayayi.lib.zbdd.exception.ZbddException} - Base exception for all ZBDD-related errors
+ *         ├── {@link de.sayayi.lib.zbdd.exception.InvalidVarException} - Invalid variable identifier
+ *         └── {@link de.sayayi.lib.zbdd.exception.InvalidZbddException} - Invalid or corrupted ZBDD node reference
+ *               └── {@link de.sayayi.lib.zbdd.exception.ZbddOutOfRangeException} - ZBDD node reference outside valid range
+ * </pre>
  * <p>
- * All exceptions in this package extend {@link java.lang.RuntimeException}, allowing them to be caught and handled
- * as needed without requiring explicit declaration in method signatures.
+ * All exceptions in this package are unchecked, allowing them to be caught and handled as needed without requiring
+ * explicit declaration in method signatures.
  */
 package de.sayayi.lib.zbdd.exception;

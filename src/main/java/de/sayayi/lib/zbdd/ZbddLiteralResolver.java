@@ -25,20 +25,26 @@ import static java.util.stream.Collectors.joining;
 
 
 /**
- * Resolve zbdd literal and cube names.
+ * Resolves ZBDD variable literals and cubes to human-readable string representations.
+ * <p>
+ * A literal resolver is used by {@link Zbdd#toString(int)} to convert internal variable numbers into meaningful
+ * names. It also controls how cubes (combinations of variables) and the base element are represented as strings.
+ * <p>
+ * This is a {@linkplain FunctionalInterface functional interface} whose functional method is
+ * {@link #getLiteralName(int)}.
  *
  * @author Jeroen Gremmen
  *
  * @see Zbdd#setLiteralResolver(ZbddLiteralResolver)
- * @see Zbdd#toString(int) 
+ * @see Zbdd#toString(int)
  */
 @FunctionalInterface
 public interface ZbddLiteralResolver
 {
   /**
-   * Returns the literal name for zbdd variable {@code var}.
+   * Returns the human-readable name for the given ZBDD variable.
    *
-   * @param var  registered variable
+   * @param var  registered variable number, must be &ge; 1
    *
    * @return  literal name, never {@code null}
    */
@@ -47,9 +53,11 @@ public interface ZbddLiteralResolver
 
 
   /**
-   * Return the string representation of a cube.
+   * Returns the string representation of a cube, which is a combination of variables. The default implementation
+   * joins the {@linkplain #getLiteralName(int) literal names} of all variables with a dot ({@code "."}) separator,
+   * or returns the {@linkplain #getBaseName() base name} if the cube has no variables.
    *
-   * @param cubeVars  zbdd variables, sorted in descending order
+   * @param cubeVars  ZBDD variables making up the cube, sorted in descending order
    *
    * @return  cube name, never {@code null}
    */
@@ -63,7 +71,8 @@ public interface ZbddLiteralResolver
 
 
   /**
-   * Returns the string representation for a cube representing the base.
+   * Returns the string representation for the base element, which represents the empty set.
+   * The default implementation returns {@code "{}"}.
    *
    * @return  base name, never {@code null}
    *

@@ -42,10 +42,13 @@ import static java.util.Objects.requireNonNull;
 
 
 /**
- * Core implementation of the {@link Zbdd} interface.
+ * Core implementation of the {@link Zbdd} interface, providing the fundamental operations on Zero-suppressed
+ * Binary Decision Diagrams.
  * <p>
  * This class is not thread-safe. Use {@link de.sayayi.lib.zbdd.ZbddFactory#asConcurrent(Zbdd)} to obtain a
  * thread-safe wrapper.
+ * <p>
+ * Instances are created through {@link de.sayayi.lib.zbdd.ZbddFactory#create() ZbddFactory.create}.
  *
  * @author Jeroen Gremmen
  */
@@ -55,7 +58,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   private static final int GC_VAR_MARK_MASK = 0x8000_0000;
   private static final int NODE_RECORD_SIZE = 6;
 
-  /** Maximum number of nodes supported by a single zbdd instance. */
+  /** Maximum number of nodes supported by a single ZBDD instance. */
   public static final int MAX_NODES = MAX_VALUE / NODE_RECORD_SIZE;
 
   private static final int _VAR = 0;       // variable number
@@ -83,7 +86,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
 
   /**
-   * Creates a new zbdd instance with the given capacity advisor.
+   * Creates a new ZBDD instance with the given capacity advisor.
    *
    * @param capacityAdvisor  capacity advisor, not {@code null}
    */
@@ -116,6 +119,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public void registerCallback(@NotNull ZbddCallback callback) {
     callbacks.add(requireNonNull(callback));
@@ -123,7 +127,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
 
   /**
-   * Returns the literal resolver associated with this zbdd instance.
+   * Returns the literal resolver associated with this ZBDD instance.
    *
    * @return  literal resolver, never {@code null}
    */
@@ -134,6 +138,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   }
 
 
+  /** {@inheritDoc} */
   @Override
   @Contract(mutates = "this")
   public void setLiteralResolver(@NotNull ZbddLiteralResolver literalResolver) {
@@ -142,7 +147,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
 
   /**
-   * Returns the statistics for this zbdd instance. The returned object is a singleton and will
+   * Returns the statistics for this ZBDD instance. The returned object is a singleton and will
    * reflect the actual statistics at any time.
    *
    * @return  statistics, never {@code null}
@@ -155,7 +160,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
 
   /**
-   * Clear all nodes from this zbdd instance. If a zbdd cache is assigned it will be cleared as
+   * Clears all nodes from this ZBDD instance. If a ZBDD cache is assigned it will be cleared as
    * well.
    * <p>
    * This method clears all variables and nodes. It does not free up allocated memory.
@@ -204,6 +209,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public int createVar(@NotNull Object varObject)
   {
@@ -216,6 +222,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   }
 
 
+  /** {@inheritDoc} */
   @Override
   @SuppressWarnings("unchecked")
   public <T> T getVarObject(int var) {
@@ -224,7 +231,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
 
   /**
-   * Returns a zbdd set with the given {@code var} as its only element.
+   * Returns a ZBDD set with the given {@code var} as its only element.
    * <p>
    * Example:
    * <pre>
@@ -236,7 +243,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
    *
    * @param var  valid variable
    *
-   * @return  zbdd set with {@code var} as its only element
+   * @return  ZBDD set with {@code var} as its only element
    */
   @Override
   @Contract(mutates = "this")
@@ -246,7 +253,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
 
   /**
-   * Returns a zbdd set with the given {@code vars} combined as its only element.
+   * Returns a ZBDD set with the given {@code vars} combined as its only element.
    * <p>
    * Example:
    * <pre>
@@ -260,7 +267,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
    *
    * @param cubeVars  valid variables
    *
-   * @return  zbdd set with {@code cubeVars} as its only element
+   * @return  ZBDD set with {@code cubeVars} as its only element
    */
   @Override
   @Contract(mutates = "this")
@@ -284,6 +291,8 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
 
   /**
+   * {@inheritDoc}
+   *
    * @since 0.3.1
    */
   @Override
@@ -326,6 +335,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   }
 
 
+  /** {@inheritDoc} */
   @Override
   @Contract(mutates = "this")
   public int subset0(int zbdd, int var) {
@@ -360,6 +370,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   }
 
 
+  /** {@inheritDoc} */
   @Override
   @Contract(mutates = "this")
   public int subset1(int zbdd, int var) {
@@ -394,6 +405,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   }
 
 
+  /** {@inheritDoc} */
   @Override
   @Contract(mutates = "this")
   public int change(int zbdd, int var) {
@@ -434,11 +446,11 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
 
   /**
-   * Returns the number of cubes in the given zbdd.
+   * Returns the number of cubes in the given ZBDD.
    *
-   * @param zbdd  valid zbdd
+   * @param zbdd  valid ZBDD node
    *
-   * @return  number of cubes >= 0
+   * @return  number of cubes &ge; 0
    */
   @Override
   @Contract(pure = true)
@@ -474,6 +486,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   }
 
 
+  /** {@inheritDoc} */
   @Override
   @Contract(mutates = "this")
   public int union(int... p)
@@ -493,6 +506,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   }
 
 
+  /** {@inheritDoc} */
   @Override
   @Contract(mutates = "this")
   public int union(int p, int q) {
@@ -549,6 +563,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   }
 
 
+  /** {@inheritDoc} */
   @Override
   @Contract(mutates = "this")
   public int intersect(int p, int q) {
@@ -594,6 +609,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   }
 
 
+  /** {@inheritDoc} */
   @Override
   @Contract(mutates = "this")
   public int difference(int p, int q) {
@@ -639,6 +655,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   }
 
 
+  /** {@inheritDoc} */
   @Override
   @Contract(mutates = "this")
   public int multiply(int p, int q) {
@@ -702,6 +719,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   }
 
 
+  /** {@inheritDoc} */
   @Override
   @Contract(mutates = "this")
   public int divide(int p, int q) {
@@ -758,6 +776,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   }
 
 
+  /** {@inheritDoc} */
   @Override
   @Contract(mutates = "this")
   public int modulo(int p, int q) {
@@ -783,6 +802,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   }
 
 
+  /** {@inheritDoc} */
   @Override
   @Contract(mutates = "this")
   public int atomize(int zbdd) {
@@ -845,6 +865,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   }
 
 
+  /** {@inheritDoc} */
   @Override
   @Contract(mutates = "this")
   public int removeBase(int zbdd) {
@@ -873,13 +894,13 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
 
   /**
-   * Tells if the given zbdd set {@code q} is contained in zbdd {@code p}.
+   * Tells if the given ZBDD set {@code q} is contained in ZBDD set {@code p}.
    *
-   * @param p  provided zbdd set to test
-   * @param q  zbdd set which is expected to be part of zbdd set {@code p}
+   * @param p  provided ZBDD set to test
+   * @param q  ZBDD set which is expected to be part of ZBDD set {@code p}
    *
-   * @return  {@code true} if both zbdd sets {@code p} and {@code q} are not empty and zbdd set {@code q} is
-   *          contained in zbdd set {@code p}, {@code false} otherwise
+   * @return  {@code true} if both ZBDD sets {@code p} and {@code q} are not empty and ZBDD set {@code q} is
+   *          contained in ZBDD set {@code p}, {@code false} otherwise
    */
   @Override
   @Contract(mutates = "this")
@@ -897,6 +918,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   }
 
 
+  /** {@inheritDoc} */
   @Override
   @Contract(mutates = "this")
   public int getNode(int var, int p0, int p1) {
@@ -973,7 +995,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   /**
    * Returns the variable for the given {@code zbdd} node.
    *
-   * @param zbdd  zbdd node
+   * @param zbdd  ZBDD node
    *
    * @return  variable or {@code -1} in case {@code zbdd} is the empty or base node
    */
@@ -991,11 +1013,11 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
 
   /**
-   * Returns the zbdd node for the 0-branch of the given {@code zbdd} node.
+   * Returns the ZBDD node for the 0-branch of the given {@code zbdd} node.
    *
-   * @param zbdd  zbdd node
+   * @param zbdd  ZBDD node
    *
-   * @return  zbdd node for the 0-branch
+   * @return  ZBDD node for the 0-branch
    */
   @Override
   @Contract(pure = true)
@@ -1011,11 +1033,11 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
 
   /**
-   * Returns the zbdd node for the 1-branch of the given {@code zbdd} node.
+   * Returns the ZBDD node for the 1-branch of the given {@code zbdd} node.
    *
-   * @param zbdd  zbdd node
+   * @param zbdd  ZBDD node
    *
-   * @return  zbdd node for the 1-branch
+   * @return  ZBDD node for the 1-branch
    */
   @Override
   @Contract(pure = true)
@@ -1037,16 +1059,16 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
 
   /**
-   * Perform garbage collection on the internal zbdd structure.
+   * Performs garbage collection on the internal ZBDD structure.
    * <p>
-   * After garbage collection, all dead and not referenced nodes have been freed and the statistics have been updated
+   * After garbage collection, all dead and unreferenced nodes have been freed and the statistics have been updated
    * accordingly.
    *
-   * @return  the number of freed zbdd nodes
+   * @return  the number of freed ZBDD nodes
    *
    * @see #incRef(int)
    * @see #decRef(int)
-   * @see #getNode(int, int, int) 
+   * @see #getNode(int, int, int)
    */
   @Override
   @Contract(mutates = "this")
@@ -1187,6 +1209,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   }
 
 
+  /** {@inheritDoc} */
   @Override
   @Contract(value = "_ -> param1", mutates = "this")
   public int incRef(int zbdd) {
@@ -1222,6 +1245,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   }
 
 
+  /** {@inheritDoc} */
   @Override
   @Contract(value = "_ -> param1", mutates = "this")
   @SuppressWarnings("UnusedReturnValue")
@@ -1256,6 +1280,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public boolean isValidZbdd(int zbdd)
   {
@@ -1266,15 +1291,15 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
 
   /**
-   * Validates the given zbdd node and returns it, or throws an exception if it is invalid.
+   * Validates the given ZBDD node and returns it, or throws an exception if it is invalid.
    *
-   * @param zbdd   zbdd node to validate
+   * @param zbdd   ZBDD node to validate
    * @param param  parameter name for the exception message, not {@code null}
    *
-   * @return  the validated zbdd node
+   * @return  the validated ZBDD node
    *
-   * @throws ZbddOutOfRangeException  if the zbdd node is out of range
-   * @throws InvalidZbddException     if the zbdd node is not valid
+   * @throws ZbddOutOfRangeException  if the ZBDD node is out of range
+   * @throws InvalidZbddException     if the ZBDD node is not valid
    */
   @Contract(value = "_, _ -> param1")
   @MustBeInvokedByOverriders
@@ -1290,6 +1315,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public boolean isValidVar(int var) {
     return var > 0 && var <= lastVarNumber;
@@ -1316,12 +1342,14 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public @NotNull Zbdd.ZbddNodeInfo getZbddNodeInfo(int zbdd) {
     return new ZbddNodeInfoDelegate(checkZbdd(zbdd, "zbdd"));
   }
 
 
+  /** {@inheritDoc} */
   @Override
   @Contract(value = "_ -> new", pure = true)
   public @NotNull String toString(int zbdd)
@@ -1338,6 +1366,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public boolean visitCubeZbdds(int zbdd, @NotNull ZbddVisitor visitor)
   {
@@ -1354,6 +1383,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public boolean visitCubes(int zbdd, @NotNull CubeVisitor visitor)
   {
@@ -1393,18 +1423,19 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
 
   /**
-   * Calculates a list of zbdd nodes, where each zbdd node references 2 other zbdd nodes in the list with a lower index.
+   * Calculates a list of ZBDD nodes, where each ZBDD node references 2 other ZBDD nodes in the list with a lower
+   * index.
    * <p>
-   * Initially, each newly created zbdd node references other zbdd nodes with lower zbdd numbers. Starting with the
-   * first garbage collection, freed zbdd numbers are going to be reused, if possible. This means that the initial
-   * contract is no longer valid and new zbdd nodes may have a lower number than the zbdd nodes it references.
+   * Initially, each newly created ZBDD node references other ZBDD nodes with lower ZBDD numbers. Starting with the
+   * first garbage collection, freed ZBDD numbers are going to be reused, if possible. This means that the initial
+   * contract is no longer valid and new ZBDD nodes may have a lower number than the ZBDD nodes it references.
    * <p>
-   * The list returned by this method essentially describes the generation sequence for all zbdd nodes in the correct
+   * The list returned by this method essentially describes the generation sequence for all ZBDD nodes in the correct
    * order.
    * <p>
    * Note: this method will always perform a garbage collection
    *
-   * @return  array with the generation sequence for all zbdd nodes, never {@code null}
+   * @return  array with the generation sequence for all ZBDD nodes, never {@code null}
    *
    * @see #gc()
    *
@@ -1501,6 +1532,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public int @NotNull [] asSingleCubeZbdds(int zbdd)
   {
@@ -1551,7 +1583,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
 
   /**
-   * Live statistics for this zbdd instance.
+   * Live statistics view for this ZBDD instance, implementing {@link ZbddStatistics}.
    */
   private final class Statistics implements ZbddStatistics
   {
@@ -1651,7 +1683,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
 
   /**
-   * Live view delegate for a zbdd node, providing access to its properties.
+   * Live view delegate for a ZBDD node, providing access to its properties via the {@link ZbddNodeInfo} interface.
    */
   private final class ZbddNodeInfoDelegate implements ZbddNodeInfo
   {

@@ -27,6 +27,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Factory for creating {@link Zbdd} instances with various configurations, including support for operation caching
  * and thread-safe (concurrent) access.
+ * <p>
+ * This class provides static factory methods only and cannot be instantiated.
  *
  * @author Jeroen Gremmen
  * @since 0.5.0
@@ -34,10 +36,10 @@ import org.jetbrains.annotations.NotNull;
 public final class ZbddFactory
 {
   /**
-   * Create a new zbdd instance with a default capacity advisor. The returned zbdd instance does no
-   * zbdd operation caching and is not thread safe.
+   * Creates a new ZBDD instance with a default capacity advisor. The returned instance does no
+   * operation caching and is not thread-safe.
    *
-   * @return  new zbdd instance, never {@code null}
+   * @return  new ZBDD instance, never {@code null}
    */
   @Contract(value = "-> new", pure = true)
   public static @NotNull Zbdd create() {
@@ -46,13 +48,13 @@ public final class ZbddFactory
 
 
   /**
-   * Create a new zbdd instance with the given {@code capacityAdvisor}. The returned zbdd instance does no
-   * zbdd operation caching and is not thread safe.
+   * Creates a new ZBDD instance with the given {@code capacityAdvisor}. The returned instance does no
+   * operation caching and is not thread-safe.
    *
    * @param capacityAdvisor  capacity advisor. If this parameter equals {@code null} then a default capacity advisor
    *                         is used.
    *
-   * @return  new zbdd instance, never {@code null}
+   * @return  new ZBDD instance, never {@code null}
    */
   @Contract(value = "_ -> new", pure = true)
   public static @NotNull Zbdd create(ZbddCapacityAdvisor capacityAdvisor) {
@@ -61,12 +63,12 @@ public final class ZbddFactory
 
 
   /**
-   * Create a new cached zbdd instance with the given {@code zbddCache} and a default capacity advisor.
-   * The returned zbdd instance is not thread safe.
+   * Creates a new cached ZBDD instance with the given {@code zbddCache} and a default capacity advisor.
+   * The returned instance is not thread-safe.
    *
-   * @param zbddCache  zbdd cache, not {@code null}
+   * @param zbddCache  ZBDD operation cache, not {@code null}
    *
-   * @return  new cached zbdd instance, never {@code null}
+   * @return  new cached ZBDD instance, never {@code null}
    */
   @Contract(value = "_ -> new", pure = true)
   public static @NotNull Zbdd.WithCache createCached(@NotNull ZbddCache zbddCache) {
@@ -75,14 +77,14 @@ public final class ZbddFactory
 
 
   /**
-   * Create a new cached zbdd instance with the given {@code capacityAdvisor} and {@code zbddCache}.
-   * The returned zbdd instance is not thread safe.
+   * Creates a new cached ZBDD instance with the given {@code capacityAdvisor} and {@code zbddCache}.
+   * The returned instance is not thread-safe.
    *
    * @param capacityAdvisor  capacity advisor. If this parameter equals {@code null} then a default capacity advisor
    *                         is used.
-   * @param zbddCache        zbdd cache, not {@code null}
+   * @param zbddCache        ZBDD operation cache, not {@code null}
    *
-   * @return  new cached zbdd instance, never {@code null}
+   * @return  new cached ZBDD instance, never {@code null}
    */
   @Contract(value = "_, _ -> new")
   public static @NotNull Zbdd.WithCache createCached(ZbddCapacityAdvisor capacityAdvisor, @NotNull ZbddCache zbddCache) {
@@ -94,9 +96,9 @@ public final class ZbddFactory
    * Wraps the given {@code zbdd} instance to make it thread-safe. If the instance is already concurrent,
    * it is returned as-is.
    *
-   * @param zbdd  zbdd instance to wrap, not {@code null}
+   * @param zbdd  ZBDD instance to wrap, not {@code null}
    *
-   * @return  thread-safe zbdd instance, never {@code null}
+   * @return  thread-safe ZBDD instance, never {@code null}
    */
   @Contract(value = "_ -> new", pure = true)
   public static @NotNull Zbdd.Concurrent asConcurrent(@NotNull Zbdd zbdd) {
@@ -108,11 +110,10 @@ public final class ZbddFactory
    * Wraps the given cached {@code zbdd} instance to make it thread-safe while preserving cache support. If the
    * instance is already concurrent, it is returned as-is.
    *
-   * @param zbdd  cached zbdd instance to wrap, not {@code null}
+   * @param zbdd  cached ZBDD instance to wrap, not {@code null}
+   * @param <T>   return type that is both {@link Zbdd.Concurrent concurrent} and {@link Zbdd.WithCache cached}
    *
-   * @return  thread-safe cached zbdd instance, never {@code null}
-   *
-   * @param <T>  return type that is both concurrent and cached
+   * @return  thread-safe cached ZBDD instance, never {@code null}
    */
   @Contract(value = "_ -> new", pure = true)
   @SuppressWarnings("unchecked")

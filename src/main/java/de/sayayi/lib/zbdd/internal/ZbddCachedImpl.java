@@ -28,7 +28,13 @@ import static java.util.Objects.requireNonNull;
 
 
 /**
- * Extension of the {@link ZbddImpl} class to add support for caching results.
+ * Extension of {@link ZbddImpl} that adds operation result caching via a {@link ZbddCache}. Each ZBDD operation
+ * first checks the cache for a previously computed result before delegating to the base implementation.
+ * <p>
+ * The cache is automatically cleared before garbage collection and when the ZBDD is cleared, ensuring consistency
+ * between cached results and the current state of the diagram.
+ * <p>
+ * Instances are created through the {@link de.sayayi.lib.zbdd.ZbddFactory ZbddFactory}.
  *
  * @author Jeroen Gremmen
  * @since 0.5.0
@@ -40,10 +46,10 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
 
 
   /**
-   * Creates a new cached zbdd instance with the given capacity advisor and cache.
+   * Creates a new cached ZBDD instance with the given capacity advisor and cache.
    *
    * @param capacityAdvisor  capacity advisor, not {@code null}
-   * @param zbddCache        zbdd cache to use for memoization, not {@code null}
+   * @param zbddCache        ZBDD operation cache to use for memoization, not {@code null}
    */
   @Contract(mutates = "param2")
   public ZbddCachedImpl(@NotNull ZbddCapacityAdvisor capacityAdvisor, @NotNull ZbddCache zbddCache)
@@ -59,12 +65,14 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public @NotNull ZbddCache getZbddCache() {
     return zbddCache;
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public void setZbddCache(@NotNull ZbddCache zbddCache)
   {
@@ -74,6 +82,10 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
 
 
   /**
+   * {@inheritDoc}
+   * <p>
+   * This implementation caches results using the {@link ZbddCache}.
+   *
    * @since 0.1.3
    */
   @Override
@@ -97,6 +109,10 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
 
 
   /**
+   * {@inheritDoc}
+   * <p>
+   * This implementation caches results using the {@link ZbddCache}.
+   *
    * @since 0.1.3
    */
   @Override
@@ -120,6 +136,10 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
 
 
   /**
+   * {@inheritDoc}
+   * <p>
+   * This implementation caches results using the {@link ZbddCache}.
+   *
    * @since 0.1.3
    */
   @Override
@@ -140,6 +160,10 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
 
 
   /**
+   * {@inheritDoc}
+   * <p>
+   * This implementation caches results using the {@link ZbddCache}.
+   *
    * @since 0.1.3
    */
   @Override
@@ -158,6 +182,10 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
 
 
   /**
+   * {@inheritDoc}
+   * <p>
+   * This implementation caches results using the {@link ZbddCache}.
+   *
    * @since 0.1.3
    */
   @Override
@@ -184,6 +212,10 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
 
 
   /**
+   * {@inheritDoc}
+   * <p>
+   * This implementation caches results using the {@link ZbddCache}.
+   *
    * @since 0.1.3
    */
   @Override
@@ -204,6 +236,10 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
 
 
   /**
+   * {@inheritDoc}
+   * <p>
+   * This implementation caches results using the {@link ZbddCache}.
+   *
    * @since 0.1.3
    */
   @Override
@@ -224,6 +260,10 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
 
 
   /**
+   * {@inheritDoc}
+   * <p>
+   * This implementation caches results using the {@link ZbddCache}.
+   *
    * @since 0.1.3
    */
   @Override
@@ -252,6 +292,10 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
 
 
   /**
+   * {@inheritDoc}
+   * <p>
+   * This implementation caches results using the {@link ZbddCache}.
+   *
    * @since 0.1.3
    */
   @Override
@@ -274,6 +318,10 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
 
 
   /**
+   * {@inheritDoc}
+   * <p>
+   * This implementation caches results using the {@link ZbddCache}.
+   *
    * @since 0.1.3
    */
   @Override
@@ -289,6 +337,10 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
 
 
   /**
+   * {@inheritDoc}
+   * <p>
+   * This implementation caches results using the {@link ZbddCache}.
+   *
    * @since 0.1.3
    */
   @Override
@@ -307,6 +359,10 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
 
 
   /**
+   * {@inheritDoc}
+   * <p>
+   * This implementation caches results using the {@link ZbddCache}.
+   *
    * @since 0.1.3
    */
   @Override

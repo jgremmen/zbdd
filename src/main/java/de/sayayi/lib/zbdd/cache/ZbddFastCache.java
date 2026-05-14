@@ -28,7 +28,11 @@ import static java.util.Locale.US;
 
 
 /**
- * A high-performance {@link ZbddCache} implementation optimized for speed with minimal memory overhead.
+ * A high-performance, fixed-size {@link ZbddCache} implementation optimized for speed with minimal memory overhead.
+ * <p>
+ * The cache uses a slot-based design where each slot holds a short chain of entries. When a slot's chain is full,
+ * the least recently used entry is evicted. The cache size is specified at construction time and cannot be changed
+ * afterward.
  *
  * @author Jeroen Gremmen
  * @since 0.1.3
@@ -83,6 +87,7 @@ public final class ZbddFastCache implements ZbddCache
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public void clear()
   {
@@ -96,6 +101,7 @@ public final class ZbddFastCache implements ZbddCache
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public int getResult(@NotNull Operation1 operation, int p)
   {
@@ -128,6 +134,7 @@ public final class ZbddFastCache implements ZbddCache
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public void putResult(@NotNull Operation1 operation, int p, int result)
   {
@@ -154,6 +161,7 @@ public final class ZbddFastCache implements ZbddCache
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public int getResult(@NotNull Operation2 operation, int p1, int p2)
   {
@@ -186,6 +194,7 @@ public final class ZbddFastCache implements ZbddCache
   }
 
 
+  /** {@inheritDoc} */
   @Override
   public void putResult(@NotNull Operation2 operation, int p1, int p2, int result)
   {
