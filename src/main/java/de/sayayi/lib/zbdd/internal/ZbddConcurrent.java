@@ -504,11 +504,39 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @SuppressWarnings("MethodDoesntCallSuperMethod")
+  public int @NotNull [] incRef(int @NotNull [] zbdds)
+  {
+    lock.lock();
+    try {
+      return this.zbdd.incRef(zbdds);
+    } finally {
+      lock.unlock();
+    }
+  }
+
+
+  /** {@inheritDoc} */
+  @Override
   public int decRef(int zbdd)
   {
     lock.lock();
     try {
       return this.zbdd.decRef(zbdd);
+    } finally {
+      lock.unlock();
+    }
+  }
+
+
+  /** {@inheritDoc} */
+  @Override
+  @SuppressWarnings("MethodDoesntCallSuperMethod")
+  public int @NotNull [] decRef(int @NotNull [] zbdds)
+  {
+    lock.lock();
+    try {
+      return this.zbdd.decRef(zbdds);
     } finally {
       lock.unlock();
     }
@@ -716,15 +744,27 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
     /** {@inheritDoc} */
     @Contract(pure = true)
-    public @NotNull ZbddCache getZbddCache() {
-      return ((Zbdd.WithCache)zbdd).getZbddCache();
+    public @NotNull ZbddCache getZbddCache()
+    {
+      lock.lock();
+      try {
+        return ((Zbdd.WithCache)zbdd).getZbddCache();
+      } finally {
+        lock.unlock();
+      }
     }
 
 
     /** {@inheritDoc} */
     @Override
-    public void setZbddCache(@NotNull ZbddCache zbddCache) {
-      ((Zbdd.WithCache)zbdd).setZbddCache(zbddCache);
+    public void setZbddCache(@NotNull ZbddCache zbddCache)
+    {
+      lock.lock();
+      try {
+        ((Zbdd.WithCache)zbdd).setZbddCache(zbddCache);
+      } finally {
+        lock.unlock();
+      }
     }
   }
 }
