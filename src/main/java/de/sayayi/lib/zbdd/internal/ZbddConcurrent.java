@@ -42,6 +42,8 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   protected final Zbdd zbdd;
   protected final Lock lock;
 
+  private final ZbddStatistics statistics;
+
 
   /**
    * Creates a new concurrent wrapper around the given ZBDD instance.
@@ -51,7 +53,9 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   public ZbddConcurrent(@NotNull Zbdd zbdd)
   {
     this.zbdd = zbdd;
+
     lock = new ReentrantLock();
+    statistics = new Statistics(zbdd.getStatistics());
   }
 
 
@@ -123,7 +127,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   /** {@inheritDoc} */
   @Override
   public @NotNull ZbddStatistics getStatistics() {
-    return zbdd.getStatistics();  // no lock required
+    return statistics;
   }
 
 
@@ -762,6 +766,218 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
       lock.lock();
       try {
         ((Zbdd.WithCache)zbdd).setZbddCache(zbddCache);
+      } finally {
+        lock.unlock();
+      }
+    }
+  }
+
+
+
+
+  /**
+   * Thread-safe {@link ZbddStatistics} delegate that acquires the lock for every access.
+   *
+   * @since 0.6.1
+   */
+  private final class Statistics implements ZbddStatistics
+  {
+    private final ZbddStatistics statistics;
+
+
+    private Statistics(@NotNull ZbddStatistics statistics) {
+      this.statistics = statistics;
+    }
+
+
+    /** {@inheritDoc} */
+    @Override
+    public int getNodesCapacity()
+    {
+      lock.lock();
+      try {
+        return statistics.getNodesCapacity();
+      } finally {
+        lock.unlock();
+      }
+    }
+
+
+    /** {@inheritDoc} */
+    @Override
+    public int getFreeNodes()
+    {
+      lock.lock();
+      try {
+        return statistics.getFreeNodes();
+      } finally {
+        lock.unlock();
+      }
+    }
+
+
+    /** {@inheritDoc} */
+    @Override
+    public int getDeadNodes()
+    {
+      lock.lock();
+      try {
+        return statistics.getDeadNodes();
+      } finally {
+        lock.unlock();
+      }
+    }
+
+
+    /** {@inheritDoc} */
+    @Override
+    public int getNodeLookups()
+    {
+      lock.lock();
+      try {
+        return statistics.getNodeLookups();
+      } finally {
+        lock.unlock();
+      }
+    }
+
+
+    /** {@inheritDoc} */
+    @Override
+    public int getNodeLookupHitCount()
+    {
+      lock.lock();
+      try {
+        return statistics.getNodeLookupHitCount();
+      } finally {
+        lock.unlock();
+      }
+    }
+
+
+    /** {@inheritDoc} */
+    @Override
+    public int getGCCount()
+    {
+      lock.lock();
+      try {
+        return statistics.getGCCount();
+      } finally {
+        lock.unlock();
+      }
+    }
+
+
+    /** {@inheritDoc} */
+    @Override
+    public long getGCFreedNodes()
+    {
+      lock.lock();
+      try {
+        return statistics.getGCFreedNodes();
+      } finally {
+        lock.unlock();
+      }
+    }
+
+
+    /** {@inheritDoc} */
+    @Override
+    public int getCapacityIncreaseCount()
+    {
+      lock.lock();
+      try {
+        return statistics.getCapacityIncreaseCount();
+      } finally {
+        lock.unlock();
+      }
+    }
+
+
+    /** {@inheritDoc} */
+    @Override
+    public long getMemoryUsage()
+    {
+      lock.lock();
+      try {
+        return statistics.getMemoryUsage();
+      } finally {
+        lock.unlock();
+      }
+    }
+
+
+    /** {@inheritDoc} */
+    @Override
+    public int getRegisteredVars()
+    {
+      lock.lock();
+      try {
+        return statistics.getRegisteredVars();
+      } finally {
+        lock.unlock();
+      }
+    }
+
+
+    /** {@inheritDoc} */
+    @Override
+    public int getAvailableNodes()
+    {
+      lock.lock();
+      try {
+        return statistics.getFreeNodes() + statistics.getDeadNodes();
+      } finally {
+        lock.unlock();
+      }
+    }
+
+
+    /** {@inheritDoc} */
+    @Override
+    public int getOccupiedNodes()
+    {
+      lock.lock();
+      try {
+        return statistics.getNodesCapacity() - statistics.getAvailableNodes();
+      } finally {
+        lock.unlock();
+      }
+    }
+
+
+    /** {@inheritDoc} */
+    @Override
+    public double getNodeLookupHitRatio()
+    {
+      lock.lock();
+      try {
+        return statistics.getNodeLookupHitCount() / (double)statistics.getNodeLookups();
+      } finally {
+        lock.unlock();
+      }
+    }
+
+
+    /** {@inheritDoc} */
+    @Override
+    public double getNodeLookupMissRatio()
+    {
+      lock.lock();
+      try {
+        return 1.0 - statistics.getNodeLookupHitRatio();
+      } finally {
+        lock.unlock();
+      }
+    }
+
+
+    @Override
+    public String toString()
+    {
+      lock.lock();
+      try {
+        return statistics.toString();
       } finally {
         lock.unlock();
       }
