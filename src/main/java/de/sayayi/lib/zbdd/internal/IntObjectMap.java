@@ -104,7 +104,7 @@ final class IntObjectMap
   {
     final var idx = indexOf(key);
     if (values[idx] != null)
-      throw new IllegalStateException();
+      throw new IllegalStateException("value already present for key " + key);
 
     keys[idx] = key;
     values[idx] = value;
