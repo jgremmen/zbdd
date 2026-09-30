@@ -18,8 +18,8 @@ package de.sayayi.lib.zbdd.cache;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-import static java.lang.Integer.MAX_VALUE;
 import static java.lang.Integer.MIN_VALUE;
+import static java.lang.Integer.rotateLeft;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.lang.String.format;
@@ -43,6 +43,11 @@ public final class ZbddFastCache implements ZbddCache
   public static final int MIN_CACHE_SIZE = 1024;
 
   private static final int CHAIN_CAPACITY = 8;
+
+  private static final int HASH_C1 = 0x9e3779b1;  // 2^32 / golden ratio
+  private static final int HASH_C2 = 0x85ebca6b;
+  private static final int HASH_C3 = 0xc2b2ae35;
+  private static final int HASH_C4 = 0x27d4eb2f;
 
   private static final int SLOT_ENTRY_SIZE1 = 3;
   private static final int SLOT_ENTRY_SIZE2 = 4;
@@ -224,13 +229,39 @@ public final class ZbddFastCache implements ZbddCache
 
   @Contract(pure = true)
   private int hash1(@NotNull Operation1 operation, int p) {
-    return ((operation.ordinal() * 4256249 + p * 741457) & MAX_VALUE) % slots;
+    return avalanche(p * HASH_C1 + operation.ordinal()) % slots;
   }
 
 
   @Contract(pure = true)
-  private int hash2(@NotNull Operation2 operation, int p1, int p2) {
-    return ((operation.ordinal() * 12582917 + p1 * 4256249 + p2 * 741457) & MAX_VALUE) % slots;
+  private int hash2(@NotNull Operation2 operation, int p1, int p2)
+  {
+    var h = rotateLeft(p1 * HASH_C1, 15) * 5 + 0xe6546b64;
+
+    h = rotateLeft(h ^ (p2 * HASH_C4), 13) * 5 + 0xe6546b64;
+
+    return avalanche(h + operation.ordinal()) % slots;
+  }
+
+
+  /**
+   * Avalanche function (Murmur3 32-bit finalizer). It spreads the influence of every input bit over the entire word,
+   * so sequential node ids (which are common in this domain) are distributed evenly over the available slots.
+   *
+   * @param h  value to mix
+   *
+   * @return  well distributed non-negative hash value
+   */
+  @Contract(pure = true)
+  private static int avalanche(int h)
+  {
+    h ^= h >>> 16;
+    h *= HASH_C2;
+    h ^= h >>> 13;
+    h *= HASH_C3;
+    h ^= h >>> 16;
+
+    return h >>> 1;  // keep the 31 best mixed bits
   }
 
 
