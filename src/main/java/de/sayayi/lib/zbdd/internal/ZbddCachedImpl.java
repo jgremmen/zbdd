@@ -18,6 +18,7 @@ package de.sayayi.lib.zbdd.internal;
 import de.sayayi.lib.zbdd.Zbdd.WithCache;
 import de.sayayi.lib.zbdd.ZbddCapacityAdvisor;
 import de.sayayi.lib.zbdd.cache.ZbddCache;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -39,6 +40,7 @@ import static java.util.Objects.requireNonNull;
  * @author Jeroen Gremmen
  * @since 0.5.0
  */
+@ApiStatus.Internal
 @SuppressWarnings("DuplicatedCode")
 public final class ZbddCachedImpl extends ZbddImpl implements WithCache
 {

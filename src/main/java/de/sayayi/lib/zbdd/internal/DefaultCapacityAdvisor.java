@@ -17,6 +17,7 @@ package de.sayayi.lib.zbdd.internal;
 
 import de.sayayi.lib.zbdd.ZbddCapacityAdvisor;
 import de.sayayi.lib.zbdd.ZbddStatistics;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 
@@ -28,6 +29,7 @@ import org.jetbrains.annotations.NotNull;
  * @author Jeroen Gremmen
  * @since 0.5.0
  */
+@ApiStatus.Internal
 public enum DefaultCapacityAdvisor implements ZbddCapacityAdvisor
 {
   /** Singleton instance of this advisor. */

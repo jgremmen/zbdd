@@ -24,6 +24,7 @@ import de.sayayi.lib.zbdd.exception.InvalidVarException;
 import de.sayayi.lib.zbdd.exception.InvalidZbddException;
 import de.sayayi.lib.zbdd.exception.ZbddException;
 import de.sayayi.lib.zbdd.exception.ZbddOutOfRangeException;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.MustBeInvokedByOverriders;
 import org.jetbrains.annotations.NotNull;
@@ -64,6 +65,7 @@ import static java.util.Objects.requireNonNull;
  *
  * @author Jeroen Gremmen
  */
+@ApiStatus.Internal
 @SuppressWarnings("DuplicatedCode")
 public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 {

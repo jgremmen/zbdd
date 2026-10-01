@@ -19,6 +19,7 @@ import de.sayayi.lib.zbdd.Zbdd;
 import de.sayayi.lib.zbdd.ZbddLiteralResolver;
 import de.sayayi.lib.zbdd.ZbddStatistics;
 import de.sayayi.lib.zbdd.cache.ZbddCache;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -37,6 +38,7 @@ import java.util.function.Function;
  * @author Jeroen Gremmen
  * @since 0.5.0
  */
+@ApiStatus.Internal
 public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcurrent.WithCache
 {
   protected final Zbdd zbdd;
@@ -734,6 +736,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
    * Instances are created through
    * {@link de.sayayi.lib.zbdd.ZbddFactory#asConcurrent(Zbdd.WithCache) ZbddFactory.asConcurrent}.
    */
+  @ApiStatus.Internal
   public static final class WithCache extends ZbddConcurrent implements Zbdd.WithCache
   {
     /**
