@@ -842,21 +842,21 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     if (q < 2 || p == q)
       return p;
 
-    int p_var = __getVar(p);
-    int q_var = __getVar(q);
+    var p_var = __getVar(p);
+    var q_var = __getVar(q);
 
     if (p_var > q_var)
     {
       // swap p <-> q, p_var <-> q_var
-      int tmp = p; p = q; q = tmp;
+      var tmp = p; p = q; q = tmp;
       tmp = p_var; p_var = q_var; q_var = tmp;
     }
 
     __incRef(p);  // lock p
     __incRef(q);  // lock q
 
-    final int p0 = __atomize_union(p_var < q_var ? p : __getP0(p), __getP0(q));
-    final int r = __getNode(q_var, p0, BASE);
+    final var p0 = __atomize_union(p_var < q_var ? p : __getP0(p), __getP0(q));
+    final var r = __getNode(q_var, p0, BASE);
 
     __decRef(q);  // release q
     __decRef(p);  // release p

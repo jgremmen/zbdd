@@ -58,8 +58,8 @@ public final class ZbddFactory
    */
   @Contract(value = "_ -> new", pure = true)
   public static @NotNull Zbdd create(ZbddCapacityAdvisor capacityAdvisor) {
-		return new ZbddImpl(capacityAdvisor != null ? capacityAdvisor : DefaultCapacityAdvisor.INSTANCE);
-	}
+    return new ZbddImpl(capacityAdvisor != null ? capacityAdvisor : DefaultCapacityAdvisor.INSTANCE);
+  }
 
 
   /**
