@@ -1186,7 +1186,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
     statistics.capacityIncreaseCount++;
 
-    nodesCapacity = min(nodesCapacity + capacityAdvisor.adviseIncrement(statistics), MAX_NODES);
+    nodesCapacity = (int)min((long)nodesCapacity + capacityAdvisor.adviseIncrement(statistics), MAX_NODES);
     nodes = copyOf(nodes, nodesCapacity * NODE_RECORD_SIZE);
 
     nextFreeNode = 0;
