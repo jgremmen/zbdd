@@ -1115,10 +1115,23 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
   private void gc_markReferencedNodes()
   {
+    final var markNodeStack = new IntStack(24);
+
     for(int zbdd = 0, offset = 0; zbdd < nodesCapacity; zbdd++, offset += NODE_RECORD_SIZE)
     {
       if (nodes[offset + _VAR] != -1 && nodes[offset + _REFCOUNT] > 0)
-        gc_markReferencesRecursively(zbdd);
+        for(markNodeStack.push(zbdd); markNodeStack.isNotEmpty();)
+        {
+          final var offset2 = markNodeStack.pop() * NODE_RECORD_SIZE;
+
+          if ((nodes[offset2 + _VAR] & GC_VAR_MARK_MASK) == 0)
+          {
+            nodes[offset2 + _VAR] |= GC_VAR_MARK_MASK;
+
+            markNodeStack.pushIfNotLeafNode(nodes[offset2 + _P0]);
+            markNodeStack.pushIfNotLeafNode(nodes[offset2 + _P1]);
+          }
+        }
 
       // clear hash chain
       nodes[offset + _CHAIN] = 0;
@@ -1152,23 +1165,6 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     }
 
     nodesDead = 0;
-  }
-
-
-  private void gc_markReferencesRecursively(int zbdd)
-  {
-    if (zbdd >= 2)
-    {
-      final int offset = zbdd * NODE_RECORD_SIZE;
-
-      if ((nodes[offset + _VAR] & GC_VAR_MARK_MASK) == 0)
-      {
-        nodes[offset + _VAR] |= GC_VAR_MARK_MASK;
-
-        gc_markReferencesRecursively(nodes[offset + _P0]);
-        gc_markReferencesRecursively(nodes[offset + _P1]);
-      }
-    }
   }
 
 

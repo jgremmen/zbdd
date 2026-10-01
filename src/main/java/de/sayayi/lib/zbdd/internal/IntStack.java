@@ -18,6 +18,7 @@ package de.sayayi.lib.zbdd.internal;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.StringJoiner;
 import java.util.function.IntConsumer;
 
 import static java.lang.Math.clamp;
@@ -140,5 +141,16 @@ final class IntStack
   {
     for(var i = stackSize - 1; i >= 0; i--)
       consumer.accept(stack[i]);
+  }
+
+
+  @Override
+  public String toString()
+  {
+    final var intJoiner = new StringJoiner("->", "[", "]");
+
+    forEach(value -> intJoiner.add(Integer.toString(value)));
+
+    return intJoiner.toString();
   }
 }
