@@ -198,6 +198,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
       nodes[offset + _CHAIN] = 0;
     }
 
+    varObjectMap.clear();
     statistics.clear();
 
     callbacks.forEach(ZbddCallback::afterClear);

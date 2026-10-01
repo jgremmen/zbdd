@@ -45,12 +45,39 @@ final class IntObjectMap
   private int size;
 
 
-  /** Creates a new empty map with a default initial capacity. */
+  /**
+   * Creates a new, empty map.
+   */
   IntObjectMap() {
-    ensureCapacity(16);
+    clear();
   }
 
 
+  /**
+   * Removes all entries from this map.
+   *
+   * @since 0.7.0
+   */
+  @Contract(mutates = "this")
+  void clear()
+  {
+    size = 0;
+    capacity = 16;
+
+    keys = new int[capacity];
+    values = new Object[capacity];
+    threshold = (int)(capacity * LOAD_FACTOR);
+    hashMask = capacity - 1;
+    hashShift = 31 - bitCount(hashMask);
+  }
+
+
+  /**
+   * Grows the internal storage, if needed, so that it can hold at least {@code newCapacity} entries, and
+   * rehashes all existing entries into the new storage.
+   *
+   * @param newCapacity  minimum number of entries the map must be able to hold
+   */
   @Contract(mutates = "this")
   private void ensureCapacity(int newCapacity)
   {
@@ -127,6 +154,14 @@ final class IntObjectMap
   }
 
 
+  /**
+   * Finds the storage slot for the given {@code key}, which is either the slot holding the key's existing
+   * entry or the first free slot in which a new entry for the key can be placed.
+   *
+   * @param key  key
+   *
+   * @return  storage slot index for the key
+   */
   @Contract(pure = true)
   private int indexOf(int key)
   {
@@ -140,6 +175,13 @@ final class IntObjectMap
   }
 
 
+  /**
+   * Computes the initial storage slot for the given {@code key}.
+   *
+   * @param key  key
+   *
+   * @return  initial storage slot index for the key
+   */
   @Contract(pure = true)
   private int hash(int key) {
     return ((1327217885 * key) >> hashShift) & hashMask;
