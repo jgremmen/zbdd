@@ -504,12 +504,16 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   @Contract(mutates = "this")
   public int union(int... p)
   {
-    for(var i = 0; i < p.length; i++)
+    final var n = p.length;
+    if (n == 0)
+      throw new IllegalArgumentException("at least one ZBDD node must be provided");
+
+    for(var i = 0; i < n; i++)
       __incRef(checkZbdd(p[i], "p[" + i + ']'));
 
     var r = p[0];
 
-    for(int i = 1, n = p.length; i < n; i++)
+    for(var i = 1; i < n; i++)
       r = __union(r, p[i]);
 
     for(var pn: p)
