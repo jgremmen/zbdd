@@ -47,13 +47,13 @@ public class ZbddOutOfRangeException extends InvalidZbddException
 
 
   /**
-   * Returns the lowest valid ZBDD node reference, which is {@link Zbdd#BASE}.
+   * Returns the lowest valid ZBDD node reference, which is {@link Zbdd#EMPTY}.
    *
    * @return  lowest valid ZBDD node reference
    */
   @Contract(pure = true)
   public int getLowBoundZbdd() {
-    return Zbdd.BASE;
+    return Zbdd.EMPTY;
   }
 
 
