@@ -315,13 +315,16 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
 
 
   /**
-   * Computes the union of multiple zbdd sets.
+   * Computes the union of one or more ZBDD sets.
    * <p>
-   * The result contains all combinations that appear in at least one of the input zbdd sets.
+   * The result contains all combinations that appear in at least one input set. Supplying a single set returns that
+   * set unchanged.
    *
-   * @param p  array of zbdd nodes to union
+   * @param p  one or more ZBDD nodes to union
    *
-   * @return  zbdd node representing the union of all input sets
+   * @return  ZBDD node representing the union of all input sets
+   *
+   * @throws IllegalArgumentException if no nodes are supplied
    */
   @Contract(mutates = "this")
   int union(int... p);
@@ -836,7 +839,8 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
   sealed interface WithCache extends Zbdd permits ZbddCachedImpl, ZbddConcurrent.WithCache
   {
     /**
-     * Returns the current zbdd cache instance used for caching.
+     * Returns the current zbdd cache instance used for caching. For concurrent instances, the lock protects only
+     * retrieval; the returned live cache can be replaced or cleared after this method returns.
      *
      * @return  current zbdd cache instance, never {@code null}
      */

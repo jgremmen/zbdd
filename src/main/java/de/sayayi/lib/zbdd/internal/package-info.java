@@ -38,6 +38,14 @@
  *     {@link de.sayayi.lib.zbdd.internal.DefaultCapacityAdvisor} - Default
  *     {@link de.sayayi.lib.zbdd.ZbddCapacityAdvisor} used when no custom advisor is provided.
  *   </li>
+ *   <li>
+ *     {@link de.sayayi.lib.zbdd.internal.IntObjectMap} - Lightweight map used by the ZBDD implementations to
+ *     associate {@code int} keys with object values.
+ *   </li>
+ *   <li>
+ *     {@link de.sayayi.lib.zbdd.internal.IntStack} - Lightweight, growable stack of {@code int} values used by
+ *     the ZBDD implementations.
+ *   </li>
  * </ul>
  */
 package de.sayayi.lib.zbdd.internal;

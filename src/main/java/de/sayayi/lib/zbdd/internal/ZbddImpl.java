@@ -49,24 +49,36 @@ import static java.util.Objects.requireNonNull;
  * thread-safe wrapper.
  * <p>
  * Instances are created through {@link de.sayayi.lib.zbdd.ZbddFactory#create() ZbddFactory.create}.
+ * <p>
+ * Nodes are stored as fixed-size records in a flat {@code int[]} array. Each node number addresses one record:
+ * <pre>
+ * offset  field      meaning
+ *   +0    _VAR       variable number (high bit temporarily marks a node during GC)
+ *   +1    _P0        0-branch node
+ *   +2    _P1        1-branch node
+ *   +3    _NEXT      free-list or hash-chain link
+ *   +4    _CHAIN     head of the hash chain for this bucket
+ *   +5    _REFCOUNT  reference count for an allocated node
+ * </pre>
+ * The record size and offsets below are measured in {@code int}s.
  *
  * @author Jeroen Gremmen
  */
 @SuppressWarnings("DuplicatedCode")
 public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 {
-  private static final int GC_VAR_MARK_MASK = 0x8000_0000;
-  private static final int NODE_RECORD_SIZE = 6;
+  private static final int GC_VAR_MARK_MASK = 0x8000_0000;  // high-bit mark in _VAR during GC
+  private static final int NODE_RECORD_SIZE = 6;            // ints per node record
 
   /** Maximum number of nodes supported by a single ZBDD instance. */
   public static final int MAX_NODES = MAX_VALUE / NODE_RECORD_SIZE;
 
   private static final int _VAR = 0;       // variable number
-  private static final int _P0 = 1;        // 0-branch
-  private static final int _P1 = 2;        // 1-branch
-  private static final int _NEXT = 3;      // next node
-  private static final int _CHAIN = 4;     // start of hash chain
-  private static final int _REFCOUNT = 5;  // reference count (only valid when var != -1)
+  private static final int _P0 = 1;        // 0-branch node
+  private static final int _P1 = 2;        // 1-branch node
+  private static final int _NEXT = 3;      // free-list or hash-chain link
+  private static final int _CHAIN = 4;     // hash-bucket chain head
+  private static final int _REFCOUNT = 5;  // allocated-node reference count
 
   private final @NotNull ZbddCapacityAdvisor capacityAdvisor;
   private final @NotNull Statistics statistics;

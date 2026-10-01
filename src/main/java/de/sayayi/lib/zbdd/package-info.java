@@ -15,36 +15,25 @@
  */
 
 /**
- * Core API for working with Zero-Suppressed Binary Decision Diagrams (ZBDDs).
+ * Core API for creating, querying and manipulating Zero Suppressed Binary Decision Diagrams (ZBDDs).
  * <p>
- * <a href="https://en.wikipedia.org/wiki/Zero-suppressed_decision_diagram">
- *   Zero-Suppressed Binary Decision Diagrams (ZBDDs)
- * </a>, developed by Shin Ichi Minato, provide an efficient way to represent
- * and manipulate large collections of sets or combinations selected from a set
- * of variables. Each ZBDD is a directed acyclic graph where nodes represent
- * variables, edges indicate whether a variable is included (1-edge) or excluded
- * (0-edge) from a combination, and zero-suppression eliminates redundant nodes
- * to maintain a compact representation, particularly beneficial for sparse data.
+ * <a href="https://en.wikipedia.org/wiki/Zero-suppressed_decision_diagram">Zero Suppressed Binary Decision
+ * Diagrams</a>, introduced by Shin Ichi Minato, efficiently represent large families of sets (combinations) over a
+ * set of variables. A ZBDD is a directed acyclic graph whose nodes represent variables and whose 1 and 0 edges
+ * indicate whether a variable is included in or excluded from a combination. Zero suppression removes redundant
+ * nodes, which keeps the representation compact, especially for sparse data.
  * <p>
- * This package provides the fundamental interfaces and classes for creating and
- * manipulating ZBDDs:
+ * Relevant types in this package:
  * <ul>
- *   <li>{@link de.sayayi.lib.zbdd.Zbdd} - The main interface representing a
- *       Zero-Suppressed Binary Decision Diagram with operations such as union,
- *       intersection, difference, and set manipulation.</li>
- *   <li>{@link de.sayayi.lib.zbdd.ZbddFactory} - Factory for creating ZBDD
- *       instances, including support for caching and thread-safe wrappers.</li>
- *   <li>{@link de.sayayi.lib.zbdd.ZbddCapacityAdvisor} - Advisor interface for
- *       optimizing internal capacity allocation.</li>
- *   <li>{@link de.sayayi.lib.zbdd.ZbddLiteralResolver} - Interface for resolving
- *       variable literals to human-readable representations.</li>
- *   <li>{@link de.sayayi.lib.zbdd.ZbddStatistics} - Provides statistical
- *       information about ZBDD structure and operations.</li>
+ *   <li>{@link de.sayayi.lib.zbdd.Zbdd}: the central interface providing variable management, set operations such
+ *     as union, intersection, difference, multiplication, division and modulo, traversal and reference counting
+ *     based memory management. The nested {@link de.sayayi.lib.zbdd.Zbdd.WithCache Zbdd.WithCache} and
+ *     {@link de.sayayi.lib.zbdd.Zbdd.Concurrent Zbdd.Concurrent} interfaces describe cached and thread safe
+ *     variants.</li>
+ *   <li>{@link de.sayayi.lib.zbdd.ZbddFactory}: creates plain, cached and concurrent ZBDD instances.</li>
+ *   <li>{@link de.sayayi.lib.zbdd.ZbddCapacityAdvisor}: controls initial node capacity and growth.</li>
+ *   <li>{@link de.sayayi.lib.zbdd.ZbddLiteralResolver}: converts variables into readable literal names.</li>
+ *   <li>{@link de.sayayi.lib.zbdd.ZbddStatistics}: exposes statistics about node usage and memory.</li>
  * </ul>
- * <p>
- * The library supports advanced algebraic operations including multiplication (to combine two ZBDD sets into a
- * product), division (for quotient calculation), and modulo operations. Additional operations include
- * {@code removeBase} to remove the base element from a set, and {@code atomize} to create a ZBDD containing only
- * single-variable elements from the original.
  */
 package de.sayayi.lib.zbdd;
