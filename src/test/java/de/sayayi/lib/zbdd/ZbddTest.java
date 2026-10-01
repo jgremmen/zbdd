@@ -748,4 +748,26 @@ class ZbddTest
     assertTrue(callbackResult[0]);
     assertTrue(callbackResult[1]);
   }
+
+
+  @Test
+  @DisplayName("Refcount underflow")
+  void refCountUnderflow()
+  {
+    final var zbdd = ZbddFactory.create();
+    final var r = zbdd.cube(zbdd.createVar());
+
+    zbdd.incRef(r);
+    zbdd.decRef(r);
+
+    if (ZbddTest.class.desiredAssertionStatus())
+    {
+      assertThrowsExactly(AssertionError.class, () -> zbdd.decRef(r));
+      assertThrowsExactly(AssertionError.class, () -> zbdd.decRef(zbdd.cube(zbdd.createVar())));
+    }
+
+    // terminal nodes are never ref counted
+    zbdd.decRef(Zbdd.empty());
+    zbdd.decRef(Zbdd.base());
+  }
 }

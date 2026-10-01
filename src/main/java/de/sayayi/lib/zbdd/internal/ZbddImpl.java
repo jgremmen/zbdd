@@ -1287,6 +1287,11 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
         nodes[refCountOffset] = newRef;
       }
+      else
+      {
+        // underflow checked only if assertions are enabled (-ea)
+        assert false : "refcount underflow on zbdd node " + zbdd + " (decRef without matching incRef)";
+      }
     }
 
     return zbdd;
