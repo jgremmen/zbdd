@@ -1407,38 +1407,43 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   @Override
   public boolean visitCubes(int zbdd, @NotNull CubeVisitor visitor)
   {
-    if (zbdd == EMPTY)
-      return true;
-
-    requireNonNull(visitor, "visitor must not be null");
-
-    __incRef(checkZbdd(zbdd, "zbdd"));
-    try {
-      return __visitCubes(new VisitCubesContext(visitor, new IntStack(__getVar(zbdd)), zbdd));
-    } finally {
-      __decRef(zbdd);
-    }
+    return zbdd == EMPTY ||
+        __visitCubes(checkZbdd(zbdd, "zbdd"), requireNonNull(visitor, "visitor must not be null"));
   }
 
 
-  private boolean __visitCubes(@NotNull VisitCubesContext context)
+  protected boolean __visitCubes(int zbdd, @NotNull CubeVisitor visitor)
   {
-    if (context.zbdd == EMPTY)
+    __incRef(zbdd);
+    try {
+      final var vars = new IntStack(__getVar(zbdd));
+      final var workStack = new IntStack(24);
+      int _zbdd;
+
+      for(workStack.pushIfNotEmptyZbdd(zbdd); workStack.isNotEmpty();)
+      {
+        if ((_zbdd = workStack.pop()) == -1)
+          vars.drop();
+        else if (_zbdd != BASE)
+        {
+          final var offset = _zbdd * NODE_RECORD_SIZE;
+
+          // 0-branch
+          workStack.pushIfNotEmptyZbdd(nodes[offset + _P0]);
+
+          // 1-branch
+          workStack.push(-1);
+          workStack.pushIfNotEmptyZbdd(nodes[offset + _P1]);
+          vars.push(nodes[offset + _VAR]);
+        }
+        else if (!visitor.visitCube(vars.getIntArray()))
+          return false;
+      }
+
       return true;
-
-    if (context.zbdd == BASE)
-      return context.visitor.visitCube(context.vars.getIntArray());
-
-    final var offset = context.zbdd * NODE_RECORD_SIZE;
-
-    // walk 1-branch
-    context.vars.push(nodes[offset + _VAR]);
-    if (!__visitCubes(context.withZbdd(nodes[offset + _P1])))
-      return false;
-    context.vars.drop();
-
-    // walk 0-branch
-    return __visitCubes(context.withZbdd(nodes[offset + _P0]));
+    } finally {
+      __decRef(zbdd);
+    }
   }
 
 
@@ -1568,35 +1573,6 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     }
 
     return cubeZbdds.getIntArray();
-  }
-
-
-
-
-  /**
-   * Context object used during cube visitation to track the current state.
-   */
-  private static final class VisitCubesContext
-  {
-    private final CubeVisitor visitor;
-    private final IntStack vars;
-    private int zbdd;
-
-
-    private VisitCubesContext(@NotNull CubeVisitor visitor, @NotNull IntStack vars, int zbdd)
-    {
-      this.visitor = visitor;
-      this.vars = vars;
-      this.zbdd = zbdd;
-    }
-
-
-    @Contract(value = "_ -> this", mutates = "this")
-    private @NotNull VisitCubesContext withZbdd(int zbdd)
-    {
-      this.zbdd = zbdd;
-      return this;
-    }
   }
 
 
