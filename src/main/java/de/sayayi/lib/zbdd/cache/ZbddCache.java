@@ -27,6 +27,12 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * Implementations must ensure that the {@link #clear()} method does not throw any exceptions, as it may be called
  * during garbage collection or ZBDD reset.
+ * <p>
+ * Implementations are not required to be thread-safe. A cache is only safe for concurrent use when it is accessed
+ * exclusively through a {@link de.sayayi.lib.zbdd.Zbdd.Concurrent Zbdd.Concurrent} wrapper, which serializes all
+ * cache reads and writes behind its lock. Sharing a {@code ZbddCache} instance across threads outside of such a
+ * wrapper (e.g. via a directly constructed {@link de.sayayi.lib.zbdd.Zbdd.WithCache Zbdd.WithCache}) is not
+ * thread-safe.
  *
  * @author Jeroen Gremmen
  * @since 0.1.3

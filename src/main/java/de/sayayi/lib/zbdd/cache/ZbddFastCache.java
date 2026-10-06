@@ -33,6 +33,10 @@ import static java.util.Locale.US;
  * The cache uses a slot-based design where each slot holds a short chain of entries. When a slot's chain is full,
  * the least recently used entry is evicted. The cache size is specified at construction time and cannot be changed
  * afterward.
+ * <p>
+ * This implementation is not thread-safe: its internal counters and arrays are mutated without synchronization.
+ * It is safe to use only when accessed exclusively through a {@link de.sayayi.lib.zbdd.Zbdd.Concurrent
+ * Zbdd.Concurrent} wrapper, or otherwise confined to a single thread.
  *
  * @author Jeroen Gremmen
  * @since 0.1.3

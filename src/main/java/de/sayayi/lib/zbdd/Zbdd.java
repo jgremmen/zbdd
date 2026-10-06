@@ -725,6 +725,8 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * Returns an array of zbdd nodes, where each zbdd node represents a single cube in the given {@code zbdd}.
    * <p>
    * For an empty zbdd, the returned array is empty.
+   * <p>
+   * None of the returned zbdd nodes have an increased reference count.
    *
    * @param zbdd  zbdd node
    *
@@ -877,6 +879,11 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
      * <p>
      * Note: the {@code operation} function should do its work as fast as possible. Essentially, it should perform
      * zbdd operations only and then exit.
+     * <p>
+     * Warning: the {@code zbdd} instance passed to {@code operation} is the raw, unwrapped {@link Zbdd} reference
+     * and is not synchronized on its own. Do not retain this reference (e.g. by storing it in a field or capturing
+     * it in another lambda) or invoke it after {@code operation} returns, as doing so bypasses the lock and is not
+     * thread-safe.
      *
      * @param operation  operation function, performing zbdd operations that are required to be atomic
      *
@@ -896,6 +903,11 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
      * <p>
      * Note: the {@code operation} function should do its work as fast as possible. Essentially, it should perform
      * zbdd operations only and then exit.
+     * <p>
+     * Warning: the {@code zbdd} instance passed to {@code operation} is the raw, unwrapped {@link Zbdd} reference
+     * and is not synchronized on its own. Do not retain this reference (e.g. by storing it in a field or capturing
+     * it in another lambda) or invoke it after {@code operation} returns, as doing so bypasses the lock and is not
+     * thread-safe.
      *
      * @param operation  operation function, performing zbdd operations that are required to be atomic
      */

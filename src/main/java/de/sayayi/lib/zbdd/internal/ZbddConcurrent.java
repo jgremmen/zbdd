@@ -33,6 +33,11 @@ import java.util.function.Function;
  * Thread-safe wrapper around a {@link Zbdd} instance. All operations are synchronized using a {@link ReentrantLock}
  * to ensure safe concurrent access from multiple threads.
  * <p>
+ * Because the lock is reentrant, a callback invoked synchronously during a locked operation (e.g.
+ * {@link de.sayayi.lib.zbdd.Zbdd.ZbddCallback#beforeGc() ZbddCallback.beforeGc()} or a user-supplied
+ * {@link de.sayayi.lib.zbdd.Zbdd.CubeVisitor CubeVisitor}/{@link de.sayayi.lib.zbdd.Zbdd.ZbddVisitor ZbddVisitor})
+ * can safely re-enter other {@code Zbdd} methods on the same thread without deadlocking.
+ * <p>
  * Instances are created through {@link de.sayayi.lib.zbdd.ZbddFactory#asConcurrent(Zbdd) ZbddFactory.asConcurrent}.
  *
  * @author Jeroen Gremmen
