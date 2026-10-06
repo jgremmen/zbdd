@@ -970,6 +970,8 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
      * <p>
      * If the reference count equals {@code -1}, the node has been newly created. If the reference count equals
      * {@code 0}, the node is dead.
+     * <p>
+     * The base and empty (terminal) nodes always return a reference count of {@code 1}.
      *
      * @return  reference count of the zbdd node
      *

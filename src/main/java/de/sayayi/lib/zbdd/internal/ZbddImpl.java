@@ -130,6 +130,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     nodes[offset + _VAR] = -1;
     nodes[offset + _P0] = zbdd;
     nodes[offset + _P1] = zbdd;
+    nodes[offset + _REFCOUNT] = 1;
   }
 
 
