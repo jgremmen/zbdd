@@ -323,26 +323,32 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
    * @since 0.3.1
    */
   @Contract(pure = true)
-  protected final boolean __hasCubeWithVar(int zbdd, int var)
+  protected final boolean __hasCubeWithVar(final int zbdd, final int var)
   {
-    final int zbddVar = __getVar(zbdd);
-
-    if (var <= zbddVar)
+    if (zbdd >= 2)
     {
-      final var stack = new IntStack(zbddVar);
+      final var zbddVar = __getVar(zbdd);
+      if (zbddVar == var)
+        return true;
 
-      for(stack.pushIfNotLeafNode(zbdd); stack.isNotEmpty();)
+      if (zbddVar > var)
       {
-        final var offset = stack.pop() * NODE_RECORD_SIZE;
-        final var currentVar = nodes[offset + _VAR];
+        final var stack = new IntStack((zbddVar - var) * 2);
+        stack.push(zbdd);
 
-        if (currentVar > var)
-        {
-          stack.pushIfNotLeafNode(nodes[offset + _P0]);
-          stack.pushIfNotLeafNode(nodes[offset + _P1]);
-        }
-        else if (currentVar == var)
-          return true;
+        do {
+          final var offset = stack.pop() * NODE_RECORD_SIZE;
+          final var currentVar = nodes[offset + _VAR];
+
+          if (currentVar == var)
+            return true;
+
+          if (currentVar > var)
+          {
+            stack.pushIfNotLeafNode(nodes[offset + _P0]);
+            stack.pushIfNotLeafNode(nodes[offset + _P1]);
+          }
+        } while(stack.isNotEmpty());
       }
     }
 
@@ -483,19 +489,22 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     if (zbdd < 2)
       return zbdd;
 
-    final var stack = new IntStack(nodes[zbdd * NODE_RECORD_SIZE + _VAR] + 1);
+    final var stack = new IntStack(__getVar(zbdd) + 1);
     var count = 0;
 
-    for(stack.push(zbdd); stack.isNotEmpty();)
+    stack.push(zbdd);
+
+    do {
       if ((zbdd = stack.pop()) == BASE)
         count++;
-      else if (zbdd > 1)
+      else if (zbdd >= 2)
       {
         final var offset = zbdd * NODE_RECORD_SIZE;
 
         stack.pushIfNotEmptyZbdd(nodes[offset + _P0]);
         stack.pushIfNotEmptyZbdd(nodes[offset + _P1]);
       }
+    } while(stack.isNotEmpty());
 
     return count;
   }
@@ -644,6 +653,8 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   {
     if (p == EMPTY || p == q)
       return EMPTY;
+    if (q == BASE)
+      return __removeBase(p);
     if (q == EMPTY)
       return p;
 
@@ -838,14 +849,15 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     if (zbdd < 2)
       return EMPTY;
 
-    final int p0_atomized = __atomize(__getP0(__incRef(zbdd)));  // lock zbdd, p0_atomized
+    final var offset = __incRef(zbdd) * NODE_RECORD_SIZE;
+    final var p0_atomized = __atomize(nodes[offset + _P0]);
     __incRef(p0_atomized);
-    final int p1_atomized = __atomize(__getP1(zbdd));
+    final var p1_atomized = __atomize(nodes[offset + _P1]);
 
-    final int p0 = __atomize_union(__decRef(p0_atomized), p1_atomized);  // release p0_atomized
-    final int r = __getNode(__getVar(zbdd), p0, BASE);
+    final var p0 = __atomize_union(__decRef(p0_atomized), p1_atomized);
+    final var r = __getNode(nodes[offset + _VAR], p0, BASE);
 
-    __decRef(zbdd);  // release zbdd
+    __decRef(zbdd);
 
     return r;
   }
@@ -903,8 +915,9 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
     __incRef(zbdd);
 
-    final int p0 = __removeBase(__getP0(zbdd));
-    final int r = __getNode(__getVar(zbdd), p0, __getP1(zbdd));
+    final var offset = zbdd * NODE_RECORD_SIZE;
+    final var p0 = __removeBase(nodes[offset + _P0]);
+    final var r = __getNode(nodes[offset + _VAR], p0, nodes[offset + _P1]);
 
     __decRef(zbdd);
 
