@@ -4,7 +4,10 @@ plugins {
 }
 
 
-description = 'Java Implementation of Shin Ichi Minato\'s Zero-Suppressed BDDs'
+description =
+    'A Java implementation of Shin-ichi Minato\'s Zero-Suppressed Binary Decision Diagrams (ZBDDs), providing a ' +
+    'compact, efficient data structure for representing and manipulating families of sets, with support for core set ' +
+    'operations, algebraic operations, reference-counted garbage collection and optional thread-safe, cached access.'
 group = 'de.sayayi.lib'
 version = libs.versions.zbdd.get()
 
