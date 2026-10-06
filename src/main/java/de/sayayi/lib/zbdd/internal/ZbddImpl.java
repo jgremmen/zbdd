@@ -1342,7 +1342,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     if (zbdd < 0 || zbdd >= nodesCapacity)
       throw new ZbddOutOfRangeException(zbdd, nodesCapacity - 1, param + " must be in range 0.." + (nodesCapacity - 1));
 
-    if (zbdd >= 2 && nodes[zbdd * NODE_RECORD_SIZE + _VAR] == -1)
+    if (zbdd >= 2 && nodes[zbdd * NODE_RECORD_SIZE + _VAR] <= 0)
       throw new InvalidZbddException(zbdd, "invalid " + param + " node " + zbdd);
 
     return zbdd;
