@@ -230,7 +230,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   {
     requireNonNull(varObject);
 
-    final int var = createVar();
+    final var var = createVar();
     varObjectMap.put(var, varObject);
 
     return var;
@@ -288,8 +288,8 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   @Contract(mutates = "this")
   public int cube(int @NotNull ... cubeVars)
   {
-    final int n = cubeVars.length;
-    int r = BASE;
+    final var n = cubeVars.length;
+    var r = BASE;
 
     if (n > 0)
     {
@@ -374,10 +374,10 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
     __incRef(zbdd);
 
-    final int p0 = __subset0(__getP0(zbdd), var);
+    final var p0 = __subset0(__getP0(zbdd), var);
     __incRef(p0);
-    final int p1 = __subset0(__getP1(zbdd), var);
-    final int r = __getNode(top, __decRef(p0), p1);
+    final var p1 = __subset0(__getP1(zbdd), var);
+    final var r = __getNode(top, __decRef(p0), p1);
 
     __decRef(zbdd);
 
@@ -399,7 +399,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   @Contract(mutates = "this")
   protected int __subset1(int zbdd, int var)
   {
-    final int top = __getVar(zbdd);
+    final var top = __getVar(zbdd);
 
     if (top < var)
       return EMPTY;
@@ -409,10 +409,10 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
     __incRef(zbdd);
 
-    final int p0 = __subset1(__getP0(zbdd), var);
+    final var p0 = __subset1(__getP0(zbdd), var);
     __incRef(p0);
-    final int p1 = __subset1(__getP1(zbdd), var);
-    final int r = __getNode(top, __decRef(p0), p1);
+    final var p1 = __subset1(__getP1(zbdd), var);
+    final var r = __getNode(top, __decRef(p0), p1);
 
     __decRef(zbdd);
 
@@ -432,9 +432,9 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
    * Internal implementation of {@link #change(int, int)} without parameter validation.
    */
   @Contract(mutates = "this")
-  protected int __change(int zbdd, int var)
+  protected int __change(final int zbdd, final int var)
   {
-    final int top = __getVar(zbdd);
+    final var top = __getVar(zbdd);
 
     if (top < var)
       return __getNode(var, EMPTY, zbdd);
@@ -447,9 +447,9 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
       r = __getNode(var, __getP1(zbdd), __getP0(zbdd));
     else
     {
-      final int p0 = __change(__getP0(zbdd), var);
+      final var p0 = __change(__getP0(zbdd), var);
       __incRef(p0);
-      final int p1 = __change(__getP1(zbdd), var);
+      final var p1 = __change(__getP1(zbdd), var);
 
       r = __getNode(top, __decRef(p0), p1);
     }
@@ -544,13 +544,13 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     if (p == EMPTY)
       return q;
 
-    int p_var = __getVar(p);
-    int q_var = __getVar(q);
+    var p_var = __getVar(p);
+    var q_var = __getVar(q);
 
     if (p_var > q_var)
     {
       // swap p <-> q, p_var <-> q_var
-      int tmp = p; p = q; q = tmp;
+      var tmp = p; p = q; q = tmp;
       tmp = p_var; p_var = q_var; q_var = tmp;
     }
 
@@ -561,16 +561,16 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
     if (p_var < q_var)
     {
-      final int p0 = __union(p, __getP0(q));
+      final var p0 = __union(p, __getP0(q));
 
       r = __getNode(q_var, p0, __getP1(q));
     }
     else
     {
       // p_var = q_var
-      final int p0 = __union(__getP0(p), __getP0(q));
+      final var p0 = __union(__getP0(p), __getP0(q));
       __incRef(p0);
-      final int p1 = __union(__getP1(p), __getP1(q));
+      final var p1 = __union(__getP1(p), __getP1(q));
 
       r = __getNode(p_var, __decRef(p0), p1);
     }
@@ -601,8 +601,8 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     if (p == q)
       return p;
 
-    final int p_var = __getVar(p);
-    final int q_var = __getVar(q);
+    final var p_var = __getVar(p);
+    final var q_var = __getVar(q);
     final int r;
 
     __incRef(p);
@@ -614,9 +614,9 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
       r = __intersect(p, __getP0(q));
     else
     {
-      final int p0 = __intersect(__getP0(p), __getP0(q));
+      final var p0 = __intersect(__getP0(p), __getP0(q));
       __incRef(p0);
-      final int p1 = __intersect(__getP1(p), __getP1(q));
+      final var p1 = __intersect(__getP1(p), __getP1(q));
 
       r = __getNode(p_var, __decRef(p0), p1);
     }
@@ -647,8 +647,8 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     if (q == EMPTY)
       return p;
 
-    final int p_var = __getVar(p);
-    final int q_var = __getVar(q);
+    final var p_var = __getVar(p);
+    final var q_var = __getVar(q);
     final int r;
 
     __incRef(p);
@@ -660,9 +660,9 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
       r = __getNode(p_var, __difference(__getP0(p), q), __getP1(p));
     else
     {
-      final int p0 = __difference(__getP0(p), __getP0(q));
+      final var p0 = __difference(__getP0(p), __getP0(q));
       __incRef(p0);
-      final int p1 = __difference(__getP1(p), __getP1(q));
+      final var p1 = __difference(__getP1(p), __getP1(q));
 
       r = __getNode(p_var, __decRef(p0), p1);
     }
@@ -695,13 +695,13 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     if (q == BASE)
       return p;
 
-    int p_var = __getVar(p);
-    int q_var = __getVar(q);
+    var p_var = __getVar(p);
+    var q_var = __getVar(q);
 
     if (p_var > q_var)
     {
       // swap p <-> q, p_var <-> q_var
-      int tmp = p; p = q; q = tmp;
+      var tmp = p; p = q; q = tmp;
       p_var = q_var;
     }
 
@@ -709,19 +709,19 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     __incRef(q);
 
     // factor P = p0 + v * p1
-    final int p0 = __incRef(__subset0(p, p_var));
-    final int p1 = __incRef(__subset1(p, p_var));
+    final var p0 = __incRef(__subset0(p, p_var));
+    final var p1 = __incRef(__subset1(p, p_var));
 
     // factor Q = q0 + v * q1
-    final int q0 = __incRef(__subset0(q, p_var));
-    final int q1 = __incRef(__subset1(q, p_var));
+    final var q0 = __incRef(__subset0(q, p_var));
+    final var q1 = __incRef(__subset1(q, p_var));
 
     // r = (p0 + v * p1) * (q0 + v * q1) = p0q0 + v * (p0q1 + p1q0 + p1q1)
-    final int p0q0 = __incRef(__multiply(p0, q0));
-    final int p0q1 = __incRef(__multiply(p0, q1));
-    final int p1q0 = __incRef(__multiply(p1, q0));
-    final int p1q1 = __incRef(__multiply(p1, q1));
-    final int r = __union(p0q0, __change(__union(__union(p0q1, p1q0), p1q1), p_var));
+    final var p0q0 = __incRef(__multiply(p0, q0));
+    final var p0q1 = __incRef(__multiply(p0, q1));
+    final var p1q0 = __incRef(__multiply(p1, q0));
+    final var p1q1 = __incRef(__multiply(p1, q1));
+    final var r = __union(p0q0, __change(__union(__union(p0q1, p1q0), p1q1), p_var));
 
     __decRef(p1q1);
     __decRef(p1q0);
@@ -762,24 +762,24 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     __incRef(p);
     __incRef(q);
 
-    final int v = __getVar(q);
+    final var v = __getVar(q);
 
     // factor P = p0 + v * p1
-    final int p0 = __incRef(__subset0(p, v));
-    final int p1 = __incRef(__subset1(p, v));
+    final var p0 = __incRef(__subset0(p, v));
+    final var p1 = __incRef(__subset1(p, v));
 
     // factor Q = q0 + v * q1
-    final int q0 = __incRef(__subset0(q, v));
-    final int q1 = __subset1(q, v);
+    final var q0 = __incRef(__subset0(q, v));
+    final var q1 = __subset1(q, v);
 
-    final int r1 = __divide(__decRef(p1), q1);
+    final var r1 = __divide(__decRef(p1), q1);
     final int r;
 
     if (r1 != EMPTY && q0 != EMPTY)
     {
       __incRef(r1);
 
-      final int r0 = __divide(p0, q0);
+      final var r0 = __divide(p0, q0);
 
       r = __intersect(__decRef(r1), r0);
     }
@@ -812,7 +812,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     __incRef(p);
     __incRef(q);
 
-    final int r = __difference(p, __multiply(q, __divide(p, q)));
+    final var r = __difference(p, __multiply(q, __divide(p, q)));
 
     __decRef(q);
     __decRef(p);
@@ -960,12 +960,12 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
       return p0;
     }
 
-    int hash = hash(var, p0, p1);
+    var hash = hash(var, p0, p1);
 
     // find node in the hash chain...
     for(int r = nodes[hash * NODE_RECORD_SIZE + _CHAIN]; r != 0;)
     {
-      final int offset = r * NODE_RECORD_SIZE;
+      final var offset = r * NODE_RECORD_SIZE;
 
       if (nodes[offset + _VAR] == var && nodes[offset + _P0] == p0 && nodes[offset + _P1] == p1)
       {
@@ -990,12 +990,12 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
       if (nodesFree == 0)
         throw new ZbddException("nodes capacity exhausted");
 
-      // may have changed due to nodes capacity increase
+      // hash may have changed due to nodes capacity increase
       hash = hash(var, p0, p1);
     }
 
-    final int r = nextFreeNode;
-    final int offset = r * NODE_RECORD_SIZE;
+    final var r = nextFreeNode;
+    final var offset = r * NODE_RECORD_SIZE;
     nextFreeNode = nodes[offset + _NEXT];
     nodesFree--;
 
@@ -1097,12 +1097,12 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   {
     callbacks.forEach(ZbddCallback::beforeGc);
 
-    final int oldNodesFree = nodesFree;
+    final var oldNodesFree = nodesFree;
 
     gc_markReferencedNodes();
     gc_freeUnreferencedNodes();
 
-    final int gcFreedNodesCount = nodesFree - oldNodesFree;
+    final var gcFreedNodesCount = nodesFree - oldNodesFree;
 
     statistics.gcFreedNodes += gcFreedNodesCount;
     statistics.gcCount++;
@@ -1146,7 +1146,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
     for(int zbdd = nodesCapacity - 1, offset = zbdd * NODE_RECORD_SIZE; zbdd >= 2; zbdd--, offset -= NODE_RECORD_SIZE)
     {
-      final int markedVar = nodes[offset + _VAR];
+      final var markedVar = nodes[offset + _VAR];
 
       if (markedVar != -1 && (markedVar & GC_VAR_MARK_MASK) != 0)
       {
@@ -1178,7 +1178,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
         return;
     }
 
-    final int oldNodesCapacity = nodesCapacity;
+    final var oldNodesCapacity = nodesCapacity;
 
     statistics.capacityIncreaseCount++;
 
@@ -1217,7 +1217,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
   private void prependHashChain(int zbdd, int hash)
   {
-    final int hashChain = hash * NODE_RECORD_SIZE + _CHAIN;
+    final var hashChain = hash * NODE_RECORD_SIZE + _CHAIN;
 
     nodes[zbdd * NODE_RECORD_SIZE + _NEXT] = nodes[hashChain];
     nodes[hashChain] = zbdd;
@@ -1242,8 +1242,8 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
     if (zbdd >= 2 && nodes[(offset = zbdd * NODE_RECORD_SIZE) + _VAR] != -1)
     {
-      final int refCountOffset = offset + _REFCOUNT;
-      final int ref = nodes[refCountOffset];
+      final var refCountOffset = offset + _REFCOUNT;
+      final var ref = nodes[refCountOffset];
 
       if (ref == -1)  // new node
         nodes[refCountOffset] = 1;
@@ -1279,8 +1279,8 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
     if (zbdd >= 2 && nodes[(offset = zbdd * NODE_RECORD_SIZE) + _VAR] != -1)
     {
-      final int refCountOffset = offset + _REFCOUNT;
-      final int newRef = nodes[refCountOffset] - 1;
+      final var refCountOffset = offset + _REFCOUNT;
+      final var newRef = nodes[refCountOffset] - 1;
 
       if (newRef >= 0)
       {
@@ -1519,8 +1519,8 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
     for(int low = 2, high = resultCount - 1; low <= high;)
     {
-      final int mid = (low + high) >>> 1;
-      final int midZbdd = sortedResults[mid];
+      final var mid = (low + high) >>> 1;
+      final var midZbdd = sortedResults[mid];
 
       if (midZbdd < zbdd)
         low = mid + 1;
@@ -1537,12 +1537,12 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   @Contract(mutates = "param1")
   private void calculateNodeDependency_addZbdd(int[] sortedResults, int resultCount, int zbdd)
   {
-    int low = 2;
+    var low = 2;
 
-    for(int high = resultCount - 1; low <= high;)
+    for(var high = resultCount - 1; low <= high;)
     {
-      final int mid = (low + high) >>> 1;
-      final int midZbdd = sortedResults[mid];
+      final var mid = (low + high) >>> 1;
+      final var midZbdd = sortedResults[mid];
 
       if (midZbdd < zbdd)
         low = mid + 1;
