@@ -1770,14 +1770,15 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
           s.append(':').append(p1literal);
       }
 
-      final var refCount = getReferenceCount();
-      s.append(",refCount=");
-      if (refCount == -1)
-        s.append("new");
-      else if (refCount == 0)
-        s.append("dead");
-      else
-        s.append(refCount);
+      if (zbdd >= 2)
+      {
+        final var refCount = getReferenceCount();
+        s.append(",refCount=").append(switch(refCount) {
+          case -1 -> "new";
+          case 0 -> "dead";
+          default -> Integer.toString(refCount);
+        });
+      }
 
       return s.append(')').toString();
     }
