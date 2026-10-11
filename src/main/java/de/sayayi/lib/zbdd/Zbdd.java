@@ -311,7 +311,7 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * @return  number of combinations in the zbdd set
    */
   @Contract(pure = true)
-  int count(int zbdd);
+  long count(int zbdd);
 
 
   /**

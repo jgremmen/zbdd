@@ -269,7 +269,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
-  public int count(int zbdd)
+  public long count(int zbdd)
   {
     lock.lock();
     try {

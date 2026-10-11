@@ -476,7 +476,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
    */
   @Override
   @Contract(pure = true)
-  public int count(int zbdd) {
+  public long count(int zbdd) {
     return __count(checkZbdd(zbdd, "zbdd"));
   }
 
@@ -485,13 +485,13 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
    * Internal implementation of {@link #count(int)} without parameter validation.
    */
   @Contract(pure = true)
-  protected int __count(int zbdd)
+  protected long __count(int zbdd)
   {
     if (zbdd < 2)
       return zbdd;
 
     final var stack = new IntStack(__getVar(zbdd) + 1);
-    var count = 0;
+    var count = 0L;
 
     stack.push(zbdd);
 
@@ -520,8 +520,12 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     if (n == 0)
       throw new IllegalArgumentException("at least one ZBDD node must be provided");
 
+    // check validity first before incrementing reference counts
     for(var i = 0; i < n; i++)
-      __incRef(checkZbdd(p[i], "p[" + i + ']'));
+      checkZbdd(p[i], "p[" + i + ']');
+
+    for(var pn: p)
+      __incRef(pn);
 
     var r = p[0];
 

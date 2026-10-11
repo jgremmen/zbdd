@@ -24,6 +24,7 @@ import org.jetbrains.annotations.NotNull;
 
 import static de.sayayi.lib.zbdd.cache.ZbddCache.Operation1.*;
 import static de.sayayi.lib.zbdd.cache.ZbddCache.Operation2.*;
+import static java.lang.Integer.MAX_VALUE;
 import static java.lang.Integer.MIN_VALUE;
 import static java.util.Objects.requireNonNull;
 
@@ -170,14 +171,14 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
    */
   @Override
   @Contract(pure = true)
-  protected int __count(int zbdd)
+  protected long __count(int zbdd)
   {
     if (zbdd < 2)
       return zbdd;
 
-    int r = zbddCache.getResult(COUNT, zbdd);
-    if (r == MIN_VALUE)
-      zbddCache.putResult(COUNT, zbdd, r = super.__count(zbdd));
+    var r = (long)zbddCache.getResult(COUNT, zbdd);
+    if (r == MIN_VALUE && (r = super.__count(zbdd)) <= MAX_VALUE)
+      zbddCache.putResult(COUNT, zbdd, (int)r);
 
     return r;
   }

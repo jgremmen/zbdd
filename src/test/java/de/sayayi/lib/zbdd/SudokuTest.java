@@ -204,7 +204,7 @@ class SudokuTest
         zbdd.decRef(solution0);
       }
 
-    assertEquals(1, zbdd.count(solution));
+    assertEquals(1L, zbdd.count(solution));
 
     System.out.println("Solution for '" + level + "' Sudoko:");
 
