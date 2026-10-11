@@ -38,7 +38,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * @since 0.5.0
  */
 @DisplayName("Solve Sudoku")
-public class SudokuTest
+@SuppressWarnings("JavaPrintToLogpoint")
+class SudokuTest
 {
   private Zbdd zbdd;
   private Map<GridCellValue,Integer> gridToVar;
@@ -50,9 +51,9 @@ public class SudokuTest
     zbdd = createCached(DefaultCapacityAdvisor.INSTANCE, new ZbddFastCache(65536));
     gridToVar = new HashMap<>();
 
-    for(int row = 1; row <= 9; row++)
-      for(int col = 1; col <= 9; col++)
-        for(int value = 1; value <= 9; value++)
+    for(var row = 1; row <= 9; row++)
+      for(var col = 1; col <= 9; col++)
+        for(var value = 1; value <= 9; value++)
         {
           final var cellValue = new GridCellValue(col, row, value);
           gridToVar.put(cellValue, zbdd.createVar(cellValue));
@@ -185,16 +186,16 @@ public class SudokuTest
   @MethodSource("sudokuParameters")
   void sudoku(@SuppressWarnings("unused") String level, int[] grid)
   {
-    int solution = Zbdd.base();
+    var solution = Zbdd.base();
 
-    for(int row = 1; row <= 9; row++)
-      for(int col = 1; col <= 9; col++)
+    for(var row = 1; row <= 9; row++)
+      for(var col = 1; col <= 9; col++)
       {
-        final int boxCol1 = 3 * ((col - 1) / 3) + 1;
-        final int boxRow1 = 3 * ((row - 1) / 3) + 1;
+        final var boxCol1 = 3 * ((col - 1) / 3) + 1;
+        final var boxRow1 = 3 * ((row - 1) / 3) + 1;
 
-        final int solution0 = zbdd.incRef(solution);
-        final int value = grid[(row - 1) * 9 + col - 1];
+        final var solution0 = zbdd.incRef(solution);
+        final var value = grid[(row - 1) * 9 + col - 1];
 
         solution = value > 0
             ? getIncrementalSolutionForValue(row, col, boxRow1, boxCol1, value, solution)
@@ -216,14 +217,14 @@ public class SudokuTest
         sudoku[cell.row - 1][cell.col - 1] = (char)('0' + cell.value);
       }
 
-      for(int y = 0; y < 9; y++)
+      for(var y = 0; y < 9; y++)
       {
         if (y % 3 == 0)
           System.out.println();
 
         System.out.print(" ");
 
-        for(int x = 0; x < 9; x++)
+        for(var x = 0; x < 9; x++)
         {
           if (x % 3 == 0)
             System.out.print(" ");
@@ -246,16 +247,16 @@ public class SudokuTest
   private int getIncrementalSolutionForValue(int row, int col, int boxRow1, int boxCol1, int value, int prunedSolution)
   {
     // same row
-    for(int c = 1; c < col; c++)
+    for(var c = 1; c < col; c++)
       prunedSolution = zbdd.subset0(prunedSolution, var(c, row, value));
 
     // same column
-    for(int r = 1; r < row; r++)
+    for(var r = 1; r < row; r++)
       prunedSolution = zbdd.subset0(prunedSolution, var(col, r, value));
 
     // same box
-    for(int r = boxRow1; r <= row; r++)
-      for(int c = boxCol1; c < col || (r < row && c < boxCol1 + 3); c++)
+    for(var r = boxRow1; r <= row; r++)
+      for(var c = boxCol1; c < col || (r < row && c < boxCol1 + 3); c++)
         prunedSolution = zbdd.subset0(prunedSolution, var(c, r, value));
 
     return zbdd.change(prunedSolution, var(col, row, value));
@@ -264,12 +265,12 @@ public class SudokuTest
 
   private int getIncrementalSolution(int row, int col, int boxRow1, int boxCol1, int[] grid, int solution)
   {
-    int tmpSolution = Zbdd.empty();
+    var tmpSolution = Zbdd.empty();
 
-    for(int value = 1; value <= 9; value++)
+    for(var value = 1; value <= 9; value++)
       if (!isExcludedValue(row, col, boxRow1, boxCol1, grid, value))
       {
-        final int tmpSolution0 = zbdd.incRef(tmpSolution);
+        final var tmpSolution0 = zbdd.incRef(tmpSolution);
 
         tmpSolution = zbdd.union(tmpSolution,
             getIncrementalSolutionForValue(row, col, boxRow1, boxCol1, value, solution));
@@ -285,18 +286,18 @@ public class SudokuTest
   private boolean isExcludedValue(int row, int col, int boxRow1, int boxCol1, int[] grid, int value)
   {
     // check current 3x3 box
-    for(int r = boxRow1; r < boxRow1 + 3; r++)
-      for(int c = boxCol1; c < boxCol1 + 3; c++)
+    for(var r = boxRow1; r < boxRow1 + 3; r++)
+      for(var c = boxCol1; c < boxCol1 + 3; c++)
         if (gridValue(r, c, grid) == value)
           return true;
 
     // check same row beyond 3x3 box
-    for(int c = boxCol1 + 3; c <= 9; c++)
+    for(var c = boxCol1 + 3; c <= 9; c++)
       if (gridValue(row, c, grid) == value)
         return true;
 
     // check same column beyond 3x3 box
-    for(int r = boxRow1 + 3; r <= 9; r++)
+    for(var r = boxRow1 + 3; r <= 9; r++)
       if (gridValue(r, col, grid) == value)
         return true;
 

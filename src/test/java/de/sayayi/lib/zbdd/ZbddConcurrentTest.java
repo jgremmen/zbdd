@@ -16,7 +16,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * @since 0.5.0
  */
 @DisplayName("Zbdd concurrency")
-public class ZbddConcurrentTest
+@SuppressWarnings("JavaPrintToLogpoint")
+class ZbddConcurrentTest
 {
   @Test
   @DisplayName("No concurrency zbdd")

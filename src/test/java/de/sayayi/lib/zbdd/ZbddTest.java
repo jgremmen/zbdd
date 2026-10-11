@@ -38,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 @DisplayName("Basic zbdd operations")
 @TestMethodOrder(MethodOrderer.DisplayName.class)
+@SuppressWarnings("JavaPrintToLogpoint")
 class ZbddTest
 {
   @Test

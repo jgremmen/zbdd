@@ -48,6 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * @since 0.2.2
  */
 @DisplayName("Solve n-Queens problem")
+@SuppressWarnings("JavaPrintToLogpoint")
 class QueensTest
 {
   private static Stream<Arguments> queensParameters()
@@ -112,7 +113,7 @@ class QueensTest
       solution = tmp;
     }
 
-    int solutions = zbdd.count(zbdd.incRef(solution));
+    var solutions = zbdd.count(zbdd.incRef(solution));
     assertEquals(solutionsExpected, solutions);
 
     zbdd.gc();
