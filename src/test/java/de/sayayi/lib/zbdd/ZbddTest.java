@@ -62,6 +62,22 @@ class ZbddTest
 
 
   @Test
+  @DisplayName("Memory usage includes node and variable-map arrays")
+  void memoryUsage()
+  {
+    final var zbdd = ZbddFactory.create();
+    final var statistics = zbdd.getStatistics();
+
+    assertEquals(statistics.getNodesCapacity() * 6L * Integer.BYTES + 16L * 8L, statistics.getMemoryUsage());
+
+    for(int i = 0; i < 12; i++)
+      zbdd.createVar(new Object());
+
+    assertEquals(statistics.getNodesCapacity() * 6L * Integer.BYTES + 32L * 8L, statistics.getMemoryUsage());
+  }
+
+
+  @Test
   @DisplayName("Operation 'change'")
   void change()
   {

@@ -1672,7 +1672,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
     @Override
     public long getMemoryUsage() {
-      return nodes.length * 4L;
+      return nodes.length * (long)Integer.BYTES + varObjectMap.getMemoryUsage();
     }
 
 

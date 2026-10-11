@@ -34,6 +34,8 @@ import static java.lang.Integer.bitCount;
  */
 final class IntObjectMap
 {
+  private static final int ESTIMATED_REFERENCE_SIZE_BYTES = 4;
+
   private static final int MAX_CAPACITY = 1 << 30;
   private static final double LOAD_FACTOR = 0.7;
 
@@ -151,6 +153,16 @@ final class IntObjectMap
   @Contract(pure = true)
   Object get(int key) {
     return values[indexOf(key)];
+  }
+
+
+  /**
+   * Estimates the payload size of this map's backing arrays, assuming 4-byte object references.
+   *
+   * @return  estimated backing-array payload size in bytes
+   */
+  long getMemoryUsage() {
+    return keys.length * (long)Integer.BYTES + values.length * (long)ESTIMATED_REFERENCE_SIZE_BYTES;
   }
 
 

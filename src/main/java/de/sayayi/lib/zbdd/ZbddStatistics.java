@@ -157,10 +157,13 @@ public interface ZbddStatistics
 
 
   /**
-   * Returns an estimation of the total number of bytes used by the ZBDD, including internal data structures
-   * and node storage.
+   * Returns an estimate of the backing-array payload used for node storage and the variable-object map. The
+   * calculation includes every element slot allocated in the node {@code int[]} and the map's {@code int[]} keys
+   * and {@code Object[]} values (estimated at 4 bytes per reference, as with compressed references). It excludes
+   * array headers and alignment, other object and collection overhead, the objects referenced by the map, and any
+   * assigned operation cache. Actual heap usage depends on the JVM.
    *
-   * @return  estimated memory usage in bytes, always &gt; 0
+   * @return  estimated backing-array payload size in bytes, always &gt; 0
    */
   @Contract(pure = true)
   long getMemoryUsage();
