@@ -25,6 +25,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -47,7 +48,8 @@ import java.util.function.Function;
 public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcurrent.WithCache
 {
   protected final Zbdd zbdd;
-  protected final Lock lock;
+  protected final Lock readLock;
+  protected final Lock writeLock;
 
   private final ZbddStatistics statistics;
 
@@ -61,7 +63,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   {
     this.zbdd = zbdd;
 
-    lock = new ReentrantLock();
+    final var readWriteLock = new ReentrantReadWriteLock();
+
+    this.readLock = readWriteLock.readLock();
+    this.writeLock = readWriteLock.writeLock();
+
     statistics = new Statistics(zbdd.getStatistics());
   }
 
@@ -70,11 +76,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public <T> T doAtomic(@NotNull Function<Zbdd,T> operation)
   {
-    lock.lock();
+    writeLock.lock();
     try {
-      return operation.apply(zbdd);
+      return operation.apply(this);
     } finally {
-      lock.unlock();
+      writeLock.unlock();
     }
   }
 
@@ -83,11 +89,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public void doAtomic(@NotNull Consumer<Zbdd> operation)
   {
-    lock.lock();
+    writeLock.lock();
     try {
-      operation.accept(zbdd);
+      operation.accept(this);
     } finally {
-      lock.unlock();
+      writeLock.unlock();
     }
   }
 
@@ -96,11 +102,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public void registerCallback(@NotNull ZbddCallback callback)
   {
-    lock.lock();
+    writeLock.lock();
     try {
       zbdd.registerCallback(callback);
     } finally {
-      lock.unlock();
+      writeLock.unlock();
     }
   }
 
@@ -109,11 +115,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public @NotNull ZbddLiteralResolver getLiteralResolver()
   {
-    lock.lock();
+    readLock.lock();
     try {
       return zbdd.getLiteralResolver();
     } finally {
-      lock.unlock();
+      readLock.unlock();
     }
   }
 
@@ -122,11 +128,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public void setLiteralResolver(@NotNull ZbddLiteralResolver literalResolver)
   {
-    lock.lock();
+    writeLock.lock();
     try {
       zbdd.setLiteralResolver(literalResolver);
     } finally {
-      lock.unlock();
+      writeLock.unlock();
     }
   }
 
@@ -142,11 +148,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public void clear()
   {
-    lock.lock();
+    writeLock.lock();
     try {
       zbdd.clear();
     } finally {
-      lock.unlock();
+      writeLock.unlock();
     }
   }
 
@@ -155,11 +161,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public int createVar()
   {
-    lock.lock();
+    writeLock.lock();
     try {
       return zbdd.createVar();
     } finally {
-      lock.unlock();
+      writeLock.unlock();
     }
   }
 
@@ -168,11 +174,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public int createVar(@NotNull Object varObject)
   {
-    lock.lock();
+    writeLock.lock();
     try {
       return zbdd.createVar(varObject);
     } finally {
-      lock.unlock();
+      writeLock.unlock();
     }
   }
 
@@ -181,11 +187,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public <T> T getVarObject(int var)
   {
-    lock.lock();
+    readLock.lock();
     try {
       return zbdd.getVarObject(var);
     } finally {
-      lock.unlock();
+      readLock.unlock();
     }
   }
 
@@ -194,11 +200,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public int cube(int var)
   {
-    lock.lock();
+    writeLock.lock();
     try {
       return zbdd.cube(var);
     } finally {
-      lock.unlock();
+      writeLock.unlock();
     }
   }
 
@@ -207,11 +213,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public int cube(int @NotNull ... cubeVars)
   {
-    lock.lock();
+    writeLock.lock();
     try {
       return zbdd.cube(cubeVars);
     } finally {
-      lock.unlock();
+      writeLock.unlock();
     }
   }
 
@@ -220,11 +226,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public boolean hasCubeWithVar(int zbdd, int var)
   {
-    lock.lock();
+    readLock.lock();
     try {
       return this.zbdd.hasCubeWithVar(zbdd, var);
     } finally {
-      lock.unlock();
+      readLock.unlock();
     }
   }
 
@@ -233,11 +239,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public int subset0(int zbdd, int var)
   {
-    lock.lock();
+    writeLock.lock();
     try {
       return this.zbdd.subset0(zbdd, var);
     } finally {
-      lock.unlock();
+      writeLock.unlock();
     }
   }
 
@@ -246,11 +252,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public int subset1(int zbdd, int var)
   {
-    lock.lock();
+    writeLock.lock();
     try {
       return this.zbdd.subset1(zbdd, var);
     } finally {
-      lock.unlock();
+      writeLock.unlock();
     }
   }
 
@@ -258,11 +264,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public int change(int zbdd, int var)
   {
-    lock.lock();
+    writeLock.lock();
     try {
       return this.zbdd.change(zbdd, var);
     } finally {
-      lock.unlock();
+      writeLock.unlock();
     }
   }
 
@@ -271,11 +277,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public long count(int zbdd)
   {
-    lock.lock();
+    readLock.lock();
     try {
       return this.zbdd.count(zbdd);
     } finally {
-      lock.unlock();
+      readLock.unlock();
     }
   }
 
@@ -284,11 +290,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public int union(int... p)
   {
-    lock.lock();
+    writeLock.lock();
     try {
       return zbdd.union(p);
     } finally {
-      lock.unlock();
+      writeLock.unlock();
     }
   }
 
@@ -297,11 +303,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public int union(int p, int q)
   {
-    lock.lock();
+    writeLock.lock();
     try {
       return zbdd.union(p, q);
     } finally {
-      lock.unlock();
+      writeLock.unlock();
     }
   }
 
@@ -310,11 +316,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public int intersect(int p, int q)
   {
-    lock.lock();
+    writeLock.lock();
     try {
       return zbdd.intersect(p, q);
     } finally {
-      lock.unlock();
+      writeLock.unlock();
     }
   }
 
@@ -323,11 +329,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public int difference(int p, int q)
   {
-    lock.lock();
+    writeLock.lock();
     try {
       return zbdd.difference(p, q);
     } finally {
-      lock.unlock();
+      writeLock.unlock();
     }
   }
 
@@ -336,11 +342,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public int multiply(int p, int q)
   {
-    lock.lock();
+    writeLock.lock();
     try {
       return zbdd.multiply(p, q);
     } finally {
-      lock.unlock();
+      writeLock.unlock();
     }
   }
 
@@ -349,11 +355,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public int divide(int p, int q)
   {
-    lock.lock();
+    writeLock.lock();
     try {
       return zbdd.divide(p, q);
     } finally {
-      lock.unlock();
+      writeLock.unlock();
     }
   }
 
@@ -361,11 +367,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public int modulo(int p, int q)
   {
-    lock.lock();
+    writeLock.lock();
     try {
       return zbdd.modulo(p, q);
     } finally {
-      lock.unlock();
+      writeLock.unlock();
     }
   }
 
@@ -374,11 +380,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public int atomize(int zbdd)
   {
-    lock.lock();
+    writeLock.lock();
     try {
       return this.zbdd.atomize(zbdd);
     } finally {
-      lock.unlock();
+      writeLock.unlock();
     }
   }
 
@@ -387,11 +393,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public int removeBase(int zbdd)
   {
-    lock.lock();
+    writeLock.lock();
     try {
       return this.zbdd.removeBase(zbdd);
     } finally {
-      lock.unlock();
+      writeLock.unlock();
     }
   }
 
@@ -400,11 +406,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public boolean contains(int p, int q)
   {
-    lock.lock();
+    writeLock.lock();
     try {
       return zbdd.contains(p, q);
     } finally {
-      lock.unlock();
+      writeLock.unlock();
     }
   }
 
@@ -413,11 +419,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public boolean isValidZbdd(int zbdd)
   {
-    lock.lock();
+    readLock.lock();
     try {
       return this.zbdd.isValidZbdd(zbdd);
     } finally {
-      lock.unlock();
+      readLock.unlock();
     }
   }
 
@@ -426,11 +432,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public boolean isValidVar(int var)
   {
-    lock.lock();
+    readLock.lock();
     try {
       return zbdd.isValidVar(var);
     } finally {
-      lock.unlock();
+      readLock.unlock();
     }
   }
 
@@ -439,11 +445,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public int getVar(int zbdd)
   {
-    lock.lock();
+    readLock.lock();
     try {
       return this.zbdd.getVar(zbdd);
     } finally {
-      lock.unlock();
+      readLock.unlock();
     }
   }
 
@@ -452,11 +458,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public int getP0(int zbdd)
   {
-    lock.lock();
+    readLock.lock();
     try {
       return this.zbdd.getP0(zbdd);
     } finally {
-      lock.unlock();
+      readLock.unlock();
     }
   }
 
@@ -465,11 +471,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public int getP1(int zbdd)
   {
-    lock.lock();
+    readLock.lock();
     try {
       return this.zbdd.getP1(zbdd);
     } finally {
-      lock.unlock();
+      readLock.unlock();
     }
   }
 
@@ -478,11 +484,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public int getNode(int var, int p0, int p1)
   {
-    lock.lock();
+    writeLock.lock();
     try {
       return zbdd.getNode(var, p0, p1);
     } finally {
-      lock.unlock();
+      writeLock.unlock();
     }
   }
 
@@ -491,11 +497,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public int gc()
   {
-    lock.lock();
+    writeLock.lock();
     try {
       return zbdd.gc();
     } finally {
-      lock.unlock();
+      writeLock.unlock();
     }
   }
 
@@ -504,11 +510,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public int incRef(int zbdd)
   {
-    lock.lock();
+    writeLock.lock();
     try {
       return this.zbdd.incRef(zbdd);
     } finally {
-      lock.unlock();
+      writeLock.unlock();
     }
   }
 
@@ -518,11 +524,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @SuppressWarnings("MethodDoesntCallSuperMethod")
   public int @NotNull [] incRef(int @NotNull [] zbdds)
   {
-    lock.lock();
+    writeLock.lock();
     try {
       return this.zbdd.incRef(zbdds);
     } finally {
-      lock.unlock();
+      writeLock.unlock();
     }
   }
 
@@ -531,11 +537,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public int decRef(int zbdd)
   {
-    lock.lock();
+    writeLock.lock();
     try {
       return this.zbdd.decRef(zbdd);
     } finally {
-      lock.unlock();
+      writeLock.unlock();
     }
   }
 
@@ -545,11 +551,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @SuppressWarnings("MethodDoesntCallSuperMethod")
   public int @NotNull [] decRef(int @NotNull [] zbdds)
   {
-    lock.lock();
+    writeLock.lock();
     try {
       return this.zbdd.decRef(zbdds);
     } finally {
-      lock.unlock();
+      writeLock.unlock();
     }
   }
 
@@ -558,11 +564,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public @NotNull ZbddNodeInfo getZbddNodeInfo(int zbdd)
   {
-    lock.lock();
+    readLock.lock();
     try {
       return new ZbddNodeInfoDelegate(this.zbdd.getZbddNodeInfo(zbdd));
     } finally {
-      lock.unlock();
+      readLock.unlock();
     }
   }
 
@@ -571,11 +577,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public @NotNull String toString(int zbdd)
   {
-    lock.lock();
+    writeLock.lock();
     try {
       return this.zbdd.toString(zbdd);
     } finally {
-      lock.unlock();
+      writeLock.unlock();
     }
   }
 
@@ -584,11 +590,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public boolean visitCubes(int zbdd, @NotNull CubeVisitor visitor)
   {
-    lock.lock();
+    writeLock.lock();
     try {
       return this.zbdd.visitCubes(zbdd, visitor);
     } finally {
-      lock.unlock();
+      writeLock.unlock();
     }
   }
 
@@ -597,11 +603,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public boolean visitCubeZbdds(int zbdd, @NotNull ZbddVisitor visitor)
   {
-    lock.lock();
+    writeLock.lock();
     try {
       return this.zbdd.visitCubeZbdds(zbdd, visitor);
     } finally {
-      lock.unlock();
+      writeLock.unlock();
     }
   }
 
@@ -610,11 +616,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public int @NotNull [] calculateNodeDependency()
   {
-    lock.lock();
+    writeLock.lock();
     try {
       return zbdd.calculateNodeDependency();
     } finally {
-      lock.unlock();
+      writeLock.unlock();
     }
   }
 
@@ -623,11 +629,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public int @NotNull [] asSingleCubeZbdds(int zbdd)
   {
-    lock.lock();
+    writeLock.lock();
     try {
       return this.zbdd.asSingleCubeZbdds(zbdd);
     } finally {
-      lock.unlock();
+      writeLock.unlock();
     }
   }
 
@@ -650,11 +656,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
     @Override
     public int getZbdd()
     {
-      lock.lock();
+      readLock.lock();
       try {
         return nodeInfo.getZbdd();
       } finally {
-        lock.unlock();
+        readLock.unlock();
       }
     }
 
@@ -662,11 +668,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
     @Override
     public int getVar()
     {
-      lock.lock();
+      readLock.lock();
       try {
         return nodeInfo.getVar();
       } finally {
-        lock.unlock();
+        readLock.unlock();
       }
     }
 
@@ -674,11 +680,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
     @Override
     public int getP0()
     {
-      lock.lock();
+      readLock.lock();
       try {
         return nodeInfo.getP0();
       } finally {
-        lock.unlock();
+        readLock.unlock();
       }
     }
 
@@ -686,11 +692,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
     @Override
     public int getP1()
     {
-      lock.lock();
+      readLock.lock();
       try {
         return nodeInfo.getP1();
       } finally {
-        lock.unlock();
+        readLock.unlock();
       }
     }
 
@@ -698,11 +704,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
     @Override
     public int getReferenceCount()
     {
-      lock.lock();
+      readLock.lock();
       try {
         return nodeInfo.getReferenceCount();
       } finally {
-        lock.unlock();
+        readLock.unlock();
       }
     }
 
@@ -710,11 +716,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
     @Override
     public @NotNull String getLiteral()
     {
-      lock.lock();
+      readLock.lock();
       try {
         return nodeInfo.getLiteral();
       } finally {
-        lock.unlock();
+        readLock.unlock();
       }
     }
 
@@ -722,11 +728,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
     @Override
     public String toString()
     {
-      lock.lock();
+      readLock.lock();
       try {
         return nodeInfo.toString();
       } finally {
-        lock.unlock();
+        readLock.unlock();
       }
     }
   }
@@ -758,11 +764,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
     @Contract(pure = true)
     public @NotNull ZbddCache getZbddCache()
     {
-      lock.lock();
+      readLock.lock();
       try {
         return ((Zbdd.WithCache)zbdd).getZbddCache();
       } finally {
-        lock.unlock();
+        readLock.unlock();
       }
     }
 
@@ -771,11 +777,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
     @Override
     public void setZbddCache(@NotNull ZbddCache zbddCache)
     {
-      lock.lock();
+      writeLock.lock();
       try {
         ((Zbdd.WithCache)zbdd).setZbddCache(zbddCache);
       } finally {
-        lock.unlock();
+        writeLock.unlock();
       }
     }
   }
@@ -802,11 +808,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
     @Override
     public int getNodesCapacity()
     {
-      lock.lock();
+      readLock.lock();
       try {
         return statistics.getNodesCapacity();
       } finally {
-        lock.unlock();
+        readLock.unlock();
       }
     }
 
@@ -815,11 +821,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
     @Override
     public int getFreeNodes()
     {
-      lock.lock();
+      readLock.lock();
       try {
         return statistics.getFreeNodes();
       } finally {
-        lock.unlock();
+        readLock.unlock();
       }
     }
 
@@ -828,11 +834,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
     @Override
     public int getDeadNodes()
     {
-      lock.lock();
+      readLock.lock();
       try {
         return statistics.getDeadNodes();
       } finally {
-        lock.unlock();
+        readLock.unlock();
       }
     }
 
@@ -841,11 +847,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
     @Override
     public int getNodeLookups()
     {
-      lock.lock();
+      readLock.lock();
       try {
         return statistics.getNodeLookups();
       } finally {
-        lock.unlock();
+        readLock.unlock();
       }
     }
 
@@ -854,11 +860,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
     @Override
     public int getNodeLookupHitCount()
     {
-      lock.lock();
+      readLock.lock();
       try {
         return statistics.getNodeLookupHitCount();
       } finally {
-        lock.unlock();
+        readLock.unlock();
       }
     }
 
@@ -867,11 +873,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
     @Override
     public int getGCCount()
     {
-      lock.lock();
+      readLock.lock();
       try {
         return statistics.getGCCount();
       } finally {
-        lock.unlock();
+        readLock.unlock();
       }
     }
 
@@ -880,11 +886,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
     @Override
     public long getGCFreedNodes()
     {
-      lock.lock();
+      readLock.lock();
       try {
         return statistics.getGCFreedNodes();
       } finally {
-        lock.unlock();
+        readLock.unlock();
       }
     }
 
@@ -893,11 +899,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
     @Override
     public int getCapacityIncreaseCount()
     {
-      lock.lock();
+      readLock.lock();
       try {
         return statistics.getCapacityIncreaseCount();
       } finally {
-        lock.unlock();
+        readLock.unlock();
       }
     }
 
@@ -906,11 +912,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
     @Override
     public long getMemoryUsage()
     {
-      lock.lock();
+      readLock.lock();
       try {
         return statistics.getMemoryUsage();
       } finally {
-        lock.unlock();
+        readLock.unlock();
       }
     }
 
@@ -919,11 +925,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
     @Override
     public int getRegisteredVars()
     {
-      lock.lock();
+      readLock.lock();
       try {
         return statistics.getRegisteredVars();
       } finally {
-        lock.unlock();
+        readLock.unlock();
       }
     }
 
@@ -932,11 +938,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
     @Override
     public int getAvailableNodes()
     {
-      lock.lock();
+      readLock.lock();
       try {
         return statistics.getFreeNodes() + statistics.getDeadNodes();
       } finally {
-        lock.unlock();
+        readLock.unlock();
       }
     }
 
@@ -945,11 +951,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
     @Override
     public int getOccupiedNodes()
     {
-      lock.lock();
+      readLock.lock();
       try {
         return statistics.getNodesCapacity() - statistics.getAvailableNodes();
       } finally {
-        lock.unlock();
+        readLock.unlock();
       }
     }
 
@@ -958,11 +964,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
     @Override
     public double getNodeLookupHitRatio()
     {
-      lock.lock();
+      readLock.lock();
       try {
         return statistics.getNodeLookupHitCount() / (double)statistics.getNodeLookups();
       } finally {
-        lock.unlock();
+        readLock.unlock();
       }
     }
 
@@ -971,11 +977,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
     @Override
     public double getNodeLookupMissRatio()
     {
-      lock.lock();
+      readLock.lock();
       try {
         return 1.0 - statistics.getNodeLookupHitRatio();
       } finally {
-        lock.unlock();
+        readLock.unlock();
       }
     }
 
@@ -983,11 +989,11 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
     @Override
     public String toString()
     {
-      lock.lock();
+      readLock.lock();
       try {
         return statistics.toString();
       } finally {
-        lock.unlock();
+        readLock.unlock();
       }
     }
   }
