@@ -58,7 +58,7 @@ algebra — such as solving constraint satisfaction problems, configuration anal
 
 ```groovy
 dependencies {
-  implementation 'de.sayayi.lib:zbdd:0.6.0'
+  implementation 'de.sayayi.lib:zbdd:0.8.0'
 }
 ```
 
@@ -68,7 +68,7 @@ dependencies {
 <dependency>
   <groupId>de.sayayi.lib</groupId>
   <artifactId>zbdd</artifactId>
-  <version>0.6.0</version>
+  <version>0.8.0</version>
 </dependency>
 ```
 

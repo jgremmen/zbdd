@@ -251,7 +251,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
    * <p>
    * Example:
    * <pre>
-   *   Zbdd zbdd = new Zbdd();
+   *   Zbdd zbdd = ZbddFactory.create();
    *   int v1 = zbdd.createVar();
    *   int singleton = zbdd.cube(v1);
    *   String s = zbdd.toString(singleton);  // = "{ v1 }"
@@ -273,7 +273,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
    * <p>
    * Example:
    * <pre>
-   *   Zbdd zbdd = new Zbdd();
+   *   Zbdd zbdd = ZbddFactory.create();
    *   int v1 = zbdd.createVar();
    *   int v2 = zbdd.createVar();
    *   int v3 = zbdd.createVar();

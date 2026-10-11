@@ -57,7 +57,7 @@ public interface ZbddLiteralResolver
    * joins the {@linkplain #getLiteralName(int) literal names} of all variables with a dot ({@code "."}) separator,
    * or returns the {@linkplain #getBaseName() base name} if the cube has no variables.
    *
-   * @param cubeVars  ZBDD variables making up the cube, sorted in descending order
+   * @param cubeVars  ZBDD variables making up the cube; their order is ignored
    *
    * @return  cube name, never {@code null}
    */
