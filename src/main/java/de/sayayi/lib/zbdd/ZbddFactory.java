@@ -35,6 +35,10 @@ import org.jetbrains.annotations.NotNull;
  */
 public final class ZbddFactory
 {
+  private ZbddFactory() {
+  }
+
+
   /**
    * Creates a new ZBDD instance with a default capacity advisor. The returned instance does no
    * operation caching and is not thread-safe.
