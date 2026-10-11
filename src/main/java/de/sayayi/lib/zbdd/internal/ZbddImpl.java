@@ -483,6 +483,8 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
   /**
    * Internal implementation of {@link #count(int)} without parameter validation.
+   * <p>
+   * Counts are computed bottom-up and memoized per distinct node.
    */
   @Contract(pure = true)
   protected long __count(int zbdd)
@@ -490,24 +492,37 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     if (zbdd < 2)
       return zbdd;
 
+    final var zbddCountMap = new IntObjectMap();
     final var stack = new IntStack(__getVar(zbdd) + 1);
-    var count = 0L;
 
-    stack.push(zbdd);
+    for(stack.push(zbdd); stack.isNotEmpty();)
+    {
+      final var n = stack.pop();
 
-    do {
-      if ((zbdd = stack.pop()) == BASE)
-        count++;
-      else if (zbdd >= 2)
+      if (n >= 2 && zbddCountMap.get(n) == null)
       {
-        final var offset = zbdd * NODE_RECORD_SIZE;
+        final var offset = n * NODE_RECORD_SIZE;
+        final var p0 = nodes[offset + _P0];
+        final var p1 = nodes[offset + _P1];
+        final var p0Count = p0 < 2 ? Long.valueOf(p0) : (Long)zbddCountMap.get(p0);
+        final var p1Count = p1 < 2 ? Long.valueOf(p1) : (Long)zbddCountMap.get(p1);
 
-        stack.pushIfNotEmptyZbdd(nodes[offset + _P0]);
-        stack.pushIfNotEmptyZbdd(nodes[offset + _P1]);
+        if (p0Count != null && p1Count != null)
+          zbddCountMap.put(n, p0Count + p1Count);
+        else
+        {
+          stack.push(n);
+
+          if (p0Count == null)
+            stack.push(p0);
+
+          if (p1Count == null)
+            stack.push(p1);
+        }
       }
-    } while(stack.isNotEmpty());
+    }
 
-    return count;
+    return (Long)zbddCountMap.get(zbdd);
   }
 
 

@@ -17,6 +17,7 @@ package de.sayayi.lib.zbdd;
 
 import de.sayayi.lib.zbdd.exception.InvalidVarException;
 import de.sayayi.lib.zbdd.exception.InvalidZbddException;
+import de.sayayi.lib.zbdd.exception.ZbddOutOfRangeException;
 import de.sayayi.lib.zbdd.internal.DefaultCapacityAdvisor;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
@@ -223,6 +224,62 @@ class ZbddTest
     final var r = zbdd.union(ab, zbdd.cube(b), zbdd.cube(c), ac, Zbdd.base());
 
     assertEquals(5, zbdd.count(r));
+  }
+
+
+  @Test
+  @DisplayName("Operation 'count' for empty and base terminal nodes")
+  void countTerminals()
+  {
+    final var zbdd = ZbddFactory.create();
+
+    assertEquals(0, zbdd.count(Zbdd.empty()));
+    assertEquals(1, zbdd.count(Zbdd.base()));
+
+    assertThrowsExactly(ZbddOutOfRangeException.class, () -> zbdd.count(-1));
+    assertThrowsExactly(InvalidZbddException.class, () -> zbdd.count(2));
+  }
+
+
+  @Test
+  @DisplayName("Operation 'count' on a diamond-shaped shared DAG")
+  void countDiamondSharedDag()
+  {
+    final var zbdd = ZbddFactory.create();
+    final var a = zbdd.createVar();
+    final var b = zbdd.createVar();
+    final var c = zbdd.createVar();
+
+    zbdd.setLiteralResolver(var -> var == a ? "a" : var == b ? "b" : "c");
+
+    // shared bottom node 'c', referenced from both the 0- and 1-branch of 'b', which in turn is
+    // referenced from both branches of 'a'. The shared sub-dag must be counted once per represented
+    // combination, not once per visit.
+    final var sharedC = zbdd.getNode(c, Zbdd.base(), Zbdd.base());     // {}, {c}
+    final var sharedB = zbdd.getNode(b, sharedC, sharedC);             // {}, {c}, {b}, {b,c}
+    final var r = zbdd.getNode(a, sharedB, sharedB);                   // all 8 subsets of {a,b,c}
+
+    assertEquals(8, zbdd.count(r));
+  }
+
+
+  @Test
+  @DisplayName("Operation 'count' remains efficient for a large, compact, fully shared ZBDD")
+  void countLargeSharedChain()
+  {
+    final var zbdd = ZbddFactory.create();
+    final var varCount = 50;
+
+    var node = Zbdd.base();
+
+    for(var i = 0; i < varCount; i++)
+    {
+      final var var = zbdd.createVar();
+      node = zbdd.incRef(zbdd.getNode(var, node, node));
+    }
+
+    // a chain of O(n) nodes, each sharing the same child on both branches, represents all 2^n subsets
+    assertEquals(1L << varCount, zbdd.count(node));
   }
 
 
