@@ -1740,8 +1740,13 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
 
     @Override
-    public @NotNull String getLiteral() {
-      return literalResolver.getLiteralName(getVar());
+    public @NotNull String getLiteral()
+    {
+      return switch(zbdd) {
+        case EMPTY -> "";
+        case BASE -> literalResolver.getBaseName();
+        default -> literalResolver.getLiteralName(getVar());
+      };
     }
 
 
@@ -1750,8 +1755,8 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     {
       final var var = getVar();
       final var s = new StringBuilder("ZbddNode(zbdd=").append(zbdd).append(",var=").append(var);
-      final var literal = literalResolver.getLiteralName(var);
 
+      final var literal = getLiteral();
       if (!literal.isBlank())
         s.append(':').append(literal);
 
