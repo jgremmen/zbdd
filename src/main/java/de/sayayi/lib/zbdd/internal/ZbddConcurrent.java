@@ -24,17 +24,16 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 
 /**
- * Thread-safe wrapper around a {@link Zbdd} instance. All operations are synchronized using a {@link ReentrantLock}
- * to ensure safe concurrent access from multiple threads.
+ * Thread-safe wrapper around a {@link Zbdd} instance. Read-only operations use a read lock and mutating operations
+ * use a write lock from a {@link ReentrantReadWriteLock} to allow concurrent reads while serializing writes.
  * <p>
- * Because the lock is reentrant, a callback invoked synchronously during a locked operation (e.g.
+ * Because the write lock is reentrant, a callback invoked synchronously during a locked operation (e.g.
  * {@link de.sayayi.lib.zbdd.Zbdd.ZbddCallback#beforeGc() ZbddCallback.beforeGc()} or a user-supplied
  * {@link de.sayayi.lib.zbdd.Zbdd.CubeVisitor CubeVisitor}/{@link de.sayayi.lib.zbdd.Zbdd.ZbddVisitor ZbddVisitor})
  * can safely re-enter other {@code Zbdd} methods on the same thread without deadlocking.
