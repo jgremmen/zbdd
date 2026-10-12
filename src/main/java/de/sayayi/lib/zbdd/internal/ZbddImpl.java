@@ -495,23 +495,24 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     final var zbddCountMap = new IntObjectMap();
     final var stack = new IntStack(__getVar(zbdd) + 1);
 
-    for(stack.push(zbdd); stack.isNotEmpty();)
-    {
-      final var n = stack.pop();
+    stack.push(zbdd);
 
-      if (n >= 2 && zbddCountMap.get(n) == null)
+    do {
+      final var z = stack.pop();
+
+      if (zbddCountMap.get(z) == null)
       {
-        final var offset = n * NODE_RECORD_SIZE;
+        final var offset = z * NODE_RECORD_SIZE;
         final var p0 = nodes[offset + _P0];
         final var p1 = nodes[offset + _P1];
         final var p0Count = p0 < 2 ? Long.valueOf(p0) : (Long)zbddCountMap.get(p0);
         final var p1Count = p1 < 2 ? Long.valueOf(p1) : (Long)zbddCountMap.get(p1);
 
         if (p0Count != null && p1Count != null)
-          zbddCountMap.put(n, p0Count + p1Count);
+          zbddCountMap.put(z, p0Count + p1Count);
         else
         {
-          stack.push(n);
+          stack.push(z);
 
           if (p0Count == null)
             stack.push(p0);
@@ -520,7 +521,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
             stack.push(p1);
         }
       }
-    }
+    } while(stack.isNotEmpty());
 
     return (Long)zbddCountMap.get(zbdd);
   }
