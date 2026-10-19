@@ -128,7 +128,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     varObjectMap = new IntObjectMap();
     protectedNodes = new IntStack(24);
 
-    clear();
+    clearInternal();
   }
 
 
@@ -184,8 +184,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
 
   /**
-   * Clears all nodes from this ZBDD instance. If a ZBDD cache is assigned it will be cleared as
-   * well.
+   * Clears all nodes from this ZBDD instance. If a ZBDD cache is assigned it will be cleared as well.
    * <p>
    * This method clears all variables and nodes. It does not free up allocated memory.
    *
@@ -197,14 +196,25 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   public void clear()
   {
     callbacks.forEach(ZbddCallback::beforeClear);
+    clearInternal();
+    callbacks.forEach(ZbddCallback::afterClear);
+  }
 
+
+  /**
+   * Resets all variables, nodes and statistics without invoking any callbacks.
+   *
+   * @since 0.8.0
+   */
+  private void clearInternal()
+  {
     lastVarNumber = 0;
     nodesDead = 0;
     nodesNew = 0;
     nextFreeNode = 2;
     nodesFree = nodesCapacity - 2;
 
-    // clear the hash chain heads for buckets 0 and 1
+    // clear the hash chain heads for zbdd < 2
     nodes[EMPTY * NODE_RECORD_SIZE + _CHAIN] = 0;
     nodes[BASE * NODE_RECORD_SIZE + _CHAIN] = 0;
 
@@ -218,8 +228,6 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     varObjectMap.clear();
     protectedNodes.truncate(0);
     statistics.clear();
-
-    callbacks.forEach(ZbddCallback::afterClear);
   }
 
 
