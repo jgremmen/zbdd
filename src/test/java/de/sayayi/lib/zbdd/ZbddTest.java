@@ -825,6 +825,46 @@ class ZbddTest
 
 
   @Test
+  @DisplayName("Dead node count after gc")
+  void deadNodeCountAfterGc()
+  {
+    final var zbdd = ZbddFactory.create();
+    final var statistics = zbdd.getStatistics();
+
+    final var a = zbdd.cube(zbdd.createVar());
+    final var b = zbdd.cube(zbdd.createVar());
+
+    // var(a_b) = b, P0(a_b) = a, P1(a_b) = base
+    final var a_b = zbdd.incRef(zbdd.union(a, b));
+
+    // union a_b protects a and b internally.
+    // on exit, it leaves both nodes dead
+    assertEquals(2, statistics.getDeadNodes());
+
+    // b is unreachable and freed; a is reachable from root,
+    // survives gc and must still be counted as dead
+    assertEquals(1, zbdd.gc());
+    assertEquals(1, statistics.getDeadNodes());
+
+    // protect a
+    zbdd.incRef(a);
+    assertEquals(0, statistics.getDeadNodes());
+
+    // unprotect a_b
+    zbdd.decRef(a_b);
+    assertEquals(1, statistics.getDeadNodes());
+
+    // a_b is freed; a is protected
+    assertEquals(1, zbdd.gc());
+    assertEquals(0, statistics.getDeadNodes());
+
+    // unprotect a
+    zbdd.decRef(a);
+    assertEquals(1, statistics.getDeadNodes());
+  }
+
+
+  @Test
   @DisplayName("Refcount underflow")
   void refCountUnderflow()
   {

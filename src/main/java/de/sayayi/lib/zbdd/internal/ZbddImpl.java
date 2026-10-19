@@ -1181,6 +1181,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   {
     nextFreeNode = -1;
     nodesFree = 0;
+    nodesDead = 0;
 
     for(int zbdd = nodesCapacity - 1, offset = zbdd * NODE_RECORD_SIZE; zbdd >= 2; zbdd--, offset -= NODE_RECORD_SIZE)
     {
@@ -1191,6 +1192,10 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
         // remove mark and chain valid node
         prependHashChain(zbdd,
             hash(nodes[offset + _VAR] &= ~GC_VAR_MARK_MASK, nodes[offset + _P0], nodes[offset + _P1]));
+
+        // dead node reachable from referenced node
+        if (nodes[offset + _REFCOUNT] == 0)
+          nodesDead++;
       }
       else
       {
@@ -1201,8 +1206,6 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
         nodesFree++;
       }
     }
-
-    nodesDead = 0;
   }
 
 
