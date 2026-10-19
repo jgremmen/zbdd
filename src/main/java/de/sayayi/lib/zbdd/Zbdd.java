@@ -45,6 +45,14 @@ import java.util.function.Function;
  *   <li>Memory management through reference counting and garbage collection</li>
  * </ul>
  *
+ * <h2>Nodes and variables</h2>
+ * For performance reasons, both zbdd nodes and variables are represented by plain {@code int} values. As a consequence,
+ * the compiler cannot detect mixed up arguments, such as {@code subset0(var, zbdd)} instead of
+ * {@code subset0(zbdd, var)}. Values outside the valid range are rejected at runtime with an
+ * {@link de.sayayi.lib.zbdd.exception.InvalidVarException InvalidVarException} or
+ * {@link de.sayayi.lib.zbdd.exception.InvalidZbddException InvalidZbddException}, but a variable that happens to be a
+ * valid node number, or vice versa, is not detected.
+ *
  * <h2>Reference lifetime</h2>
  * Almost every method that creates zbdd nodes may trigger a garbage collection. Garbage collection frees all zbdd
  * nodes that are not protected by a reference count (see {@link #incRef(int)}) and not reachable from a protected
