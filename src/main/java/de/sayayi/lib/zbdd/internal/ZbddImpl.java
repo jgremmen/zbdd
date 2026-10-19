@@ -864,12 +864,12 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   @Contract(mutates = "this")
   protected int __divide(int p, int q)
   {
-    if (p < 2)
-      return EMPTY;
-    if (p == q)
-      return BASE;
     if (q == BASE)
-      return p;
+      return p;  // p / { ø } = p
+    else if (p == EMPTY || p == BASE)
+      return EMPTY;  // {} / q = {} or { ø } / q = {} for q != { ø }
+    else if (p == q)
+      return BASE;  // p / p = { ø }
 
     final var mark = saveAndProtect(p, q);
     final var v = __getVar(q);

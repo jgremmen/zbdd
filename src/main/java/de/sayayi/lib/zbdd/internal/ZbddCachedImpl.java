@@ -305,12 +305,12 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
   @Contract(mutates = "this")
   protected int __divide(int p, int q)
   {
-    if (p < 2)
-      return EMPTY;
-    if (p == q)
-      return BASE;
     if (q == BASE)
-      return p;
+      return p;  // p / { ø } = p
+    else if (p == EMPTY || p == BASE)
+      return EMPTY;  // {} / q = {} or { ø } / q = {} for q != { ø }
+    else if (p == q)
+      return BASE;  // p / p = { ø }
 
     int r = zbddCache.getResult(DIVIDE, p, q);
     if (r == MIN_VALUE)
