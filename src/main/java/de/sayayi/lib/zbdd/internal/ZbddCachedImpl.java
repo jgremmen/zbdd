@@ -101,7 +101,7 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
       return zbdd;
 
     if (top == var)
-      return getP0(zbdd);
+      return __getP0(zbdd);
 
     int r = zbddCache.getResult(SUBSET0, zbdd, var);
     if (r == MIN_VALUE)
@@ -128,7 +128,7 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
       return EMPTY;
 
     if (top == var)
-      return getP1(zbdd);
+      return __getP1(zbdd);
 
     int r = zbddCache.getResult(SUBSET1, zbdd, var);
     if (r == MIN_VALUE)

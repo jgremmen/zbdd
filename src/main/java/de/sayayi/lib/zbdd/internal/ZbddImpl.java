@@ -1158,7 +1158,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
 
   @Contract(pure = true)
-  protected int __getVar(int zbdd) {
+  protected final int __getVar(int zbdd) {
     return zbdd < 2 ? -1 : nodes[zbdd * NODE_RECORD_SIZE + _VAR];
   }
 

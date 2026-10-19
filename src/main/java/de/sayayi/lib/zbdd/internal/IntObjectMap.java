@@ -107,15 +107,11 @@ final class IntObjectMap
       keys = new int[capacity];
       values = new Object[capacity];
 
-      if (oldKeys != null)
-      {
-        assert oldValues != null;
-        Object value;
+      Object value;
 
-        for(int idx = 0, length = oldKeys.length; idx < length; idx++)
-          if ((value = oldValues[idx]) != null)
-            put(oldKeys[idx], value);
-      }
+      for(int idx = 0, length = oldKeys.length; idx < length; idx++)
+        if ((value = oldValues[idx]) != null)
+          put(oldKeys[idx], value);
     }
   }
 
