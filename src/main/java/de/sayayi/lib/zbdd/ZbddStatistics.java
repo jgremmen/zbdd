@@ -91,7 +91,7 @@ public interface ZbddStatistics
    * @return  number of node lookups, always &ge; 0
    */
   @Contract(pure = true)
-  int getNodeLookups();
+  long getNodeLookups();
 
 
   /**
@@ -101,7 +101,7 @@ public interface ZbddStatistics
    * @return  node lookup hit count, always &ge; 0
    */
   @Contract(pure = true)
-  int getNodeLookupHitCount();
+  long getNodeLookupHitCount();
 
 
   /**

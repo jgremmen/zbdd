@@ -1630,8 +1630,8 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
    */
   private final class Statistics implements ZbddStatistics
   {
-    private int nodeLookups;
-    private int nodeLookupHitCount;
+    private long nodeLookups;
+    private long nodeLookupHitCount;
     private int gcCount;
     private int capacityIncreaseCount;
     private long gcFreedNodes;
@@ -1670,13 +1670,13 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
 
     @Override
-    public int getNodeLookups() {
+    public long getNodeLookups() {
       return nodeLookups;
     }
 
 
     @Override
-    public int getNodeLookupHitCount() {
+    public long getNodeLookupHitCount() {
       return nodeLookupHitCount;
     }
 

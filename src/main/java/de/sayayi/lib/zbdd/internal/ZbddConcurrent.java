@@ -863,7 +863,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
     /** {@inheritDoc} */
     @Override
-    public int getNodeLookups()
+    public long getNodeLookups()
     {
       readLock.lock();
       try {
@@ -876,7 +876,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
     /** {@inheritDoc} */
     @Override
-    public int getNodeLookupHitCount()
+    public long getNodeLookupHitCount()
     {
       readLock.lock();
       try {

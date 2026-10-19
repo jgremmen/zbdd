@@ -17,9 +17,11 @@ package de.sayayi.lib.zbdd.internal;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.platform.commons.util.ReflectionUtils;
 
 import static de.sayayi.lib.zbdd.Zbdd.BASE;
 import static de.sayayi.lib.zbdd.Zbdd.EMPTY;
+import static java.lang.Integer.MAX_VALUE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -73,5 +75,30 @@ class ZbddImplTest
     }
 
     assertTrue(foundBucket[0] && foundBucket[1]);
+  }
+
+
+  @Test
+  @DisplayName("Lookup counters beyond int range")
+  void lookupCountersBeyondIntRange() throws Exception
+  {
+    final var zbdd = new ZbddImpl(DefaultCapacityAdvisor.INSTANCE);
+    final var statistics = zbdd.getStatistics();
+
+    // simulate 2^31 - 1 node lookups, all of them hits
+    for(var counterFieldName: new String[] { "nodeLookups", "nodeLookupHitCount" })
+    {
+      ReflectionUtils
+          .makeAccessible(statistics.getClass().getDeclaredField(counterFieldName))
+          .setLong(statistics, MAX_VALUE);
+    }
+
+    final var var = zbdd.createVar();
+    zbdd.cube(var);  // miss
+    zbdd.cube(var);  // hit
+
+    assertEquals(MAX_VALUE + 2L, statistics.getNodeLookups());
+    assertEquals(MAX_VALUE + 1L, statistics.getNodeLookupHitCount());
+    assertTrue(statistics.getNodeLookupHitRatio() > 0.99);
   }
 }

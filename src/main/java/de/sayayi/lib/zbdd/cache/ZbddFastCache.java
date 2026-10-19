@@ -62,14 +62,14 @@ public final class ZbddFastCache implements ZbddCache
   private final int capacity;
 
   private final int[] cache1;
-  private int lookup1Count;
+  private long lookup1Count;
   private int cacheElementCount1;
 
   private final int[] cache2;
-  private int lookup2Count;
+  private long lookup2Count;
   private int cacheElementCount2;
 
-  private int lookupHitCount;
+  private long lookupHitCount;
 
 
   /**
