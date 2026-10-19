@@ -20,7 +20,6 @@ import de.sayayi.lib.zbdd.internal.ZbddCachedImpl;
 import de.sayayi.lib.zbdd.internal.ZbddConcurrent;
 import de.sayayi.lib.zbdd.internal.ZbddImpl;
 import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.MustBeInvokedByOverriders;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Consumer;
@@ -136,7 +135,6 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * @see ZbddCache#clear()
    */
   @Contract(mutates = "this")
-  @MustBeInvokedByOverriders
   void clear();
 
 
@@ -176,7 +174,6 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * @return  variable number
    */
   @Contract(mutates = "this")
-  @MustBeInvokedByOverriders
   int createVar();
 
 
@@ -192,7 +189,6 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * @since 0.5.0
    */
   @Contract(mutates = "this")
-  @MustBeInvokedByOverriders
   int createVar(@NotNull Object varObject);
 
 
@@ -563,7 +559,6 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * @return  zbdd node identifier
    */
   @Contract(mutates = "this")
-  @MustBeInvokedByOverriders
   int getNode(int var, int p0, int p1);
 
 
@@ -582,7 +577,6 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * @see #decRef(int)
    */
   @Contract(mutates = "this")
-  @MustBeInvokedByOverriders
   int gc();
 
 
@@ -610,7 +604,6 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * @see #decRef(int)
    */
   @Contract(value = "_ -> param1", mutates = "this")
-  @MustBeInvokedByOverriders
   int incRef(int zbdd);
 
 
@@ -628,7 +621,6 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * @since 0.5.1
    */
   @Contract(mutates = "this")
-  @MustBeInvokedByOverriders
   default int @NotNull [] incRef(int @NotNull [] zbdds)
   {
     for(var zbdd: zbdds)
@@ -652,7 +644,6 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * @see #decRef(int[])
    */
   @Contract(value = "_ -> param1", mutates = "this")
-  @MustBeInvokedByOverriders
   int decRef(int zbdd);
 
 
@@ -670,7 +661,6 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * @since 0.5.1
    */
   @Contract(mutates = "this")
-  @MustBeInvokedByOverriders
   default int @NotNull [] decRef(int @NotNull [] zbdds)
   {
     for(var zbdd: zbdds)

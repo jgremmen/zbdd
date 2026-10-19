@@ -526,7 +526,6 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
-  @SuppressWarnings("MethodDoesntCallSuperMethod")
   public int @NotNull [] incRef(int @NotNull [] zbdds)
   {
     writeLock.lock();
@@ -553,7 +552,6 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
-  @SuppressWarnings("MethodDoesntCallSuperMethod")
   public int @NotNull [] decRef(int @NotNull [] zbdds)
   {
     writeLock.lock();
