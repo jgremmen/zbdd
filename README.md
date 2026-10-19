@@ -299,6 +299,9 @@ Exported packages:
 - `de.sayayi.lib.zbdd.cache` — Cache API (`ZbddCache`, `ZbddFastCache`)
 - `de.sayayi.lib.zbdd.exception` — Exceptions (`ZbddException`, `InvalidVarException`, `InvalidZbddException`, `ZbddOutOfRangeException`)
 
+The package `de.sayayi.lib.zbdd.internal` is not exported. When the library is used on the class path, its classes
+are technically accessible, but using them directly is not supported. Always create instances through `ZbddFactory`.
+
 ---
 
 ## License

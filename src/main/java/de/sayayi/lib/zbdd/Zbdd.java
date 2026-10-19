@@ -67,6 +67,12 @@ import java.util.function.Function;
  *   int r = zbdd.union(ab, zbdd.union(c, d));
  *   zbdd.decRef(ab);
  * }</pre>
+ *
+ * <h2>Implementations</h2>
+ * This interface, as well as {@link WithCache} and {@link Concurrent}, is sealed on purpose. Zbdd node numbers,
+ * reference counting, garbage collection, operation caching and locking depend on invariants that are guaranteed only
+ * by the implementations provided by this library. Custom implementations, including decorators or wrappers, are
+ * therefore not permitted. Instances are created through {@link ZbddFactory}.
  * <p>
  * See also:
  * <a href="https://en.wikipedia.org/wiki/Zero-suppressed_decision_diagram">Zero-suppressed decision diagram</a>

@@ -20,6 +20,11 @@
  * This package contains the core implementation details of the ZBDD data structure and supporting utilities.
  * Classes in this package are not part of the public API and may change without notice.
  * <p>
+ * This package is not exported by the module {@code de.sayayi.lib.zbdd}. If the library is used on the class path
+ * instead of the module path, the module system does not enforce this and the public classes in this package are
+ * accessible. Using them directly, e.g. by invoking one of their constructors, is not supported. Zbdd instances must
+ * be created through {@link de.sayayi.lib.zbdd.ZbddFactory ZbddFactory} only.
+ * <p>
  * Key components:
  * <ul>
  *   <li>
