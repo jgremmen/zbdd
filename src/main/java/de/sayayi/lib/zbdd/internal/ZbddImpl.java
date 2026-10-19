@@ -1634,7 +1634,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   @Contract(value = "_ -> new", pure = true)
   public @NotNull String toString(int zbdd)
   {
-    final var s = new StringJoiner(", ", "{ ", " }");
+    final var s = new StringJoiner(", ", "{ ", " }").setEmptyValue("{ }");
     final var resolver = getLiteralResolver();
 
     visitCubes(zbdd, cube -> {
