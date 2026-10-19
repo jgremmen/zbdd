@@ -194,6 +194,10 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     nextFreeNode = 2;
     nodesFree = nodesCapacity - 2;
 
+    // clear the hash chain heads for buckets 0 and 1
+    nodes[EMPTY * NODE_RECORD_SIZE + _CHAIN] = 0;
+    nodes[BASE * NODE_RECORD_SIZE + _CHAIN] = 0;
+
     for(int zbdd = 2, offset = 2 * NODE_RECORD_SIZE; zbdd++ < nodesCapacity; offset += NODE_RECORD_SIZE)
     {
       nodes[offset + _VAR] = -1;

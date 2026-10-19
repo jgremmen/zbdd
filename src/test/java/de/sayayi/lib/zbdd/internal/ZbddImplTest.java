@@ -1,0 +1,77 @@
+/*
+ * Copyright 2026 Jeroen Gremmen
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package de.sayayi.lib.zbdd.internal;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static de.sayayi.lib.zbdd.Zbdd.BASE;
+import static de.sayayi.lib.zbdd.Zbdd.EMPTY;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+
+/**
+ * @author Jeroen Gremmen
+ * @since 0.8.0
+ */
+@DisplayName("ZbddImpl")
+class ZbddImplTest
+{
+  @Test
+  @DisplayName("Node lookup in buckets 0 and 1 after clear")
+  void lookupAfterClear()
+  {
+    final var zbdd = new ZbddImpl(DefaultCapacityAdvisor.INSTANCE);
+
+    // populate the hash table, including the chains for buckets 0 and 1
+    var vars = new int[60];
+
+    for(var i = 0; i < vars.length; i++)
+      vars[i] = zbdd.createVar();
+
+    for(var i = 0; i < vars.length; i++)
+      for(var j = i + 1; j < vars.length; j++)
+        zbdd.incRef(zbdd.cube(vars[i], vars[j]));
+
+    zbdd.clear();
+
+    final var statistics = zbdd.getStatistics();
+    assertEquals(0, statistics.getRegisteredVars());
+    assertEquals(statistics.getNodesCapacity() - 2, statistics.getFreeNodes());
+
+    // the first lookups after clear must hit buckets 0 and 1, before stale nodes get reallocated
+    final var foundBucket = new boolean[2];
+
+    for(var i = 0; i < 10000 && !(foundBucket[0] && foundBucket[1]); i++)
+    {
+      final var var = zbdd.createVar();
+      final var bucket = zbdd.hash(var, EMPTY, BASE);
+
+      if (bucket < 2 && !foundBucket[bucket])
+      {
+        foundBucket[bucket] = true;
+
+        final var cube = zbdd.cube(var);
+
+        assertEquals(var, zbdd.getVar(cube));
+        assertEquals(cube, zbdd.cube(var));
+      }
+    }
+
+    assertTrue(foundBucket[0] && foundBucket[1]);
+  }
+}
