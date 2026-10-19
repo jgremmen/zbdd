@@ -32,6 +32,7 @@ import java.util.Random;
 import java.util.TreeMap;
 
 import static java.lang.Integer.bitCount;
+import static java.time.Duration.ofSeconds;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.joining;
 import static org.junit.jupiter.api.Assertions.*;
@@ -208,6 +209,30 @@ class ZbddTest
     final var withoutV8 = zbdd.subset0(r, v8);  // removes cubes with v8
     assertFalse(zbdd.hasCubeWithVar(withoutV8, v8));
     assertTrue(zbdd.hasCubeWithVar(withoutV8, v1));  // v1 still in v1.v3.v5
+  }
+
+
+  @Test
+  @DisplayName("Operation 'hasCubeWithVar' on shared DAG")
+  void hasCubeWithVarSharedDag()
+  {
+    final var zbdd = ZbddFactory.create();
+    final var v1 = zbdd.createVar();
+    final var v2 = zbdd.createVar();
+
+    // { v2 } x power set of 40 variables: 41 nodes, but 2^40 paths
+    var set = zbdd.cube(v2);
+    for(var n = 0; n < 40; n++)
+      set = zbdd.getNode(zbdd.createVar(), set, set);
+
+    assertEquals(1099511627776L, zbdd.count(set));
+
+    final var sharedDag = set;
+
+    assertTimeoutPreemptively(ofSeconds(5), () -> {
+      assertFalse(zbdd.hasCubeWithVar(sharedDag, v1));
+      assertTrue(zbdd.hasCubeWithVar(sharedDag, v2));
+    });
   }
 
 

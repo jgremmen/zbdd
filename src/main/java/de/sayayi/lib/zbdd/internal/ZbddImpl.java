@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.StringJoiner;
 
+import static java.lang.Boolean.TRUE;
 import static java.lang.Integer.MAX_VALUE;
 import static java.lang.Math.*;
 import static java.lang.System.arraycopy;
@@ -345,6 +346,9 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
   /**
    * Internal implementation of {@link #hasCubeWithVar(int, int)} without parameter validation.
+   * <p>
+   * The nodes above {@code var} are traversed depth-first. Each node is visited at most once, so the running time is
+   * linear in the number of nodes and not in the (potentially exponential) number of paths.
    *
    * @since 0.3.1
    */
@@ -360,7 +364,9 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
       if (zbddVar > var)
       {
         final var stack = new IntStack((zbddVar - var) * 2);
-        stack.push(zbdd);
+        final var visited = new IntObjectMap();
+
+        visited.put(stack.push(zbdd), TRUE);
 
         do {
           final var offset = stack.pop() * NODE_RECORD_SIZE;
@@ -371,14 +377,29 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
           if (currentVar > var)
           {
-            stack.pushIfNotLeafNode(nodes[offset + _P0]);
-            stack.pushIfNotLeafNode(nodes[offset + _P1]);
+            __hasCubeWithVar_pushUnvisited(stack, visited, nodes[offset + _P0]);
+            __hasCubeWithVar_pushUnvisited(stack, visited, nodes[offset + _P1]);
           }
         } while(stack.isNotEmpty());
       }
     }
 
     return false;
+  }
+
+
+  /**
+   * Pushes the given {@code zbdd} onto the {@code stack} and records it as visited, unless it is a terminal node or
+   * has been visited before.
+   *
+   * @param stack    traversal stack, not {@code null}
+   * @param visited  visited nodes, not {@code null}
+   * @param zbdd     zbdd node
+   */
+  private static void __hasCubeWithVar_pushUnvisited(@NotNull IntStack stack, @NotNull IntObjectMap visited, int zbdd)
+  {
+    if (zbdd >= 2 && visited.get(zbdd) == null)
+      visited.put(stack.push(zbdd), TRUE);
   }
 
 
