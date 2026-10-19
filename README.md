@@ -176,7 +176,17 @@ zbdd.gc();            // explicitly trigger garbage collection
 ```
 
 > **Note:** All ZBDD operations automatically protect their input parameters by incrementing reference counts on
-> entry and decrementing on exit.
+> entry and decrementing on exit. Returned ZBDDs are **not** protected: almost every operation may trigger a
+> garbage collection, which recycles all unprotected nodes. A returned ZBDD is therefore only guaranteed to be valid
+> until the next operation. Protect every ZBDD you need later with `incRef`, including results that are passed as
+> arguments while other arguments of the same call are still being computed:
+>
+> ```java
+> // unsafe: the result of the 1st union may be recycled while computing the 2nd union
+> int r = zbdd.union(zbdd.union(a, b), zbdd.union(c, d));
+> ```
+>
+> With a concurrent instance, perform an operation and the `incRef` of its result together in `doAtomic`.
 
 ### Traversal
 

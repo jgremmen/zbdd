@@ -43,6 +43,30 @@ import java.util.function.Function;
  *   <li>Querying and traversing the ZBDD structure</li>
  *   <li>Memory management through reference counting and garbage collection</li>
  * </ul>
+ *
+ * <h2>Reference lifetime</h2>
+ * Almost every method that creates zbdd nodes may trigger a garbage collection. Garbage collection frees all zbdd
+ * nodes that are not protected by a reference count (see {@link #incRef(int)}) and not reachable from a protected
+ * node. Freed node numbers are recycled for new nodes.
+ * <p>
+ * Consequently, a zbdd returned by a method is only guaranteed to be valid until the next node creating method is
+ * invoked. It is the caller's responsibility to protect every zbdd that is needed at a later point by invoking
+ * {@link #incRef(int)} and to release it with {@link #decRef(int)} once it is no longer needed. Using an unprotected
+ * zbdd after it has been recycled does not necessarily throw an exception; the zbdd may silently denote a different
+ * set.
+ * <p>
+ * Zbdds passed as parameters are protected by the method for the duration of the invocation. This does not protect
+ * zbdds that are only intended to be passed to a method invocation, while other arguments for the same invocation are
+ * still being evaluated:
+ * <pre>{@code
+ *   // unsafe: the result of the 1st union may be recycled while evaluating the 2nd union
+ *   int r = zbdd.union(zbdd.union(a, b), zbdd.union(c, d));
+ *
+ *   // safe
+ *   int ab = zbdd.incRef(zbdd.union(a, b));
+ *   int r = zbdd.union(ab, zbdd.union(c, d));
+ *   zbdd.decRef(ab);
+ * }</pre>
  * <p>
  * See also:
  * <a href="https://en.wikipedia.org/wiki/Zero-suppressed_decision_diagram">Zero-suppressed decision diagram</a>
@@ -567,7 +591,8 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * that have an incremented reference count are protected from garbage collection.
    * <p>
    * All functions in this interface that accept one or more zbdds as a parameter will protect those zbdds by
-   * internally increasing the reference count on entry and decreasing it on exit.
+   * internally increasing the reference count on entry and decreasing it on exit. Returned zbdds are not protected;
+   * see the reference lifetime section in the {@link Zbdd} class documentation.
    *
    * @param zbdd  zbdd node
    *
@@ -864,6 +889,15 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
 
   /**
    * Zbdd implementation that is thread-safe.
+   * <p>
+   * Each method invocation is performed under a lock, which is released as soon as the method returns. As a
+   * result, a zbdd returned by a method may be recycled by a garbage collection triggered by another thread before
+   * the caller is able to protect it with {@link #incRef(int)}. Zbdd operations whose results are needed later
+   * must therefore be performed together with the corresponding {@code incRef} within
+   * {@link #doAtomic(Function) doAtomic}:
+   * <pre>{@code
+   *   int r = concurrentZbdd.doAtomic(z -> { return z.incRef(z.union(p, q)); });
+   * }</pre>
    *
    * @author Jeroen Gremmen
    * @since 0.5.0
