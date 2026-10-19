@@ -170,7 +170,7 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
    * @since 0.1.3
    */
   @Override
-  @Contract(pure = true)
+  @Contract(mutates = "this")
   protected long __count(int zbdd)
   {
     if (zbdd < 2)

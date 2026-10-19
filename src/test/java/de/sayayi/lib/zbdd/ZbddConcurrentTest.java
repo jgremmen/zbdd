@@ -1,12 +1,19 @@
 package de.sayayi.lib.zbdd;
 
+import de.sayayi.lib.zbdd.cache.ZbddFastCache;
 import de.sayayi.lib.zbdd.exception.InvalidZbddException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import static de.sayayi.lib.zbdd.ZbddFactory.asConcurrent;
+import static de.sayayi.lib.zbdd.ZbddFactory.createCached;
 import static java.util.concurrent.Executors.newFixedThreadPool;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -56,7 +63,7 @@ class ZbddConcurrentTest
   @DisplayName("With concurrency zbdd")
   void concurrencyZbdd() throws Exception
   {
-    final var zbdd = ZbddFactory.asConcurrent(ZbddFactory.create());
+    final var zbdd = asConcurrent(ZbddFactory.create());
     final int cube = zbdd.cube(zbdd.createVar(), zbdd.createVar());
 
     final var state1Complete = new CountDownLatch(1);
@@ -103,5 +110,70 @@ class ZbddConcurrentTest
       assertTrue(zbdd.isValidZbdd(cube));
       assertEquals(1, future.get());
     }
+  }
+
+
+  @Test
+  @DisplayName("Concurrent count with cache")
+  void concurrentCountWithCache() throws Exception
+  {
+    final var zbdd = asConcurrent(createCached(new ZbddFastCache()));
+    final var vars = new int[14];
+
+    for(var i = 0; i < vars.length; i++)
+      vars[i] = zbdd.createVar();
+
+    final var random = new Random(1);
+    final var sets = new int[300];
+    final var expectedCounts = new long[sets.length];
+
+    for(var s = 0; s < sets.length; s++)
+    {
+      var set = Zbdd.empty();
+
+      for(var n = 0; n < 25; n++)
+      {
+        final var cubeVars = new int[1 + random.nextInt(4)];
+
+        for(var i = 0; i < cubeVars.length; i++)
+          cubeVars[i] = vars[random.nextInt(vars.length)];
+
+        final var union = zbdd.incRef(zbdd.union(set, zbdd.cube(cubeVars)));
+
+        zbdd.decRef(set);
+        set = union;
+      }
+
+      sets[s] = set;
+      expectedCounts[s] = zbdd.count(set);
+    }
+
+    final var wrongCounts = new AtomicInteger();
+
+    try(final var executor = newFixedThreadPool(8)) {
+      final var futures = new ArrayList<Future<?>>();
+
+      for(var t = 0; t < 8; t++)
+      {
+        final var seed = t;
+
+        futures.add(executor.submit(() -> {
+          final var threadRandom = new Random(seed);
+
+          for(var n = 0; n < 200_000; n++)
+          {
+            final var s = threadRandom.nextInt(sets.length);
+
+            if (zbdd.count(sets[s]) != expectedCounts[s])
+              wrongCounts.incrementAndGet();
+          }
+        }));
+      }
+
+      for(var future: futures)
+        future.get();
+    }
+
+    assertEquals(0, wrongCounts.get());
   }
 }

@@ -759,7 +759,26 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
     }
 
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Counting reads and writes the ZBDD cache, which is not thread-safe. Therefore, this implementation acquires the
+     * write lock instead of the read lock.
+     */
+    @Override
+    public long count(int zbdd)
+    {
+      writeLock.lock();
+      try {
+        return this.zbdd.count(zbdd);
+      } finally {
+        writeLock.unlock();
+      }
+    }
+
+
     /** {@inheritDoc} */
+    @Override
     @Contract(pure = true)
     public @NotNull ZbddCache getZbddCache()
     {
