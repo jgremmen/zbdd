@@ -891,13 +891,13 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
   /**
    * Zbdd implementation that is thread-safe.
    * <p>
-   * Each method invocation is performed under a lock, which is released as soon as the method returns. As a
-   * result, a zbdd returned by a method may be recycled by a garbage collection triggered by another thread before
-   * the caller is able to protect it with {@link #incRef(int)}. Zbdd operations whose results are needed later
-   * must therefore be performed together with the corresponding {@code incRef} within
+   * Each method invocation is performed under a lock, which is released as soon as the method returns. As a result, a
+   * zbdd returned by a method may be recycled by a garbage collection triggered by another thread before the caller is
+   * able to protect it with {@link #incRef(int)}. Zbdd operations whose results are needed later must therefore be
+   * performed together with the corresponding {@code incRef} within
    * {@link #doAtomic(Function) doAtomic}:
    * <pre>{@code
-   *   int r = concurrentZbdd.doAtomic(z -> { return z.incRef(z.union(p, q)); });
+   *   int r = concurrentZbdd.doAtomic(z -> z.incRef(z.union(p, q)));
    * }</pre>
    *
    * @author Jeroen Gremmen
@@ -908,18 +908,20 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
     /**
      * Perform operations within a locked context, acting like one atomic operation.
      * <p>
-     * When executing multiple zbdd operations on this concurrent instance, a lock is aquired for each operation
-     * on entry and released on exit. For multiple zbdd operations, there's always a chance another thread is given
-     * the next lock, allowing it to perform its operations.
+     * When executing multiple zbdd operations on this concurrent instance, a lock is acquired for each operation on
+     * entry and released on exit. For multiple zbdd operations, there's always a chance another thread is given the
+     * next lock, allowing it to perform its operations.
      * <p>
-     * Note: the {@code operation} function should do its work as fast as possible. Essentially, it should perform
-     * zbdd operations only and then exit.
+     * Note: the {@code operation} function should do its work as fast as possible. Essentially, it should perform zbdd
+     * operations only and then exit.
      *
-     * @param operation  operation function, performing zbdd operations that are required to be atomic
+     * @param operation  operation function, performing zbdd operations that are required to be atomic, not {@code null}
      *
      * @return  return value from the {@code operation} function
      *
      * @param <T>  return value type
+     *
+     * @see #runAtomic(Consumer)
      */
     <T> T doAtomic(@NotNull Function<Zbdd,T> operation);
 
@@ -927,16 +929,22 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
     /**
      * Perform operations within a locked context, acting like one atomic operation.
      * <p>
-     * When executing multiple zbdd operations on this concurrent instance, a lock is aquired for each operation
-     * on entry and released on exit. For multiple zbdd operations, there's always a chance another thread is given
-     * the next lock, allowing it to perform its operations.
+     * When executing multiple zbdd operations on this concurrent instance, a lock is acquired for each operation on
+     * entry and released on exit. For multiple zbdd operations, there's always a chance another thread is given the
+     * next lock, allowing it to perform its operations.
      * <p>
-     * Note: the {@code operation} function should do its work as fast as possible. Essentially, it should perform
-     * zbdd operations only and then exit.
+     * Note: the {@code operation} function should do its work as fast as possible. Essentially, it should perform zbdd
+     * operations only and then exit.
+     * <p>
+     * This method is the counterpart of {@link #doAtomic(Function)} for operations without a result.
      *
-     * @param operation  operation function, performing zbdd operations that are required to be atomic
+     * @param operation  operation function, performing zbdd operations that are required to be atomic, not {@code null}
+     *
+     * @see #doAtomic(Function)
+     *
+     * @since 0.8.0
      */
-    void doAtomic(@NotNull Consumer<Zbdd> operation);
+    void runAtomic(@NotNull Consumer<Zbdd> operation);
   }
 
 

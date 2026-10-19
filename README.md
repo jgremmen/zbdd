@@ -186,7 +186,8 @@ zbdd.gc();            // explicitly trigger garbage collection
 > int r = zbdd.union(zbdd.union(a, b), zbdd.union(c, d));
 > ```
 >
-> With a concurrent instance, perform an operation and the `incRef` of its result together in `doAtomic`.
+> With a concurrent instance, perform an operation and the `incRef` of its result together in `doAtomic`:
+> `int r = concurrent.doAtomic(z -> z.incRef(z.union(a, b)));`
 
 ### Traversal
 
@@ -227,10 +228,13 @@ You can also implement the `ZbddCache` interface for a custom caching strategy.
 // Wrap any ZBDD instance for thread-safe access
 Zbdd.Concurrent concurrent = ZbddFactory.asConcurrent(zbdd);
 
-// Perform multiple operations atomically
-concurrent.doAtomic(z -> {
-    int r = z.union(a, b);
-    z.incRef(r);
+// Perform multiple operations atomically and return a result
+int r = concurrent.doAtomic(z -> z.incRef(z.union(a, b)));
+
+// Perform multiple operations atomically without a result
+concurrent.runAtomic(z -> {
+    z.decRef(r);
+    z.gc();
 });
 ```
 

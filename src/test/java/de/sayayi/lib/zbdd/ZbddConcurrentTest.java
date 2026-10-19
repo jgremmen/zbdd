@@ -87,13 +87,13 @@ class ZbddConcurrentTest
 
       final var future = executor.submit(() -> {
         System.out.println("start zbdd operation thread");
-        zbdd.doAtomic(z -> {
+        zbdd.runAtomic(z -> {
           System.out.println("perform zbdd operation...");
           zbdd.incRef(cube);
 
           System.out.println("unlocking gc thread...");
           state1Complete.countDown();  // signal state 1 complete
-          // without doAtomic, the gc thread would kick in at this point
+          // without runAtomic, the gc thread would kick in at this point
 
           zbdd.incRef(cube);
           System.out.println("zbdd operation finished");

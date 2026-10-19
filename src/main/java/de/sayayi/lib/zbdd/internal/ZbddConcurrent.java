@@ -28,6 +28,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static java.util.Objects.requireNonNull;
+
 
 /**
  * Thread-safe wrapper around a {@link Zbdd} instance. Read-only operations use a read lock and mutating operations
@@ -75,6 +77,8 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   @Override
   public <T> T doAtomic(@NotNull Function<Zbdd,T> operation)
   {
+    requireNonNull(operation, "operation must not be null");
+
     writeLock.lock();
     try {
       return operation.apply(this);
@@ -86,8 +90,10 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
-  public void doAtomic(@NotNull Consumer<Zbdd> operation)
+  public void runAtomic(@NotNull Consumer<Zbdd> operation)
   {
+    requireNonNull(operation, "operation must not be null");
+
     writeLock.lock();
     try {
       operation.accept(this);
