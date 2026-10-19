@@ -97,15 +97,15 @@ public final class ZbddFactory
 
 
   /**
-   * Wraps the given {@code zbdd} instance to make it thread-safe. If the instance is already concurrent,
-   * it is returned as-is. After wrapping, access the underlying instance only through the returned wrapper;
-   * direct access through another reference bypasses synchronization.
+   * Wraps the given {@code zbdd} instance to make it thread-safe. If the instance is already concurrent, it is
+   * returned as-is. After wrapping, access the underlying instance only through the returned wrapper; direct access
+   * through another reference bypasses synchronization.
    *
    * @param zbdd  ZBDD instance to wrap, not {@code null}
    *
    * @return  thread-safe ZBDD instance, never {@code null}
    */
-  @Contract(value = "_ -> new", pure = true)
+  @Contract(pure = true)
   public static @NotNull Zbdd.Concurrent asConcurrent(@NotNull Zbdd zbdd) {
     return zbdd instanceof Zbdd.Concurrent ? (Zbdd.Concurrent)zbdd : new ZbddConcurrent(zbdd);
   }
@@ -113,15 +113,16 @@ public final class ZbddFactory
 
   /**
    * Wraps the given cached {@code zbdd} instance to make it thread-safe while preserving cache support. If the
-   * instance is already concurrent, it is returned as-is. After wrapping, access the underlying instance only
-   * through the returned wrapper; direct access through another reference bypasses synchronization.
+   * instance is already concurrent, it is returned as-is. After wrapping, access the underlying instance only through
+   * the returned wrapper; direct access through another reference bypasses synchronization.
    *
    * @param zbdd  cached ZBDD instance to wrap, not {@code null}
+   *
    * @param <T>   return type that is both {@link Zbdd.Concurrent concurrent} and {@link Zbdd.WithCache cached}
    *
    * @return  thread-safe cached ZBDD instance, never {@code null}
    */
-  @Contract(value = "_ -> new", pure = true)
+  @Contract(pure = true)
   @SuppressWarnings("unchecked")
   public static <T extends Zbdd.Concurrent & Zbdd.WithCache> @NotNull T asConcurrent(@NotNull Zbdd.WithCache zbdd) {
     return (T)(zbdd instanceof Zbdd.Concurrent ? zbdd : new ZbddConcurrent.WithCache(zbdd));
