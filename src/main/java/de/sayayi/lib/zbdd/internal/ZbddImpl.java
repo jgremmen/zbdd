@@ -1070,7 +1070,10 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   {
     final var mark = protectedNodes.size();
     try {
-      return __getNode(checkVar(var), checkZbdd(p0, "p0"), checkZbdd(p1, "p1"));
+      return __getNode(
+          checkVar(var),
+          checkVarOrder(var, p0, "p0"),
+          checkVarOrder(var, p1, "p1"));
     } finally {
       protectedNodes.truncate(mark);
     }
@@ -1589,6 +1592,33 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
       throw new InvalidVarException(var, lastVarNumber, "var must be in range 1.." + lastVarNumber);
 
     return var;
+  }
+
+
+  /**
+   * Validates that the variable of the given child node {@code zbdd} is lower than {@code var}, which is required for
+   * a node with variable {@code var} to reference {@code zbdd} as one of its branches.
+   *
+   * @param var    variable of the node referencing {@code zbdd}
+   * @param zbdd   valid zbdd child node
+   * @param param  parameter name for the exception message, not {@code null}
+   *
+   * @return  the validated zbdd child node
+   *
+   * @throws InvalidZbddException  if the variable of {@code zbdd} is not lower than {@code var}
+   */
+  @Contract(value = "_, _, _ -> param2", pure = true)
+  private int checkVarOrder(int var, int zbdd, @NotNull String param)
+  {
+    final var zbddVar = __getVar(checkZbdd(zbdd, param));
+
+    if (zbddVar >= var)
+    {
+      throw new InvalidZbddException(zbdd, param + " node " + zbdd + " has var " + zbddVar +
+          ", which must be lower than var " + var);
+    }
+
+    return zbdd;
   }
 
 

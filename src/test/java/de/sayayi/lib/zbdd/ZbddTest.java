@@ -274,9 +274,11 @@ class ZbddTest
   void countDiamondSharedDag()
   {
     final var zbdd = ZbddFactory.create();
-    final var a = zbdd.createVar();
-    final var b = zbdd.createVar();
+
+    // variables are created bottom-up, as a node may only reference nodes with a lower variable
     final var c = zbdd.createVar();
+    final var b = zbdd.createVar();
+    final var a = zbdd.createVar();
 
     zbdd.setLiteralResolver(var -> var == a ? "a" : var == b ? "b" : "c");
 
@@ -958,6 +960,31 @@ class ZbddTest
     // nodes protected by the failed operation must have been released
     zbdd.gc();
     assertEquals(statistics.getNodesCapacity() - 2, statistics.getFreeNodes());
+  }
+
+
+  @Test
+  @DisplayName("Operation 'getNode' enforces variable order")
+  void getNodeVarOrder()
+  {
+    final var zbdd = ZbddFactory.create();
+    final var v1 = zbdd.createVar();
+    final var v2 = zbdd.createVar();
+    final var cubeV1 = zbdd.cube(v1);
+    final var cubeV2 = zbdd.cube(v2);
+
+    assertEquals(zbdd.cube(v1, v2), zbdd.getNode(v2, Zbdd.empty(), cubeV1));
+    assertEquals(cubeV1, zbdd.getNode(v1, Zbdd.empty(), Zbdd.base()));
+
+    // child variable higher than node variable
+    var exception = assertThrowsExactly(InvalidZbddException.class, () -> zbdd.getNode(v1, Zbdd.empty(), cubeV2));
+    assertEquals(cubeV2, exception.getZbdd());
+    assertThrowsExactly(InvalidZbddException.class, () -> zbdd.getNode(v1, cubeV2, Zbdd.base()));
+
+    // child variable equal to node variable
+    exception = assertThrowsExactly(InvalidZbddException.class, () -> zbdd.getNode(v2, cubeV2, Zbdd.base()));
+    assertEquals(cubeV2, exception.getZbdd());
+    assertThrowsExactly(InvalidZbddException.class, () -> zbdd.getNode(v2, Zbdd.empty(), cubeV2));
   }
 
 

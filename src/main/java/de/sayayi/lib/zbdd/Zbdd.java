@@ -16,6 +16,8 @@
 package de.sayayi.lib.zbdd;
 
 import de.sayayi.lib.zbdd.cache.ZbddCache;
+import de.sayayi.lib.zbdd.exception.InvalidVarException;
+import de.sayayi.lib.zbdd.exception.InvalidZbddException;
 import de.sayayi.lib.zbdd.internal.ZbddCachedImpl;
 import de.sayayi.lib.zbdd.internal.ZbddConcurrent;
 import de.sayayi.lib.zbdd.internal.ZbddImpl;
@@ -551,12 +553,20 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * <p>
    * This is the fundamental operation for constructing zbdd nodes. It ensures that identical nodes are shared
    * (canonical representation).
+   * <p>
+   * Variables are ordered: a node may only reference nodes with a lower variable. Therefore, {@code var} must be
+   * greater than the variables of both {@code p0} and {@code p1}. The terminal nodes {@link #EMPTY} and {@link #BASE}
+   * can be referenced by any node.
    *
    * @param var  variable for the node
    * @param p0   zbdd node for the 0-branch (variable absent)
    * @param p1   zbdd node for the 1-branch (variable present)
    *
    * @return  zbdd node identifier
+   *
+   * @throws InvalidVarException   if {@code var} is not a valid variable
+   * @throws InvalidZbddException  if {@code p0} or {@code p1} is not a valid zbdd node, or if its variable is not
+   *                               lower than {@code var}
    */
   @Contract(mutates = "this")
   int getNode(int var, int p0, int p1);
