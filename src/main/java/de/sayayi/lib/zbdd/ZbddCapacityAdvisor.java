@@ -54,7 +54,10 @@ public interface ZbddCapacityAdvisor
 
 
   /**
-   * Calculate the number of nodes to incease the zbdd node capacity by.
+   * Calculate the number of nodes to increase the zbdd node capacity by.
+   * <p>
+   * A negative value is treated as {@code 0}. If the capacity is not increased and no free node is left, the zbdd
+   * operation requiring a new node fails with a {@link de.sayayi.lib.zbdd.exception.ZbddException ZbddException}.
    *
    * @param statistics  current zbdd statistics, not {@code null}
    *

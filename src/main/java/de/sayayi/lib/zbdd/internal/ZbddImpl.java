@@ -1220,10 +1220,16 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     }
 
     final var oldNodesCapacity = nodesCapacity;
+    final var newNodesCapacity =
+        clamp((long)nodesCapacity + capacityAdvisor.adviseIncrement(statistics), nodesCapacity, MAX_NODES);
+
+    // no capacity increase advised or possible
+    if (newNodesCapacity == oldNodesCapacity)
+      return;
 
     statistics.capacityIncreaseCount++;
 
-    nodesCapacity = (int)min((long)nodesCapacity + capacityAdvisor.adviseIncrement(statistics), MAX_NODES);
+    nodesCapacity = newNodesCapacity;
     nodes = copyOf(nodes, nodesCapacity * NODE_RECORD_SIZE);
 
     nextFreeNode = 0;

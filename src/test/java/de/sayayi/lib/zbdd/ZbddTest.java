@@ -17,6 +17,7 @@ package de.sayayi.lib.zbdd;
 
 import de.sayayi.lib.zbdd.exception.InvalidVarException;
 import de.sayayi.lib.zbdd.exception.InvalidZbddException;
+import de.sayayi.lib.zbdd.exception.ZbddException;
 import de.sayayi.lib.zbdd.exception.ZbddOutOfRangeException;
 import de.sayayi.lib.zbdd.internal.DefaultCapacityAdvisor;
 import org.jetbrains.annotations.NotNull;
@@ -24,6 +25,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.Random;
 import java.util.TreeMap;
@@ -861,6 +864,37 @@ class ZbddTest
     // unprotect a
     zbdd.decRef(a);
     assertEquals(1, statistics.getDeadNodes());
+  }
+
+
+  @ParameterizedTest(name = "increment = {0}")
+  @DisplayName("Capacity advisor without increment")
+  @ValueSource(ints = { 0, -4 })
+  void capacityAdvisorNoIncrement(int increment)
+  {
+    final var zbdd = ZbddFactory.create(new ZbddCapacityAdvisor() {
+      @Override public int getInitialCapacity() { return 16; }
+      @Override public int getMinimumFreeNodes(@NotNull ZbddStatistics statistics) { return 1; }
+      @Override public int adviseIncrement(@NotNull ZbddStatistics statistics) { return increment; }
+      @Override public boolean isGCRequired(@NotNull ZbddStatistics statistics) { return false; }
+    });
+    final var statistics = zbdd.getStatistics();
+    final var a = zbdd.createVar();
+    final var cubeA = zbdd.incRef(zbdd.cube(a));
+
+    // 14 non-terminal nodes fit into a capacity of 16
+    for(var n = 1; n < 14; n++)
+      zbdd.incRef(zbdd.cube(a, zbdd.createVar()));
+
+    assertEquals(0, statistics.getFreeNodes());
+
+    final var b = zbdd.createVar();
+    final var exception = assertThrowsExactly(ZbddException.class, () -> zbdd.cube(a, b));
+    assertEquals("nodes capacity exhausted", exception.getMessage());
+
+    assertEquals(16, statistics.getNodesCapacity());
+    assertEquals(0, statistics.getCapacityIncreaseCount());
+    assertEquals("{ v1 }", zbdd.toString(cubeA));
   }
 
 
