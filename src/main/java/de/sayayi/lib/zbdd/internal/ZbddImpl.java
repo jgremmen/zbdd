@@ -87,11 +87,18 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   private final @NotNull List<ZbddCallback> callbacks;
   private final @NotNull IntObjectMap varObjectMap;
 
+  /**
+   * Nodes protected from garbage collection by currently running zbdd operations. Each operation saves the stack
+   * size on entry and truncates the stack to that size on exit, so an exception never leaves nodes protected.
+   */
+  private final @NotNull IntStack protectedNodes;
+
   private int lastVarNumber;
 
   private int nodesCapacity;
   private int nodesFree;
   private int nodesDead;
+  private int nodesNew;
 
   private int @NotNull [] nodes;
   private int nextFreeNode;
@@ -118,6 +125,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     statistics = new Statistics();
     callbacks = new ArrayList<>();
     varObjectMap = new IntObjectMap();
+    protectedNodes = new IntStack(24);
 
     clear();
   }
@@ -191,6 +199,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
     lastVarNumber = 0;
     nodesDead = 0;
+    nodesNew = 0;
     nextFreeNode = 2;
     nodesFree = nodesCapacity - 2;
 
@@ -206,6 +215,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     }
 
     varObjectMap.clear();
+    protectedNodes.truncate(0);
     statistics.clear();
 
     callbacks.forEach(ZbddCallback::afterClear);
@@ -267,8 +277,14 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
    */
   @Override
   @Contract(mutates = "this")
-  public int cube(int var) {
-    return __getNode(checkVar(var), EMPTY, BASE);
+  public int cube(int var)
+  {
+    final var mark = protectedNodes.size();
+    try {
+      return __getNode(checkVar(var), EMPTY, BASE);
+    } finally {
+      protectedNodes.truncate(mark);
+    }
   }
 
 
@@ -301,9 +317,14 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
       if (n >= 2)
         sort(cubeVars = copyOf(cubeVars, n));
 
-      for(int i = 0, topVar = -1, var; i < n; i++)
-        if ((var = cubeVars[i]) != topVar)
-          r = __getNode(topVar = checkVar(var), EMPTY, r);
+      final var mark = protectedNodes.size();
+      try {
+        for(int i = 0, topVar = -1, var; i < n; i++)
+          if ((var = cubeVars[i]) != topVar)
+            r = __getNode(topVar = checkVar(var), EMPTY, r);
+      } finally {
+        protectedNodes.truncate(mark);
+      }
     }
 
     return r;
@@ -364,8 +385,14 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   /** {@inheritDoc} */
   @Override
   @Contract(mutates = "this")
-  public int subset0(int zbdd, int var) {
-    return __subset0(checkZbdd(zbdd, "zbdd"), checkVar(var));
+  public int subset0(int zbdd, int var)
+  {
+    final var mark = protectedNodes.size();
+    try {
+      return __subset0(checkZbdd(zbdd, "zbdd"), checkVar(var));
+    } finally {
+      protectedNodes.truncate(mark);
+    }
   }
 
 
@@ -383,14 +410,13 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     if (top == var)
       return __getP0(zbdd);
 
-    __incRef(zbdd);
+    final var mark = saveAndProtect(zbdd);
 
-    final var p0 = __subset0(__getP0(zbdd), var);
-    __incRef(p0);
+    final var p0 = protect(__subset0(__getP0(zbdd), var));
     final var p1 = __subset0(__getP1(zbdd), var);
-    final var r = __getNode(top, __decRef(p0), p1);
+    final var r = __getNode(top, p0, p1);
 
-    __decRef(zbdd);
+    protectedNodes.truncate(mark);
 
     return r;
   }
@@ -399,8 +425,14 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   /** {@inheritDoc} */
   @Override
   @Contract(mutates = "this")
-  public int subset1(int zbdd, int var) {
-    return __subset1(checkZbdd(zbdd, "zbdd"), checkVar(var));
+  public int subset1(int zbdd, int var)
+  {
+    final var mark = protectedNodes.size();
+    try {
+      return __subset1(checkZbdd(zbdd, "zbdd"), checkVar(var));
+    } finally {
+      protectedNodes.truncate(mark);
+    }
   }
 
 
@@ -418,14 +450,13 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     if (top == var)
       return __getP1(zbdd);
 
-    __incRef(zbdd);
+    final var mark = saveAndProtect(zbdd);
 
-    final var p0 = __subset1(__getP0(zbdd), var);
-    __incRef(p0);
+    final var p0 = protect(__subset1(__getP0(zbdd), var));
     final var p1 = __subset1(__getP1(zbdd), var);
-    final var r = __getNode(top, __decRef(p0), p1);
+    final var r = __getNode(top, p0, p1);
 
-    __decRef(zbdd);
+    protectedNodes.truncate(mark);
 
     return r;
   }
@@ -434,8 +465,14 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   /** {@inheritDoc} */
   @Override
   @Contract(mutates = "this")
-  public int change(int zbdd, int var) {
-    return __change(checkZbdd(zbdd, "zbdd"), checkVar(var));
+  public int change(int zbdd, int var)
+  {
+    final var mark = protectedNodes.size();
+    try {
+      return __change(checkZbdd(zbdd, "zbdd"), checkVar(var));
+    } finally {
+      protectedNodes.truncate(mark);
+    }
   }
 
 
@@ -450,22 +487,20 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     if (top < var)
       return __getNode(var, EMPTY, zbdd);
 
-    __incRef(zbdd);
-
+    final var mark = saveAndProtect(zbdd);
     final int r;
 
     if (top == var)
       r = __getNode(var, __getP1(zbdd), __getP0(zbdd));
     else
     {
-      final var p0 = __change(__getP0(zbdd), var);
-      __incRef(p0);
+      final var p0 = protect(__change(__getP0(zbdd), var));
       final var p1 = __change(__getP1(zbdd), var);
 
-      r = __getNode(top, __decRef(p0), p1);
+      r = __getNode(top, p0, p1);
     }
 
-    __decRef(zbdd);
+    protectedNodes.truncate(mark);
 
     return r;
   }
@@ -540,30 +575,38 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     if (n == 0)
       throw new IllegalArgumentException("at least one ZBDD node must be provided");
 
-    // check validity first before incrementing reference counts
+    // check validity first before protecting nodes
     for(var i = 0; i < n; i++)
       checkZbdd(p[i], "p[" + i + ']');
 
-    for(var pn: p)
-      __incRef(pn);
+    final var mark = protectedNodes.size();
+    try {
+      for(var pn: p)
+        protect(pn);
 
-    var r = p[0];
+      var r = p[0];
 
-    for(var i = 1; i < n; i++)
-      r = __union(r, p[i]);
+      for(var i = 1; i < n; i++)
+        r = __union(r, p[i]);
 
-    for(var pn: p)
-      __decRef(pn);
-
-    return r;
+      return r;
+    } finally {
+      protectedNodes.truncate(mark);
+    }
   }
 
 
   /** {@inheritDoc} */
   @Override
   @Contract(mutates = "this")
-  public int union(int p, int q) {
-    return __union(checkZbdd(p, "p"), checkZbdd(q, "q"));
+  public int union(int p, int q)
+  {
+    final var mark = protectedNodes.size();
+    try {
+      return __union(checkZbdd(p, "p"), checkZbdd(q, "q"));
+    } finally {
+      protectedNodes.truncate(mark);
+    }
   }
 
 
@@ -588,9 +631,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
       tmp = p_var; p_var = q_var; q_var = tmp;
     }
 
-    __incRef(p);
-    __incRef(q);
-
+    final var mark = saveAndProtect(p, q);
     final int r;
 
     if (p_var < q_var)
@@ -602,15 +643,13 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     else
     {
       // p_var = q_var
-      final var p0 = __union(__getP0(p), __getP0(q));
-      __incRef(p0);
+      final var p0 = protect(__union(__getP0(p), __getP0(q)));
       final var p1 = __union(__getP1(p), __getP1(q));
 
-      r = __getNode(p_var, __decRef(p0), p1);
+      r = __getNode(p_var, p0, p1);
     }
 
-    __decRef(q);
-    __decRef(p);
+    protectedNodes.truncate(mark);
 
     return r;
   }
@@ -619,8 +658,14 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   /** {@inheritDoc} */
   @Override
   @Contract(mutates = "this")
-  public int intersect(int p, int q) {
-    return __intersect(checkZbdd(p, "p"), checkZbdd(q, "q"));
+  public int intersect(int p, int q)
+  {
+    final var mark = protectedNodes.size();
+    try {
+      return __intersect(checkZbdd(p, "p"), checkZbdd(q, "q"));
+    } finally {
+      protectedNodes.truncate(mark);
+    }
   }
 
 
@@ -639,8 +684,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     final var q_var = __getVar(q);
     final int r;
 
-    __incRef(p);
-    __incRef(q);
+    final var mark = saveAndProtect(p, q);
 
     if (p_var > q_var)
       r = __intersect(__getP0(p), q);
@@ -648,15 +692,13 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
       r = __intersect(p, __getP0(q));
     else
     {
-      final var p0 = __intersect(__getP0(p), __getP0(q));
-      __incRef(p0);
+      final var p0 = protect(__intersect(__getP0(p), __getP0(q)));
       final var p1 = __intersect(__getP1(p), __getP1(q));
 
-      r = __getNode(p_var, __decRef(p0), p1);
+      r = __getNode(p_var, p0, p1);
     }
 
-    __decRef(q);
-    __decRef(p);
+    protectedNodes.truncate(mark);
 
     return r;
   }
@@ -665,8 +707,14 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   /** {@inheritDoc} */
   @Override
   @Contract(mutates = "this")
-  public int difference(int p, int q) {
-    return __difference(checkZbdd(p, "p"), checkZbdd(q, "q"));
+  public int difference(int p, int q)
+  {
+    final var mark = protectedNodes.size();
+    try {
+      return __difference(checkZbdd(p, "p"), checkZbdd(q, "q"));
+    } finally {
+      protectedNodes.truncate(mark);
+    }
   }
 
 
@@ -687,8 +735,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     final var q_var = __getVar(q);
     final int r;
 
-    __incRef(p);
-    __incRef(q);
+    final var mark = saveAndProtect(p, q);
 
     if (p_var < q_var)
       r = __difference(p, __getP0(q));
@@ -696,15 +743,13 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
       r = __getNode(p_var, __difference(__getP0(p), q), __getP1(p));
     else
     {
-      final var p0 = __difference(__getP0(p), __getP0(q));
-      __incRef(p0);
+      final var p0 = protect(__difference(__getP0(p), __getP0(q)));
       final var p1 = __difference(__getP1(p), __getP1(q));
 
-      r = __getNode(p_var, __decRef(p0), p1);
+      r = __getNode(p_var, p0, p1);
     }
 
-    __decRef(q);
-    __decRef(p);
+    protectedNodes.truncate(mark);
 
     return r;
   }
@@ -713,8 +758,14 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   /** {@inheritDoc} */
   @Override
   @Contract(mutates = "this")
-  public int multiply(int p, int q) {
-    return __multiply(checkZbdd(p, "p"), checkZbdd(q, "q"));
+  public int multiply(int p, int q)
+  {
+    final var mark = protectedNodes.size();
+    try {
+      return __multiply(checkZbdd(p, "p"), checkZbdd(q, "q"));
+    } finally {
+      protectedNodes.truncate(mark);
+    }
   }
 
 
@@ -741,34 +792,24 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
       p_var = q_var;
     }
 
-    __incRef(p);
-    __incRef(q);
+    final var mark = saveAndProtect(p, q);
 
     // factor P = p0 + v * p1
-    final var p0 = __incRef(__subset0(p, p_var));
-    final var p1 = __incRef(__subset1(p, p_var));
+    final var p0 = protect(__subset0(p, p_var));
+    final var p1 = protect(__subset1(p, p_var));
 
     // factor Q = q0 + v * q1
-    final var q0 = __incRef(__subset0(q, p_var));
-    final var q1 = __incRef(__subset1(q, p_var));
+    final var q0 = protect(__subset0(q, p_var));
+    final var q1 = protect(__subset1(q, p_var));
 
     // r = (p0 + v * p1) * (q0 + v * q1) = p0q0 + v * (p0q1 + p1q0 + p1q1)
-    final var p0q0 = __incRef(__multiply(p0, q0));
-    final var p0q1 = __incRef(__multiply(p0, q1));
-    final var p1q0 = __incRef(__multiply(p1, q0));
-    final var p1q1 = __incRef(__multiply(p1, q1));
+    final var p0q0 = protect(__multiply(p0, q0));
+    final var p0q1 = protect(__multiply(p0, q1));
+    final var p1q0 = protect(__multiply(p1, q0));
+    final var p1q1 = protect(__multiply(p1, q1));
     final var r = __union(p0q0, __change(__union(__union(p0q1, p1q0), p1q1), p_var));
 
-    __decRef(p1q1);
-    __decRef(p1q0);
-    __decRef(p0q1);
-    __decRef(p0q0);
-    __decRef(q1);
-    __decRef(q0);
-    __decRef(p1);
-    __decRef(p0);
-    __decRef(q);
-    __decRef(p);
+    protectedNodes.truncate(mark);
 
     return r;
   }
@@ -777,8 +818,14 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   /** {@inheritDoc} */
   @Override
   @Contract(mutates = "this")
-  public int divide(int p, int q) {
-    return __divide(checkZbdd(p, "p"), checkZbdd(q, "q"));
+  public int divide(int p, int q)
+  {
+    final var mark = protectedNodes.size();
+    try {
+      return __divide(checkZbdd(p, "p"), checkZbdd(q, "q"));
+    } finally {
+      protectedNodes.truncate(mark);
+    }
   }
 
 
@@ -795,37 +842,32 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     if (q == BASE)
       return p;
 
-    __incRef(p);
-    __incRef(q);
-
+    final var mark = saveAndProtect(p, q);
     final var v = __getVar(q);
 
     // factor P = p0 + v * p1
-    final var p0 = __incRef(__subset0(p, v));
-    final var p1 = __incRef(__subset1(p, v));
+    final var p0 = protect(__subset0(p, v));
+    final var p1 = protect(__subset1(p, v));
 
     // factor Q = q0 + v * q1
-    final var q0 = __incRef(__subset0(q, v));
+    final var q0 = protect(__subset0(q, v));
     final var q1 = __subset1(q, v);
 
-    final var r1 = __divide(__decRef(p1), q1);
+    final var r1 = __divide(p1, q1);
     final int r;
 
     if (r1 != EMPTY && q0 != EMPTY)
     {
-      __incRef(r1);
+      protect(r1);
 
       final var r0 = __divide(p0, q0);
 
-      r = __intersect(__decRef(r1), r0);
+      r = __intersect(r1, r0);
     }
     else
       r = r1;
 
-    __decRef(q0);
-    __decRef(p0);
-    __decRef(q);
-    __decRef(p);
+    protectedNodes.truncate(mark);
 
     return r;
   }
@@ -834,8 +876,14 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   /** {@inheritDoc} */
   @Override
   @Contract(mutates = "this")
-  public int modulo(int p, int q) {
-    return __modulo(checkZbdd(p, "p"), checkZbdd(q, "q"));
+  public int modulo(int p, int q)
+  {
+    final var mark = protectedNodes.size();
+    try {
+      return __modulo(checkZbdd(p, "p"), checkZbdd(q, "q"));
+    } finally {
+      protectedNodes.truncate(mark);
+    }
   }
 
 
@@ -845,13 +893,10 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   @Contract(mutates = "this")
   protected int __modulo(int p, int q)
   {
-    __incRef(p);
-    __incRef(q);
-
+    final var mark = saveAndProtect(p, q);
     final var r = __difference(p, __multiply(q, __divide(p, q)));
 
-    __decRef(q);
-    __decRef(p);
+    protectedNodes.truncate(mark);
 
     return r;
   }
@@ -860,8 +905,14 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   /** {@inheritDoc} */
   @Override
   @Contract(mutates = "this")
-  public int atomize(int zbdd) {
-    return __atomize(checkZbdd(zbdd, "zbdd"));
+  public int atomize(int zbdd)
+  {
+    final var mark = protectedNodes.size();
+    try {
+      return __atomize(checkZbdd(zbdd, "zbdd"));
+    } finally {
+      protectedNodes.truncate(mark);
+    }
   }
 
 
@@ -874,15 +925,15 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     if (zbdd < 2)
       return EMPTY;
 
-    final var offset = __incRef(zbdd) * NODE_RECORD_SIZE;
-    final var p0_atomized = __atomize(nodes[offset + _P0]);
-    __incRef(p0_atomized);
+    final var mark = saveAndProtect(zbdd);
+    final var offset = zbdd * NODE_RECORD_SIZE;
+    final var p0_atomized = protect(__atomize(nodes[offset + _P0]));
     final var p1_atomized = __atomize(nodes[offset + _P1]);
 
-    final var p0 = __atomize_union(__decRef(p0_atomized), p1_atomized);
+    final var p0 = __atomize_union(p0_atomized, p1_atomized);
     final var r = __getNode(nodes[offset + _VAR], p0, BASE);
 
-    __decRef(zbdd);
+    protectedNodes.truncate(mark);
 
     return r;
   }
@@ -908,14 +959,11 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
       tmp = p_var; p_var = q_var; q_var = tmp;
     }
 
-    __incRef(p);  // lock p
-    __incRef(q);  // lock q
-
+    final var mark = saveAndProtect(p, q);
     final var p0 = __atomize_union(p_var < q_var ? p : __getP0(p), __getP0(q));
     final var r = __getNode(q_var, p0, BASE);
 
-    __decRef(q);  // release q
-    __decRef(p);  // release p
+    protectedNodes.truncate(mark);
 
     return r;
   }
@@ -924,8 +972,14 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   /** {@inheritDoc} */
   @Override
   @Contract(mutates = "this")
-  public int removeBase(int zbdd) {
-    return __removeBase(checkZbdd(zbdd, "zbdd"));
+  public int removeBase(int zbdd)
+  {
+    final var mark = protectedNodes.size();
+    try {
+      return __removeBase(checkZbdd(zbdd, "zbdd"));
+    } finally {
+      protectedNodes.truncate(mark);
+    }
   }
 
 
@@ -938,13 +992,12 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     if (zbdd < 2)
       return EMPTY;
 
-    __incRef(zbdd);
-
+    final var mark = saveAndProtect(zbdd);
     final var offset = zbdd * NODE_RECORD_SIZE;
     final var p0 = __removeBase(nodes[offset + _P0]);
     final var r = __getNode(nodes[offset + _VAR], p0, nodes[offset + _P1]);
 
-    __decRef(zbdd);
+    protectedNodes.truncate(mark);
 
     return r;
   }
@@ -961,8 +1014,14 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
    */
   @Override
   @Contract(mutates = "this")
-  public boolean contains(int p, int q) {
-    return __contains(checkZbdd(p, "p"), checkZbdd(q, "q"));
+  public boolean contains(int p, int q)
+  {
+    final var mark = protectedNodes.size();
+    try {
+      return __contains(checkZbdd(p, "p"), checkZbdd(q, "q"));
+    } finally {
+      protectedNodes.truncate(mark);
+    }
   }
 
 
@@ -978,8 +1037,14 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   /** {@inheritDoc} */
   @Override
   @Contract(mutates = "this")
-  public int getNode(int var, int p0, int p1) {
-    return __getNode(checkVar(var), checkZbdd(p0, "p0"), checkZbdd(p1, "p1"));
+  public int getNode(int var, int p0, int p1)
+  {
+    final var mark = protectedNodes.size();
+    try {
+      return __getNode(checkVar(var), checkZbdd(p0, "p0"), checkZbdd(p1, "p1"));
+    } finally {
+      protectedNodes.truncate(mark);
+    }
   }
 
 
@@ -1017,13 +1082,11 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     // increase the number of free nodes if there are not enough nodes available
     if (nodesFree < 2)
     {
-      __incRef(p0);
-      __incRef(p1);
+      final var mark = saveAndProtect(p0, p1);
 
       ensureCapacity();
 
-      __decRef(p1);
-      __decRef(p0);
+      protectedNodes.truncate(mark);
 
       if (nodesFree == 0)
         throw new ZbddException("nodes capacity exhausted");
@@ -1034,8 +1097,10 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
     final var r = nextFreeNode;
     final var offset = r * NODE_RECORD_SIZE;
+
     nextFreeNode = nodes[offset + _NEXT];
     nodesFree--;
+    nodesNew++;
 
     // set new node
     nodes[offset + _VAR] = var;
@@ -1155,24 +1220,40 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   {
     final var markNodeStack = new IntStack(24);
 
+    // nodes protected by currently running zbdd operations
+    protectedNodes.forEach(zbdd -> gc_markNode(markNodeStack, zbdd));
+
     for(int zbdd = 0, offset = 0; zbdd < nodesCapacity; zbdd++, offset += NODE_RECORD_SIZE)
     {
       if (nodes[offset + _VAR] != -1 && nodes[offset + _REFCOUNT] > 0)
-        for(markNodeStack.push(zbdd); markNodeStack.isNotEmpty();)
-        {
-          final var offset2 = markNodeStack.pop() * NODE_RECORD_SIZE;
-
-          if ((nodes[offset2 + _VAR] & GC_VAR_MARK_MASK) == 0)
-          {
-            nodes[offset2 + _VAR] |= GC_VAR_MARK_MASK;
-
-            markNodeStack.pushIfNotLeafNode(nodes[offset2 + _P0]);
-            markNodeStack.pushIfNotLeafNode(nodes[offset2 + _P1]);
-          }
-        }
+        gc_markNode(markNodeStack, zbdd);
 
       // clear hash chain
       nodes[offset + _CHAIN] = 0;
+    }
+  }
+
+
+  /**
+   * Marks the given {@code zbdd} and all nodes reachable from it as being in use, so they survive the sweep phase of
+   * the garbage collection. Nodes which are already marked are not traversed again.
+   *
+   * @param markNodeStack  empty work stack, reused across invocations to avoid allocations, not {@code null}
+   * @param zbdd           zbdd node to mark, must not be a terminal node
+   */
+  private void gc_markNode(@NotNull IntStack markNodeStack, int zbdd)
+  {
+    for(markNodeStack.push(zbdd); markNodeStack.isNotEmpty();)
+    {
+      final var offset = markNodeStack.pop() * NODE_RECORD_SIZE;
+
+      if ((nodes[offset + _VAR] & GC_VAR_MARK_MASK) == 0)
+      {
+        nodes[offset + _VAR] |= GC_VAR_MARK_MASK;
+
+        markNodeStack.pushIfNotLeafNode(nodes[offset + _P0]);
+        markNodeStack.pushIfNotLeafNode(nodes[offset + _P1]);
+      }
     }
   }
 
@@ -1182,6 +1263,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     nextFreeNode = -1;
     nodesFree = 0;
     nodesDead = 0;
+    nodesNew = 0;
 
     for(int zbdd = nodesCapacity - 1, offset = zbdd * NODE_RECORD_SIZE; zbdd >= 2; zbdd--, offset -= NODE_RECORD_SIZE)
     {
@@ -1193,9 +1275,12 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
         prependHashChain(zbdd,
             hash(nodes[offset + _VAR] &= ~GC_VAR_MARK_MASK, nodes[offset + _P0], nodes[offset + _P1]));
 
-        // dead node reachable from referenced node
-        if (nodes[offset + _REFCOUNT] == 0)
+        // dead or new node reachable from referenced or protected node
+        final var refCount = nodes[offset + _REFCOUNT];
+        if (refCount == 0)
           nodesDead++;
+        else if (refCount == -1)
+          nodesNew++;
       }
       else
       {
@@ -1212,7 +1297,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   @Contract(mutates = "this")
   private void ensureCapacity()
   {
-    if (nodesDead > 0 && capacityAdvisor.isGCRequired(statistics))
+    if (nodesDead + nodesNew > 0 && capacityAdvisor.isGCRequired(statistics))
     {
       gc();
       if (nodesFree >= capacityAdvisor.getMinimumFreeNodes(statistics))
@@ -1271,6 +1356,72 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   }
 
 
+  /**
+   * Protects the given {@code zbdd} from garbage collection until the protection stack is truncated to a size
+   * below the current size. Unlike {@link #incRef(int)}, this does not change the node's reference count.
+   *
+   * @param zbdd  zbdd node
+   *
+   * @return  zbdd node
+   */
+  @Contract(value = "_ -> param1", mutates = "this")
+  private int protect(int zbdd)
+  {
+    protectedNodes.pushIfNotLeafNode(zbdd);
+    return zbdd;
+  }
+
+
+  /**
+   * Returns the current size of the protection stack and protects the given {@code zbdd} from garbage collection.
+   * <p>
+   * The returned mark must be passed to {@link IntStack#truncate(int) protectedNodes.truncate(mark)} once the
+   * protection is no longer required. This releases {@code zbdd} together with all nodes protected after it.
+   *
+   * @param zbdd  zbdd node to protect
+   *
+   * @return  protection stack size before protecting {@code zbdd}
+   *
+   * @see #protect(int)
+   */
+  @Contract(mutates = "this")
+  private int saveAndProtect(int zbdd)
+  {
+    final var mark = protectedNodes.size();
+
+    protectedNodes.pushIfNotLeafNode(zbdd);
+
+    return mark;
+  }
+
+
+  /**
+   * Returns the current size of the protection stack and protects the given zbdds {@code p} and {@code q} from
+   * garbage collection.
+   * <p>
+   * The returned mark must be passed to {@link IntStack#truncate(int) protectedNodes.truncate(mark)} once the
+   * protection is no longer required. This releases {@code p} and {@code q} together with all nodes protected after
+   * them.
+   *
+   * @param p  1st zbdd node to protect
+   * @param q  2nd zbdd node to protect
+   *
+   * @return  protection stack size before protecting {@code p} and {@code q}
+   *
+   * @see #protect(int)
+   */
+  @Contract(mutates = "this")
+  private int saveAndProtect(int p, int q)
+  {
+    final var mark = protectedNodes.size();
+
+    protectedNodes.pushIfNotLeafNode(p);
+    protectedNodes.pushIfNotLeafNode(q);
+
+    return mark;
+  }
+
+
   /** {@inheritDoc} */
   @Override
   @Contract(value = "_ -> param1", mutates = "this")
@@ -1293,7 +1444,10 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
       final var ref = nodes[refCountOffset];
 
       if (ref == -1)  // new node
+      {
+        nodesNew--;
         nodes[refCountOffset] = 1;
+      }
       else
       {
         if (ref == 0)
@@ -1461,7 +1615,8 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
   protected boolean __visitCubes(int zbdd, @NotNull CubeVisitor visitor)
   {
-    __incRef(zbdd);
+    final var mark = saveAndProtect(zbdd);
+
     try {
       final var vars = new IntStack(__getVar(zbdd));
       final var workStack = new IntStack(24);
@@ -1489,7 +1644,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
       return true;
     } finally {
-      __decRef(zbdd);
+      protectedNodes.truncate(mark);
     }
   }
 
@@ -1609,14 +1764,15 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   public int @NotNull [] asSingleCubeZbdds(int zbdd)
   {
     final var cubeZbdds = new IntStack(16);
+    final var mark = protectedNodes.size();
 
     try {
       visitCubeZbdds(zbdd, cubeZbdd -> {
-        __incRef(cubeZbdds.push(cubeZbdd));
+        protect(cubeZbdds.push(cubeZbdd));
         return true;
       });
     } finally {
-      cubeZbdds.forEach(this::__decRef);
+      protectedNodes.truncate(mark);
     }
 
     return cubeZbdds.getIntArray();
@@ -1670,6 +1826,12 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
 
     @Override
+    public int getNewNodes() {
+      return nodesNew;
+    }
+
+
+    @Override
     public long getNodeLookups() {
       return nodeLookups;
     }
@@ -1715,7 +1877,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     public String toString()
     {
       return "Statistics(node={capacity=" + getNodesCapacity() + ", occupied=" + getOccupiedNodes() +
-          ", free=" + getFreeNodes() + ", dead=" + getDeadNodes() + "}, hitRatio=" +
+          ", free=" + getFreeNodes() + ", dead=" + getDeadNodes() + ", new=" + getNewNodes() + "}, hitRatio=" +
           round(getNodeLookupHitRatio() * 1000) / 10.0 + "%, gcCount=" + getGCCount() + ", capIncCount=" +
           getCapacityIncreaseCount() + ", mem=" +
           String.format(ROOT, "%.1fKB", getMemoryUsage() / 1024.0) + ")";

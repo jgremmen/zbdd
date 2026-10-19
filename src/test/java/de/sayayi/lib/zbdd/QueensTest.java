@@ -183,7 +183,7 @@ class QueensTest
 
     @Override
     public boolean isGCRequired(@NotNull ZbddStatistics statistics) {
-      return statistics.getDeadNodes() > (statistics.getNodesCapacity() / 10);
+      return statistics.getUnreferencedNodes() > (statistics.getNodesCapacity() / 10);
     }
   }
 }

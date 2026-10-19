@@ -23,8 +23,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Default {@link ZbddCapacityAdvisor} implementation used when no custom advisor is provided to the
- * {@link de.sayayi.lib.zbdd.ZbddFactory ZbddFactory}. It starts with a low initial capacity and grows
- * aggressively at first, then more conservatively once the diagram reaches a larger size.
+ * {@link de.sayayi.lib.zbdd.ZbddFactory ZbddFactory}. It starts with a low initial capacity and grows aggressively at
+ * first, then more conservatively once the zbdd collection reaches a larger size.
  *
  * @author Jeroen Gremmen
  * @since 0.5.0
@@ -68,8 +68,6 @@ public enum DefaultCapacityAdvisor implements ZbddCapacityAdvisor
   {
     final var capacity = statistics.getNodesCapacity();
 
-    // capacity > 250000
-    // dead nodes > 10% of total capacity
-    return capacity > 250000 || statistics.getDeadNodes() > (capacity / 10);
+    return capacity > 250000 || statistics.getUnreferencedNodes() > (capacity / 10);
   }
 }

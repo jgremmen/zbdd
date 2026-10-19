@@ -834,20 +834,27 @@ class ZbddTest
     final var zbdd = ZbddFactory.create();
     final var statistics = zbdd.getStatistics();
 
-    final var a = zbdd.cube(zbdd.createVar());
+    final var a = zbdd.incRef(zbdd.cube(zbdd.createVar()));
     final var b = zbdd.cube(zbdd.createVar());
+
+    zbdd.decRef(a);
+
+    // a is dead and b is new
+    assertEquals(1, statistics.getDeadNodes());
+    assertEquals(1, statistics.getNewNodes());
 
     // var(a_b) = b, P0(a_b) = a, P1(a_b) = base
     final var a_b = zbdd.incRef(zbdd.union(a, b));
 
-    // union a_b protects a and b internally.
-    // on exit, it leaves both nodes dead
-    assertEquals(2, statistics.getDeadNodes());
+    // union a_b protects a and b internally but doesn't change the reference counts
+    assertEquals(1, statistics.getDeadNodes());
+    assertEquals(1, statistics.getNewNodes());
 
     // b is unreachable and freed; a is reachable from root,
     // survives gc and must still be counted as dead
     assertEquals(1, zbdd.gc());
     assertEquals(1, statistics.getDeadNodes());
+    assertEquals(0, statistics.getNewNodes());
 
     // protect a
     zbdd.incRef(a);
@@ -895,6 +902,37 @@ class ZbddTest
     assertEquals(16, statistics.getNodesCapacity());
     assertEquals(0, statistics.getCapacityIncreaseCount());
     assertEquals("{ v1 }", zbdd.toString(cubeA));
+  }
+
+
+  @Test
+  @DisplayName("No protected nodes left after failed operation")
+  void noProtectedNodesAfterFailedOperation()
+  {
+    final var zbdd = ZbddFactory.create(new ZbddCapacityAdvisor() {
+      @Override public int getInitialCapacity() { return 16; }
+      @Override public int getMinimumFreeNodes(@NotNull ZbddStatistics statistics) { return 1; }
+      @Override public int adviseIncrement(@NotNull ZbddStatistics statistics) { return 0; }
+      @Override public boolean isGCRequired(@NotNull ZbddStatistics statistics) { return false; }
+    });
+    final var statistics = zbdd.getStatistics();
+    final var v = new int[6];
+
+    for(int i = 0; i < v.length; i++)
+      v[i] = zbdd.createVar();
+
+    final var x = zbdd.incRef(zbdd.union(zbdd.cube(v[0], v[1]), zbdd.cube(v[2], v[3])));
+    final var y = zbdd.incRef(zbdd.union(zbdd.cube(v[4], v[5]), zbdd.cube(v[0], v[3])));
+
+    // the product requires more nodes than available and fails deep inside the recursion
+    assertThrowsExactly(ZbddException.class, () -> zbdd.multiply(x, y));
+
+    zbdd.decRef(x);
+    zbdd.decRef(y);
+
+    // nodes protected by the failed operation must have been released
+    zbdd.gc();
+    assertEquals(statistics.getNodesCapacity() - 2, statistics.getFreeNodes());
   }
 
 

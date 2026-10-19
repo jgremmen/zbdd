@@ -175,11 +175,11 @@ zbdd.decRef(result);  // allow GC to reclaim if no longer needed
 zbdd.gc();            // explicitly trigger garbage collection
 ```
 
-> **Note:** All ZBDD operations automatically protect their input parameters by incrementing reference counts on
-> entry and decrementing on exit. Returned ZBDDs are **not** protected: almost every operation may trigger a
-> garbage collection, which recycles all unprotected nodes. A returned ZBDD is therefore only guaranteed to be valid
-> until the next operation. Protect every ZBDD you need later with `incRef`, including results that are passed as
-> arguments while other arguments of the same call are still being computed:
+> **Note:** All ZBDD operations automatically protect their input parameters from garbage collection for the duration
+> of the call, even if the call fails with an exception. Returned ZBDDs are **not** protected: almost every operation 
+> may trigger a garbage collection, which recycles all unprotected nodes. A returned ZBDD is therefore only guaranteed 
+> to be valid until the next operation. Protect every ZBDD you need later with `incRef`, including results that are 
+> passed as arguments while other arguments of the same call are still being computed:
 >
 > ```java
 > // unsafe: the result of the 1st union may be recycled while computing the 2nd union
@@ -242,7 +242,9 @@ ZbddStatistics stats = zbdd.getStatistics();
 stats.getNodesCapacity();       // total node capacity
 stats.getOccupiedNodes();       // actively used nodes
 stats.getFreeNodes();           // unused node slots
-stats.getDeadNodes();           // nodes eligible for GC
+stats.getDeadNodes();           // nodes whose reference count dropped to 0
+stats.getNewNodes();            // nodes that have never been referenced (e.g. intermediate results)
+stats.getUnreferencedNodes();   // new + dead nodes, candidates for GC
 stats.getGCCount();             // number of GC runs
 stats.getGCFreedNodes();        // cumulative freed nodes
 stats.getNodeLookupHitRatio();  // cache hit ratio (0.0 – 1.0)

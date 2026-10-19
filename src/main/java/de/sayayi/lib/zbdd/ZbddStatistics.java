@@ -61,14 +61,43 @@ public interface ZbddStatistics
 
 
   /**
+   * Returns the current number of new nodes. New nodes are nodes that have been created, but whose reference count
+   * has never been incremented. Intermediate results of zbdd operations are new nodes, as are results which have not
+   * (yet) been protected by {@link Zbdd#incRef(int)}.
+   *
+   * @return  new node count, always &ge; 0
+   *
+   * @since 0.8.0
+   */
+  @Contract(pure = true)
+  int getNewNodes();
+
+
+  /**
+   * Returns the number of unreferenced nodes, which is the sum of {@linkplain #getNewNodes() new} and
+   * {@linkplain #getDeadNodes() dead} nodes. Unreferenced nodes are freed by garbage collection, unless they are
+   * reachable from a referenced node.
+   *
+   * @return  unreferenced node count, always &ge; 0
+   *
+   * @since 0.8.0
+   */
+  @Contract(pure = true)
+  default int getUnreferencedNodes() {
+    return getNewNodes() + getDeadNodes();
+  }
+
+
+  /**
    * Returns the number of available nodes, which is the sum of {@linkplain #getFreeNodes() free} and
-   * {@linkplain #getDeadNodes() dead} nodes. These nodes can potentially be reused without increasing capacity.
+   * {@linkplain #getUnreferencedNodes() unreferenced} nodes. These nodes can potentially be reused without
+   * increasing capacity.
    *
    * @return  available node count, always &ge; 0
    */
   @Contract(pure = true)
   default int getAvailableNodes() {
-    return getFreeNodes() + getDeadNodes();
+    return getFreeNodes() + getUnreferencedNodes();
   }
 
 

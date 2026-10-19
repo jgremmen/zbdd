@@ -590,9 +590,10 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * collection to free unused zbdd nodes before the decision is made to increase the node capacity. All zbdd nodes
    * that have an incremented reference count are protected from garbage collection.
    * <p>
-   * All functions in this interface that accept one or more zbdds as a parameter will protect those zbdds by
-   * internally increasing the reference count on entry and decreasing it on exit. Returned zbdds are not protected;
-   * see the reference lifetime section in the {@link Zbdd} class documentation.
+   * All functions in this interface that accept one or more zbdds as a parameter will protect those zbdds from
+   * garbage collection for the duration of the invocation, without changing their reference count. This protection
+   * is also released if the function terminates with an exception. Returned zbdds are not protected; see the reference
+   * lifetime section in the {@link Zbdd} class documentation.
    *
    * @param zbdd  zbdd node
    *

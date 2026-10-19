@@ -863,6 +863,32 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
     /** {@inheritDoc} */
     @Override
+    public int getNewNodes()
+    {
+      readLock.lock();
+      try {
+        return statistics.getNewNodes();
+      } finally {
+        readLock.unlock();
+      }
+    }
+
+
+    /** {@inheritDoc} */
+    @Override
+    public int getUnreferencedNodes()
+    {
+      readLock.lock();
+      try {
+        return statistics.getUnreferencedNodes();
+      } finally {
+        readLock.unlock();
+      }
+    }
+
+
+    /** {@inheritDoc} */
+    @Override
     public long getNodeLookups()
     {
       readLock.lock();
@@ -958,7 +984,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
     {
       readLock.lock();
       try {
-        return statistics.getFreeNodes() + statistics.getDeadNodes();
+        return statistics.getAvailableNodes();
       } finally {
         readLock.unlock();
       }

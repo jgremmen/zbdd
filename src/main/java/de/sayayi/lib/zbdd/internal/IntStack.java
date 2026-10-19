@@ -111,6 +111,35 @@ final class IntStack
 
 
   /**
+   * Returns the number of values on the stack.
+   *
+   * @return  number of values on the stack
+   *
+   * @since 0.8.0
+   */
+  @Contract(pure = true)
+  int size() {
+    return stackSize;
+  }
+
+
+  /**
+   * Removes values from the top of the stack until at most {@code size} values are left. If the stack contains
+   * {@code size} values or less, it remains unchanged.
+   *
+   * @param size  maximum number of values to keep
+   *
+   * @since 0.8.0
+   */
+  @Contract(mutates = "this")
+  void truncate(int size)
+  {
+    if (size < stackSize)
+      stackSize = size;
+  }
+
+
+  /**
    * Tells whether the stack is not empty.
    *
    * @return  {@code true} if the stack contains at least one element, {@code false} otherwise
