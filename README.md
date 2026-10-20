@@ -224,6 +224,10 @@ You can also implement the `ZbddCache` interface for a custom caching strategy.
 
 ### Thread Safety
 
+A concurrent wrapper serializes all method invocations, including read-only ones, using a single reentrant lock.
+Callbacks, visitors and the literal resolver may call back into the same instance without deadlocking, but other threads
+are blocked while they run.
+
 ```java
 // Wrap any ZBDD instance for thread-safe access
 Zbdd.Concurrent concurrent = ZbddFactory.asConcurrent(zbdd);

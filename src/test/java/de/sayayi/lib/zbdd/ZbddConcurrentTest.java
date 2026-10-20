@@ -5,6 +5,7 @@ import de.sayayi.lib.zbdd.exception.InvalidZbddException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
@@ -192,5 +193,27 @@ class ZbddConcurrentTest
     }
 
     assertEquals(0, wrongCounts.get());
+  }
+
+
+  @Test
+  @DisplayName("Literal resolver re-entering locked methods")
+  void literalResolverReentrance()
+  {
+    final var zbdd = asConcurrent(ZbddFactory.create());
+    final var cube = zbdd.incRef(zbdd.cube(zbdd.createVar()));
+
+    // toString(int) acquires the lock
+    zbdd.setLiteralResolver(var -> "x" + zbdd.toString(Zbdd.BASE).length());
+
+    final var nodeInfo = zbdd.getZbddNodeInfo(cube);
+
+    assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
+      assertEquals("x6", nodeInfo.getLiteral());
+      assertTrue(nodeInfo.toString().contains(":x6"));
+    });
+
+    // the instance must still be usable, i.e. no lock is left behind
+    assertTimeoutPreemptively(Duration.ofSeconds(5), () -> assertEquals("{ x6 }", zbdd.toString(cube)));
   }
 }

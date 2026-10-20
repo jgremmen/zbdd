@@ -915,7 +915,16 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
   /**
    * Zbdd implementation that is thread-safe.
    * <p>
-   * Each method invocation is performed under a lock, which is released as soon as the method returns. As a result, a
+   * All method invocations are serialized by a single reentrant lock, including methods that only read the zbdd, as
+   * well as methods of the {@link ZbddStatistics} and {@link ZbddNodeInfo} views obtained from this instance. Multiple
+   * threads therefore never access the wrapped zbdd simultaneously.
+   * <p>
+   * User code invoked synchronously while the lock is held, such as {@link ZbddCallback callbacks},
+   * {@link CubeVisitor cube visitors}, {@link ZbddVisitor zbdd visitors} and the {@link ZbddLiteralResolver literal
+   * resolver}, may invoke methods of this instance on the same thread without deadlocking. As other threads are blocked
+   * for as long as the lock is held, such user code should return as fast as possible.
+   * <p>
+   * Each method invocation is performed under the lock, which is released as soon as the method returns. As a result, a
    * zbdd returned by a method may be recycled by a garbage collection triggered by another thread before the caller is
    * able to protect it with {@link #incRef(int)}. Zbdd operations whose results are needed later must therefore be
    * performed together with the corresponding {@code incRef} within
