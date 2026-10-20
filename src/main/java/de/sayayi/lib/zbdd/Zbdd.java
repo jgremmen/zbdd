@@ -137,8 +137,8 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
 
 
   /**
-   * Returns the statistics for this zbdd instance. The returned object is a singleton and will
-   * reflect the actual statistics at any time.
+   * Returns the statistics for this zbdd instance. The returned object is a singleton and will reflect the actual
+   * statistics at any time. See {@link ZbddStatistics} for its thread safety.
    *
    * @return  statistics, never {@code null}
    */

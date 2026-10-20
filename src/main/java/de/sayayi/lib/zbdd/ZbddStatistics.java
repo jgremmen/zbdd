@@ -22,9 +22,14 @@ import org.jetbrains.annotations.Contract;
  * Provides a live view of the statistics for a {@link Zbdd} instance, including node capacity, usage, garbage
  * collection activity, and node lookup performance.
  * <p>
- * All values returned by methods of this interface reflect the current state of the underlying ZBDD at the time
- * of invocation. Because this is a live view, values may change between successive calls if the ZBDD is modified
- * concurrently.
+ * All values returned by methods of this interface reflect the current state of the underlying ZBDD at the time of
+ * invocation. Because this is a live view, values may change between successive calls whenever the ZBDD is modified.
+ * <p>
+ * The statistics of a {@link Zbdd.Concurrent} instance may be read from any thread. Each method acquires the lock of
+ * the instance, so successive calls may observe different states; use
+ * {@link Zbdd.Concurrent#doAtomic(java.util.function.Function) doAtomic} to read several values consistently. The
+ * statistics of all other instances are not thread-safe and must only be read by the thread using the instance, or
+ * with external synchronization.
  *
  * @author Jeroen Gremmen
  *
