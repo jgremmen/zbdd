@@ -15,10 +15,15 @@
  */
 package de.sayayi.lib.zbdd.internal;
 
+import de.sayayi.lib.zbdd.ZbddCapacityAdvisor;
+import de.sayayi.lib.zbdd.ZbddStatistics;
 import de.sayayi.lib.zbdd.exception.ZbddException;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.commons.util.ReflectionUtils;
+
+import java.util.ArrayList;
 
 import static de.sayayi.lib.zbdd.Zbdd.BASE;
 import static de.sayayi.lib.zbdd.Zbdd.EMPTY;
@@ -152,5 +157,53 @@ class ZbddImplTest
     assertTrue(zbdd.hasCubeWithVar(set, highVar));
     assertTrue(zbdd.hasCubeWithVar(set, midVar));
     assertFalse(zbdd.hasCubeWithVar(set, lowVar));
+  }
+
+
+  @Test
+  @DisplayName("Instance remains intact after failing to increase the nodes capacity")
+  void outOfMemoryOnCapacityIncrease()
+  {
+    final var advisor = new ZbddCapacityAdvisor() {
+      int increment = ZbddImpl.MAX_NODES;  // exceeds any reasonable heap
+
+      @Override public int getInitialCapacity() { return 16; }
+      @Override public int getMinimumFreeNodes(@NotNull ZbddStatistics statistics) { return 2; }
+      @Override public int adviseIncrement(@NotNull ZbddStatistics statistics) { return increment; }
+      @Override public boolean isGCRequired(@NotNull ZbddStatistics statistics) { return false; }
+    };
+    
+    final var zbdd = new ZbddImpl(advisor);
+    final var statistics = zbdd.getStatistics();
+    final var cubes = new ArrayList<Integer>();
+
+    assertThrowsExactly(OutOfMemoryError.class, () -> {
+      //noinspection InfiniteLoopStatement
+      while(true)
+        cubes.add(zbdd.incRef(zbdd.cube(zbdd.createVar())));
+    });
+
+    assertEquals(16, statistics.getNodesCapacity());
+    assertEquals(0, statistics.getCapacityIncreaseCount());
+    assertEquals(13, cubes.size());
+
+    for(var cube: cubes)
+    {
+      assertTrue(zbdd.isValidZbdd(cube));
+      assertEquals(cube, zbdd.cube(zbdd.getVar(cube)));
+    }
+
+    // with a reasonable increment, the instance continues to work
+    advisor.increment = 16;
+
+    final var var = zbdd.createVar();
+    final var cube = zbdd.cube(var);
+
+    assertEquals(32, statistics.getNodesCapacity());
+    assertEquals(1, statistics.getCapacityIncreaseCount());
+    assertEquals(var, zbdd.getVar(cube));
+
+    for(var c: cubes)
+      assertEquals(c, zbdd.cube(zbdd.getVar(c)));
   }
 }

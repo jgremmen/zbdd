@@ -1287,7 +1287,13 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
     final var oldNodesFree = nodesFree;
 
-    gc_markReferencedNodes();
+    try {
+      gc_markReferencedNodes();
+    } catch(Throwable ex) {
+      gc_unmarkNodes();
+      throw ex;
+    }
+
     gc_freeUnreferencedNodes();
 
     final var gcFreedNodesCount = nodesFree - oldNodesFree;
@@ -1338,6 +1344,29 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
         markNodeStack.pushIfNotLeafNode(nodes[offset + _P0]);
         markNodeStack.pushIfNotLeafNode(nodes[offset + _P1]);
+      }
+    }
+  }
+
+
+  /**
+   * Restores the node table after an aborted mark phase: mark bits are removed and all hash chains are rebuilt. Left
+   * in place, the mark bits would make a later garbage collection skip the children of marked nodes and free
+   * reachable nodes.
+   */
+  private void gc_unmarkNodes()
+  {
+    for(int i = 0, end = nodesCapacity * NODE_RECORD_SIZE; i < end; i += NODE_RECORD_SIZE)
+      nodes[i + _CHAIN] = 0;
+
+    for(int zbdd = nodesCapacity - 1, offset = zbdd * NODE_RECORD_SIZE; zbdd >= 2; zbdd--, offset -= NODE_RECORD_SIZE)
+    {
+      final var markedVar = nodes[offset + _VAR];
+
+      if (markedVar != -1)
+      {
+        prependHashChain(zbdd,
+            hash(nodes[offset + _VAR] = markedVar & ~GC_VAR_MARK_MASK, nodes[offset + _P0], nodes[offset + _P1]));
       }
     }
   }
@@ -1397,10 +1426,11 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     if (newNodesCapacity == oldNodesCapacity)
       return;
 
-    statistics.capacityIncreaseCount++;
-
+    // allocate first, so the instance is left intact if the allocation fails with an OutOfMemoryError
+    nodes = copyOf(nodes, newNodesCapacity * NODE_RECORD_SIZE);
     nodesCapacity = newNodesCapacity;
-    nodes = copyOf(nodes, nodesCapacity * NODE_RECORD_SIZE);
+
+    statistics.capacityIncreaseCount++;
 
     nextFreeNode = 0;
     nodesFree = nodesCapacity - oldNodesCapacity;
