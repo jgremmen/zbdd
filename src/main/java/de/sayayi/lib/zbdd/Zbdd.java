@@ -363,7 +363,7 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * Returns the exact number of cubes (combinations) in the given {@code zbdd}, regardless of its magnitude.
    * <p>
    * This method is slower than {@link #count(int)} and its results are not cached. Use it only if the number of cubes
-   * may exceed {@link Long#MAX_VALUE}.
+   * may exceed {@link Integer#MAX_VALUE}.
    *
    * @param zbdd  zbdd node
    *
