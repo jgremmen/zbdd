@@ -778,6 +778,12 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * Decrements the reference count for the given {@code zbdd}.
    * <p>
    * When the reference count reaches zero, the node becomes eligible for garbage collection.
+   * <p>
+   * Each invocation must match a preceding {@link #incRef(int) incRef} of the same node. An invocation without a
+   * matching {@code incRef}, including one for a node whose reference count has never been incremented, leaves the
+   * reference count unchanged. This misuse is detected only if assertions are enabled ({@code -ea}), in which case an
+   * {@link AssertionError} is thrown. The terminal nodes {@link #EMPTY} and {@link #BASE} are not reference counted, so
+   * this method has no effect on them.
    *
    * @param zbdd  zbdd node
    *

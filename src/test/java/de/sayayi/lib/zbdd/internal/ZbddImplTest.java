@@ -206,4 +206,31 @@ class ZbddImplTest
     for(var c: cubes)
       assertEquals(c, zbdd.cube(zbdd.getVar(c)));
   }
+
+
+  @Test
+  @DisplayName("Unmatched decRef leaves the reference count unchanged")
+  void unmatchedDecRef()
+  {
+    final var zbdd = new ZbddImpl(DefaultCapacityAdvisor.INSTANCE);
+    final var cube = zbdd.cube(zbdd.createVar());
+    final var nodeInfo = zbdd.getZbddNodeInfo(cube);
+
+    // terminal nodes are not reference counted
+    assertEquals(EMPTY, zbdd.decRef(EMPTY));
+    assertEquals(BASE, zbdd.decRef(BASE));
+
+    // new node, reference count never incremented
+    assertTrue(nodeInfo.isNewNode());
+    assertThrowsExactly(AssertionError.class, () -> zbdd.decRef(cube));
+    assertTrue(nodeInfo.isNewNode());
+
+    // dead node, all increments have been matched already
+    zbdd.decRef(zbdd.incRef(cube));
+    assertTrue(nodeInfo.isDeadNode());
+    assertThrowsExactly(AssertionError.class, () -> zbdd.decRef(cube));
+    assertTrue(nodeInfo.isDeadNode());
+    assertEquals(0, zbdd.getStatistics().getNewNodes());
+    assertEquals(1, zbdd.getStatistics().getDeadNodes());
+  }
 }
