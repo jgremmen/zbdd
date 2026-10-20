@@ -147,10 +147,15 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
 
 
   /**
-   * Clear all nodes from this zbdd instance. If a zbdd cache is assigned it will be cleared as
-   * well.
+   * Clears this zbdd instance, returning it to the state of a newly created instance.
    * <p>
-   * This method clears all variables and nodes. It does not free up allocated memory.
+   * All variables, including their associated objects, and all nodes are removed, regardless of their reference count.
+   * Previously obtained variables and zbdd nodes must no longer be used. All statistics counters are reset. If a zbdd
+   * cache is assigned, it is cleared as well.
+   * <p>
+   * The node capacity is retained, so allocated memory is not freed. Registered callbacks, the literal resolver and the
+   * assigned zbdd cache are retained as well. Callbacks are notified {@linkplain ZbddCallback#beforeClear() before} and
+   * {@linkplain ZbddCallback#afterClear() after} clearing.
    *
    * @throws ZbddException  if invoked from a {@link ZbddCallback callback}
    *

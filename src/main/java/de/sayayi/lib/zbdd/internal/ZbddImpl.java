@@ -19,7 +19,6 @@ import de.sayayi.lib.zbdd.Zbdd;
 import de.sayayi.lib.zbdd.ZbddCapacityAdvisor;
 import de.sayayi.lib.zbdd.ZbddLiteralResolver;
 import de.sayayi.lib.zbdd.ZbddStatistics;
-import de.sayayi.lib.zbdd.cache.ZbddCache;
 import de.sayayi.lib.zbdd.exception.InvalidVarException;
 import de.sayayi.lib.zbdd.exception.InvalidZbddException;
 import de.sayayi.lib.zbdd.exception.ZbddException;
@@ -196,15 +195,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   }
 
 
-  /**
-   * Clears all nodes from this ZBDD instance. If a ZBDD cache is assigned it will be cleared as well.
-   * <p>
-   * This method clears all variables and nodes. It does not free up allocated memory.
-   *
-   * @throws ZbddException  if a callback is running
-   *
-   * @see ZbddCache#clear()
-   */
+  /** {@inheritDoc} */
   @Override
   @Contract(mutates = "this")
   public void clear()
