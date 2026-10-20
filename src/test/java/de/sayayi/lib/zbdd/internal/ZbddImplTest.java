@@ -17,6 +17,7 @@ package de.sayayi.lib.zbdd.internal;
 
 import de.sayayi.lib.zbdd.ZbddCapacityAdvisor;
 import de.sayayi.lib.zbdd.ZbddStatistics;
+import de.sayayi.lib.zbdd.exception.InvalidZbddException;
 import de.sayayi.lib.zbdd.exception.ZbddException;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
@@ -232,5 +233,28 @@ class ZbddImplTest
     assertTrue(nodeInfo.isDeadNode());
     assertEquals(0, zbdd.getStatistics().getNewNodes());
     assertEquals(1, zbdd.getStatistics().getDeadNodes());
+  }
+
+
+  @Test
+  @DisplayName("Node info of a freed and a recycled node")
+  void nodeInfoOfFreedNode()
+  {
+    final var zbdd = new ZbddImpl(DefaultCapacityAdvisor.INSTANCE);
+    final var var1 = zbdd.createVar();
+    final var var2 = zbdd.createVar();
+    final var cube = zbdd.cube(var1);
+    final var nodeInfo = zbdd.getZbddNodeInfo(cube);
+
+    assertEquals(var1, nodeInfo.getVar());
+
+    // the unprotected node is freed
+    zbdd.gc();
+    assertThrows(InvalidZbddException.class, nodeInfo::getVar);
+    assertThrows(InvalidZbddException.class, nodeInfo::toString);
+
+    // the freed node number is reused, so the view describes the new node
+    assertEquals(cube, zbdd.cube(var2));
+    assertEquals(var2, nodeInfo.getVar());
   }
 }

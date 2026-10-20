@@ -827,6 +827,8 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
 
   /**
    * Returns an object that provides a "live" view of the given {@code zbdd} node.
+   * <p>
+   * The view is only valid as long as {@code zbdd} is protected from garbage collection; see {@link ZbddNodeInfo}.
    *
    * @param zbdd  zbdd node info to get
    *
@@ -1145,11 +1147,14 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
 
 
   /**
-   * A ZbddNode provides a "live view" on a zbdd node. As the reference count or literal resolver changes, those changes
-   * reflect in the return values for the associated methods.
+   * A {@code ZbddNodeInfo} provides a "live view" on a zbdd node. As the reference count or literal resolver changes,
+   * those changes reflect in the return values for the associated methods.
    * <p>
-   * If the zbdd node was garbage collected, all methods in this interface, including {@code toString()}, throw an
-   * {@link InvalidZbddException} stating that the zbdd is not valid.
+   * The view refers to the zbdd node by its number and is only valid as long as the node is protected from garbage
+   * collection, e.g. by an {@linkplain Zbdd#incRef(int) incremented reference count}. If the zbdd node has been freed
+   * by a {@linkplain Zbdd#gc() garbage collection} or by {@link Zbdd#clear() clear}, all methods in this interface,
+   * including {@code toString()}, throw an {@link InvalidZbddException} stating that the zbdd is not valid. However,
+   * freed node numbers are reused for new nodes. Once this has happened, the view silently describes the new node.
    *
    * @author Jeroen Gremmen
    * @since 0.5.0
