@@ -18,9 +18,14 @@ package de.sayayi.lib.zbdd.internal;
 import de.sayayi.lib.zbdd.Zbdd.WithCache;
 import de.sayayi.lib.zbdd.ZbddCapacityAdvisor;
 import de.sayayi.lib.zbdd.cache.ZbddCache;
+import de.sayayi.lib.zbdd.exception.ZbddException;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+
+import java.lang.ref.WeakReference;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 import static de.sayayi.lib.zbdd.cache.ZbddCache.Operation1.*;
 import static de.sayayi.lib.zbdd.cache.ZbddCache.Operation2.*;
@@ -45,6 +50,15 @@ import static java.util.Objects.requireNonNull;
 @SuppressWarnings("DuplicatedCode")
 public final class ZbddCachedImpl extends ZbddImpl implements WithCache
 {
+  /**
+   * Zbdd caches currently in use, mapped to the instance using them. Cached results are keyed by node numbers, which
+   * are only meaningful for a single zbdd instance, so a cache must never be used by more than one instance at a time.
+   * <p>
+   * Both the cache and its owner are referenced weakly, so a cache becomes available again as soon as its owner is no
+   * longer reachable. Access must be synchronized on the map itself.
+   */
+  private static final Map<ZbddCache,WeakReference<ZbddCachedImpl>> CACHE_OWNERS = new WeakHashMap<>();
+
   private ZbddCache zbddCache;
 
 
@@ -79,7 +93,25 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
   @Override
   public void setZbddCache(@NotNull ZbddCache zbddCache)
   {
-    requireNonNull(zbddCache).clear();
+    requireNonNull(zbddCache);
+
+    synchronized(CACHE_OWNERS) {
+      final var ownerRef = CACHE_OWNERS.get(zbddCache);
+      final var owner = ownerRef == null ? null : ownerRef.get();
+
+      if (owner != null && owner != this)
+        throw new ZbddException("zbdd cache is already in use by another zbdd instance");
+
+      // release the previous cache, making it available for other zbdd instances
+      if (this.zbddCache != null && this.zbddCache != zbddCache)
+        CACHE_OWNERS.remove(this.zbddCache);
+
+      if (owner == null)
+        CACHE_OWNERS.put(zbddCache, new WeakReference<>(this));
+    }
+
+    zbddCache.clear();
+
     this.zbddCache = zbddCache;
   }
 

@@ -69,12 +69,17 @@ public final class ZbddFactory
   /**
    * Creates a new cached ZBDD instance with the given {@code zbddCache} and a default capacity advisor.
    * The returned instance is not thread-safe.
+   * <p>
+   * The cache is cleared and bound to the returned instance. It must not be used by any other ZBDD instance, as cached
+   * results are keyed by node numbers of the returned instance.
    *
    * @param zbddCache  ZBDD operation cache, not {@code null}
    *
    * @return  new cached ZBDD instance, never {@code null}
+   *
+   * @throws de.sayayi.lib.zbdd.exception.ZbddException  if {@code zbddCache} is in use by another ZBDD instance
    */
-  @Contract(value = "_ -> new", pure = true)
+  @Contract(value = "_ -> new", mutates = "param1")
   public static @NotNull Zbdd.WithCache createCached(@NotNull ZbddCache zbddCache) {
     return createCached(null, zbddCache);
   }
@@ -83,15 +88,21 @@ public final class ZbddFactory
   /**
    * Creates a new cached ZBDD instance with the given {@code capacityAdvisor} and {@code zbddCache}.
    * The returned instance is not thread-safe.
+   * <p>
+   * The cache is cleared and bound to the returned instance. It must not be used by any other ZBDD instance, as cached
+   * results are keyed by node numbers of the returned instance.
    *
-   * @param capacityAdvisor  capacity advisor. If this parameter equals {@code null} then a default capacity advisor
-   *                         is used.
+   * @param capacityAdvisor  capacity advisor. If this parameter equals {@code null} then a default capacity advisor is
+   *                         used.
    * @param zbddCache        ZBDD operation cache, not {@code null}
    *
    * @return  new cached ZBDD instance, never {@code null}
+   *
+   * @throws de.sayayi.lib.zbdd.exception.ZbddException  if {@code zbddCache} is in use by another ZBDD instance
    */
-  @Contract(value = "_, _ -> new")
-  public static @NotNull Zbdd.WithCache createCached(ZbddCapacityAdvisor capacityAdvisor, @NotNull ZbddCache zbddCache) {
+  @Contract(value = "_, _ -> new", mutates = "param2")
+  public static @NotNull Zbdd.WithCache createCached(ZbddCapacityAdvisor capacityAdvisor,
+                                                     @NotNull ZbddCache zbddCache) {
     return new ZbddCachedImpl(capacityAdvisor != null ? capacityAdvisor : DefaultCapacityAdvisor.INSTANCE, zbddCache);
   }
 

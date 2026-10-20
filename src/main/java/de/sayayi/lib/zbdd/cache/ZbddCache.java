@@ -28,6 +28,15 @@ import org.jetbrains.annotations.NotNull;
  * Implementations must ensure that the {@link #clear()} method does not throw any exceptions, as it may be called
  * during garbage collection or ZBDD reset.
  * <p>
+ * Cached results are keyed by ZBDD node numbers, which are only meaningful for a single ZBDD instance. A cache
+ * instance must therefore be used by at most one ZBDD instance at a time. This is enforced when a cache is assigned:
+ * {@link de.sayayi.lib.zbdd.ZbddFactory#createCached(ZbddCache) ZbddFactory.createCached} and
+ * {@link de.sayayi.lib.zbdd.Zbdd.WithCache#setZbddCache(ZbddCache) setZbddCache} throw a
+ * {@link de.sayayi.lib.zbdd.exception.ZbddException ZbddException} if the cache is already in use by another ZBDD
+ * instance. A cache becomes available again once it has been replaced in its ZBDD instance or that instance is no
+ * longer reachable. Assigning a cache clears it. Ownership is tracked using {@link Object#equals(Object) equals}, so
+ * implementations should not override the identity based {@code equals} and {@code hashCode} methods.
+ * <p>
  * Implementations are not required to be thread-safe. A cache is only safe for concurrent use when it is accessed
  * exclusively through a {@link de.sayayi.lib.zbdd.Zbdd.Concurrent Zbdd.Concurrent} wrapper, which serializes all
  * cache reads and writes behind its lock. Sharing a {@code ZbddCache} instance across threads outside of such a

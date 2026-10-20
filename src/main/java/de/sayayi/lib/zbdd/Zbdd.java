@@ -891,9 +891,15 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
 
 
     /**
-     * Sets the given {@code zbddCache}.
+     * Sets the given {@code zbddCache}. The cache is cleared before it is used. The previously assigned cache is
+     * released and may be assigned to another zbdd instance afterwards.
+     * <p>
+     * A cache must not be used by more than one zbdd instance at a time, as cached results are keyed by node numbers of
+     * this instance. Assigning the currently assigned cache again is permitted and clears the cache.
      *
      * @param zbddCache  new zbdd cache instance to use for caching, not {@code null}
+     *
+     * @throws de.sayayi.lib.zbdd.exception.ZbddException  if {@code zbddCache} is in use by another zbdd instance
      */
     @Contract(mutates = "this,param1")
     void setZbddCache(@NotNull ZbddCache zbddCache);
