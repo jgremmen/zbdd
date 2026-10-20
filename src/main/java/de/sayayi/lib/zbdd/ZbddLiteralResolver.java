@@ -49,7 +49,7 @@ public interface ZbddLiteralResolver
    * @return  literal name, never {@code null}
    */
   @Contract(pure = true)
-  @NotNull String getLiteralName(@Range(from = 1, to = MAX_VALUE) int var);
+  @NotNull String getLiteralName(@Range(from = 1, to = MAX_VALUE - 1) int var);
 
 
   /**

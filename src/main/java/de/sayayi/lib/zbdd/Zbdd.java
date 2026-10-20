@@ -23,10 +23,13 @@ import de.sayayi.lib.zbdd.internal.ZbddConcurrent;
 import de.sayayi.lib.zbdd.internal.ZbddImpl;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Range;
 
 import java.math.BigInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
+
+import static java.lang.Integer.MAX_VALUE;
 
 
 /**
@@ -181,25 +184,37 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
 
   /**
    * Create a new literal/variable.
+   * <p>
+   * Variables are numbered consecutively, starting with {@code 1}. The highest supported variable number is
+   * {@code Integer.MAX_VALUE - 1}.
    *
    * @return  variable number
+   *
+   * @throws de.sayayi.lib.zbdd.exception.ZbddException  if the highest supported variable number has been reached
    */
   @Contract(mutates = "this")
+  @Range(from = 1, to = MAX_VALUE - 1)
   int createVar();
 
 
   /**
    * Create a new literal/variable with an associated {@code varObject}.
+   * <p>
+   * Variables are numbered consecutively, starting with {@code 1}. The highest supported variable number is
+   * {@code Integer.MAX_VALUE - 1}.
    *
    * @param varObject  object to be associated with the created variable
    *
    * @return  variable number
-   * 
+   *
+   * @throws de.sayayi.lib.zbdd.exception.ZbddException  if the highest supported variable number has been reached
+   *
    * @see #getVarObject(int)
    *
    * @since 0.5.0
    */
   @Contract(mutates = "this")
+  @Range(from = 1, to = MAX_VALUE - 1)
   int createVar(@NotNull Object varObject);
 
 

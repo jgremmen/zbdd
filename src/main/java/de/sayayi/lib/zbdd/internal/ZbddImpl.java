@@ -80,6 +80,12 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   /** Maximum number of nodes supported by a single ZBDD instance. */
   public static final int MAX_NODES = MAX_VALUE / NODE_RECORD_SIZE;
 
+  /**
+   * Highest variable number supported by a single ZBDD instance. {@link Integer#MAX_VALUE} is excluded, as marking it
+   * during garbage collection ({@code MAX_VALUE | GC_VAR_MARK_MASK}) results in {@code -1}, which denotes a free node.
+   */
+  public static final int MAX_VAR = MAX_VALUE - 1;
+
   private static final int _VAR = 0;       // variable number
   private static final int _P0 = 1;        // 0-branch node
   private static final int _P1 = 2;        // 1-branch node
@@ -245,7 +251,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   @MustBeInvokedByOverriders
   public int createVar()
   {
-    if (lastVarNumber == MAX_VALUE)
+    if (lastVarNumber == MAX_VAR)
       throw new ZbddException("variable count exceeded");
 
     return ++lastVarNumber;

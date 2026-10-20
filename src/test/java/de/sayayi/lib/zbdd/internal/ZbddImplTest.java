@@ -15,15 +15,16 @@
  */
 package de.sayayi.lib.zbdd.internal;
 
+import de.sayayi.lib.zbdd.exception.ZbddException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.commons.util.ReflectionUtils;
 
 import static de.sayayi.lib.zbdd.Zbdd.BASE;
 import static de.sayayi.lib.zbdd.Zbdd.EMPTY;
+import static de.sayayi.lib.zbdd.internal.ZbddImpl.MAX_VAR;
 import static java.lang.Integer.MAX_VALUE;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 /**
@@ -100,5 +101,34 @@ class ZbddImplTest
     assertEquals(MAX_VALUE + 2L, statistics.getNodeLookups());
     assertEquals(MAX_VALUE + 1L, statistics.getNodeLookupHitCount());
     assertTrue(statistics.getNodeLookupHitRatio() > 0.99);
+  }
+
+
+  @Test
+  @DisplayName("Highest variable survives garbage collection")
+  void highestVarSurvivesGc() throws Exception
+  {
+    final var zbdd = new ZbddImpl(DefaultCapacityAdvisor.INSTANCE);
+    final var lowVar = zbdd.createVar();
+
+    // simulate MAX_VAR - 1 created variables
+    ReflectionUtils
+        .makeAccessible(ZbddImpl.class.getDeclaredField("lastVarNumber"))
+        .setInt(zbdd, MAX_VAR - 1);
+
+    final var highVar = zbdd.createVar();
+    assertEquals(MAX_VAR, highVar);
+    assertThrowsExactly(ZbddException.class, zbdd::createVar);
+
+    final var cube = zbdd.incRef(zbdd.cube(lowVar, highVar));
+
+    zbdd.gc();
+
+    // the top node of the cube must not have been mistaken for a free node
+    assertTrue(zbdd.isValidZbdd(cube));
+    assertEquals(highVar, zbdd.getVar(cube));
+    assertEquals(lowVar, zbdd.getVar(zbdd.getP1(cube)));
+    assertEquals(1, zbdd.count(cube));
+    assertEquals(cube, zbdd.cube(lowVar, highVar));
   }
 }
