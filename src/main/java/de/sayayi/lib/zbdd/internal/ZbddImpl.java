@@ -26,7 +26,6 @@ import de.sayayi.lib.zbdd.exception.ZbddException;
 import de.sayayi.lib.zbdd.exception.ZbddOutOfRangeException;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.MustBeInvokedByOverriders;
 import org.jetbrains.annotations.NotNull;
 
 import java.math.BigInteger;
@@ -158,6 +157,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
   /** {@inheritDoc} */
   @Override
+  @Contract(mutates = "this")
   public void registerCallback(@NotNull ZbddCallback callback) {
     callbacks.add(requireNonNull(callback));
   }
@@ -272,7 +272,6 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
    */
   @Override
   @Contract(mutates = "this")
-  @MustBeInvokedByOverriders
   public int createVar()
   {
     if (lastVarNumber == MAX_VAR)
@@ -284,6 +283,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
   /** {@inheritDoc} */
   @Override
+  @Contract(mutates = "this")
   public int createVar(@NotNull Object varObject)
   {
     requireNonNull(varObject);
@@ -297,6 +297,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
   /** {@inheritDoc} */
   @Override
+  @Contract(pure = true)
   @SuppressWarnings("unchecked")
   public <T> T getVarObject(int var) {
     return (T)varObjectMap.get(checkVar(var));
@@ -579,7 +580,6 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
    * @throws ArithmeticException  if the number of cubes exceeds {@link Long#MAX_VALUE}
    */
   @Override
-  @Contract(pure = true)
   public int count(int zbdd) {
     return __count(checkZbdd(zbdd, "zbdd"));
   }
@@ -1305,7 +1305,6 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
    */
   @Override
   @Contract(mutates = "this")
-  @MustBeInvokedByOverriders
   @SuppressWarnings("UnusedReturnValue")
   public int gc()
   {
@@ -1648,6 +1647,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
   /** {@inheritDoc} */
   @Override
+  @Contract(pure = true)
   public boolean isValidZbdd(int zbdd)
   {
     return zbdd < 2
@@ -1668,7 +1668,6 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
    * @throws InvalidZbddException     if the ZBDD node is not valid
    */
   @Contract(value = "_, _ -> param1")
-  @MustBeInvokedByOverriders
   protected int checkZbdd(int zbdd, @NotNull String param)
   {
     if (zbdd < 0 || zbdd >= nodesCapacity)
@@ -1683,6 +1682,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
   /** {@inheritDoc} */
   @Override
+  @Contract(pure = true)
   public boolean isValidVar(int var) {
     return var > 0 && var <= lastVarNumber;
   }
@@ -1698,7 +1698,6 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
    * @throws InvalidVarException  if the variable is not valid
    */
   @Contract(value = "_ -> param1")
-  @MustBeInvokedByOverriders
   protected int checkVar(int var)
   {
     if (var <= 0 || var > lastVarNumber)
@@ -1762,6 +1761,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
   /** {@inheritDoc} */
   @Override
+  @Contract(pure = true)
   public @NotNull Zbdd.ZbddNodeInfo getZbddNodeInfo(int zbdd) {
     return new ZbddNodeInfoDelegate(checkZbdd(zbdd, "zbdd"));
   }
@@ -1786,6 +1786,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
   /** {@inheritDoc} */
   @Override
+  @Contract(mutates = "this")
   public boolean visitCubeZbdds(int zbdd, @NotNull ZbddVisitor visitor)
   {
     requireNonNull(visitor, "visitor must not be null");
@@ -1866,7 +1867,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
    * @since 0.3.1
    */
   @Override
-  @Contract(value = "-> new")
+  @Contract(value = "-> new", mutates = "this")
   public int @NotNull [] calculateNodeDependency()
   {
     // make sure we're only dealing with valid nodes
@@ -1958,6 +1959,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
   /** {@inheritDoc} */
   @Override
+  @Contract(value = "_ -> new", mutates = "this")
   public int @NotNull [] asSingleCubeZbdds(int zbdd)
   {
     final var cubeZbdds = new IntStack(16);
@@ -2098,36 +2100,42 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
 
     @Override
+    @Contract(pure = true)
     public int getZbdd() {
       return checkZbdd(zbdd, "zbdd");
     }
 
 
     @Override
+    @Contract(pure = true)
     public int getVar() {
       return ZbddImpl.this.getVar(zbdd);
     }
 
 
     @Override
+    @Contract(pure = true)
     public int getP0() {
       return ZbddImpl.this.getP0(zbdd);
     }
 
 
     @Override
+    @Contract(pure = true)
     public int getP1() {
       return ZbddImpl.this.getP1(zbdd);
     }
 
 
     @Override
+    @Contract(pure = true)
     public int getReferenceCount() {
       return nodes[(getZbdd() * NODE_RECORD_SIZE) + _REFCOUNT];
     }
 
 
     @Override
+    @Contract(pure = true)
     public @NotNull String getLiteral()
     {
       return switch(zbdd) {

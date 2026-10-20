@@ -83,6 +83,7 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
 
   /** {@inheritDoc} */
   @Override
+  @Contract(pure = true)
   public @NotNull ZbddCache getZbddCache() {
     return zbddCache;
   }
@@ -90,6 +91,7 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
 
   /** {@inheritDoc} */
   @Override
+  @Contract(mutates = "this,param1")
   public void setZbddCache(@NotNull ZbddCache zbddCache)
   {
     requireNonNull(zbddCache);

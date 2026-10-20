@@ -104,6 +104,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(mutates = "this")
   public void registerCallback(@NotNull ZbddCallback callback)
   {
     lock.lock();
@@ -117,6 +118,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(pure = true)
   public @NotNull ZbddLiteralResolver getLiteralResolver()
   {
     lock.lock();
@@ -130,6 +132,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(mutates = "this")
   public void setLiteralResolver(@NotNull ZbddLiteralResolver literalResolver)
   {
     lock.lock();
@@ -143,6 +146,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(pure = true)
   public @NotNull ZbddStatistics getStatistics() {
     return statistics;
   }
@@ -150,6 +154,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(mutates = "this")
   public void clear()
   {
     lock.lock();
@@ -163,6 +168,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(mutates = "this")
   public int createVar()
   {
     lock.lock();
@@ -176,6 +182,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(mutates = "this")
   public int createVar(@NotNull Object varObject)
   {
     lock.lock();
@@ -189,6 +196,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(pure = true)
   public <T> T getVarObject(int var)
   {
     lock.lock();
@@ -202,6 +210,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(mutates = "this")
   public int cube(int var)
   {
     lock.lock();
@@ -215,6 +224,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(mutates = "this")
   public int cube(int @NotNull ... cubeVars)
   {
     lock.lock();
@@ -228,6 +238,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(pure = true)
   public boolean hasCubeWithVar(int zbdd, int var)
   {
     lock.lock();
@@ -241,6 +252,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(mutates = "this")
   public int subset0(int zbdd, int var)
   {
     lock.lock();
@@ -254,6 +266,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(mutates = "this")
   public int subset1(int zbdd, int var)
   {
     lock.lock();
@@ -266,6 +279,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(mutates = "this")
   public int change(int zbdd, int var)
   {
     lock.lock();
@@ -292,6 +306,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(pure = true)
   public @NotNull BigInteger countExact(int zbdd)
   {
     lock.lock();
@@ -305,6 +320,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(mutates = "this")
   public int union(int... p)
   {
     lock.lock();
@@ -318,6 +334,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(mutates = "this")
   public int union(int p, int q)
   {
     lock.lock();
@@ -331,6 +348,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(mutates = "this")
   public int intersect(int p, int q)
   {
     lock.lock();
@@ -344,6 +362,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(mutates = "this")
   public int difference(int p, int q)
   {
     lock.lock();
@@ -357,6 +376,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(mutates = "this")
   public int multiply(int p, int q)
   {
     lock.lock();
@@ -370,6 +390,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(mutates = "this")
   public int divide(int p, int q)
   {
     lock.lock();
@@ -382,6 +403,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(mutates = "this")
   public int modulo(int p, int q)
   {
     lock.lock();
@@ -395,6 +417,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(mutates = "this")
   public int atomize(int zbdd)
   {
     lock.lock();
@@ -408,6 +431,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(mutates = "this")
   public int removeBase(int zbdd)
   {
     lock.lock();
@@ -421,6 +445,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(mutates = "this")
   public boolean contains(int p, int q)
   {
     lock.lock();
@@ -434,6 +459,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(pure = true)
   public boolean isValidZbdd(int zbdd)
   {
     lock.lock();
@@ -447,6 +473,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(pure = true)
   public boolean isValidVar(int var)
   {
     lock.lock();
@@ -460,6 +487,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(pure = true)
   public int getVar(int zbdd)
   {
     lock.lock();
@@ -473,6 +501,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(pure = true)
   public int getP0(int zbdd)
   {
     lock.lock();
@@ -486,6 +515,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(pure = true)
   public int getP1(int zbdd)
   {
     lock.lock();
@@ -499,6 +529,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(mutates = "this")
   public int getNode(int var, int p0, int p1)
   {
     lock.lock();
@@ -512,6 +543,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(mutates = "this")
   public int gc()
   {
     lock.lock();
@@ -525,6 +557,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(value = "_ -> param1", mutates = "this")
   public int incRef(int zbdd)
   {
     lock.lock();
@@ -538,6 +571,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(mutates = "this")
   public int @NotNull [] incRef(int @NotNull [] zbdds)
   {
     lock.lock();
@@ -551,6 +585,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(value = "_ -> param1", mutates = "this")
   public int decRef(int zbdd)
   {
     lock.lock();
@@ -564,6 +599,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(mutates = "this")
   public int @NotNull [] decRef(int @NotNull [] zbdds)
   {
     lock.lock();
@@ -577,6 +613,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(pure = true)
   public @NotNull ZbddNodeInfo getZbddNodeInfo(int zbdd)
   {
     lock.lock();
@@ -590,6 +627,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(value = "_ -> new", pure = true)
   public @NotNull String toString(int zbdd)
   {
     lock.lock();
@@ -616,6 +654,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(mutates = "this")
   public boolean visitCubeZbdds(int zbdd, @NotNull ZbddVisitor visitor)
   {
     lock.lock();
@@ -629,6 +668,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(value = "-> new", mutates = "this")
   public int @NotNull [] calculateNodeDependency()
   {
     lock.lock();
@@ -642,6 +682,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
+  @Contract(value = "_ -> new", mutates = "this")
   public int @NotNull [] asSingleCubeZbdds(int zbdd)
   {
     lock.lock();
@@ -669,6 +710,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
 
     @Override
+    @Contract(pure = true)
     public int getZbdd()
     {
       lock.lock();
@@ -681,6 +723,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
 
     @Override
+    @Contract(pure = true)
     public int getVar()
     {
       lock.lock();
@@ -693,6 +736,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
 
     @Override
+    @Contract(pure = true)
     public int getP0()
     {
       lock.lock();
@@ -705,6 +749,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
 
     @Override
+    @Contract(pure = true)
     public int getP1()
     {
       lock.lock();
@@ -717,6 +762,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
 
     @Override
+    @Contract(pure = true)
     public int getReferenceCount()
     {
       lock.lock();
@@ -729,6 +775,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
 
     @Override
+    @Contract(pure = true)
     public @NotNull String getLiteral()
     {
       lock.lock();
@@ -791,6 +838,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
     /** {@inheritDoc} */
     @Override
+    @Contract(mutates = "this,param1")
     public void setZbddCache(@NotNull ZbddCache zbddCache)
     {
       lock.lock();

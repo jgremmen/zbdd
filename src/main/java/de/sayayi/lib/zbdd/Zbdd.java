@@ -792,6 +792,7 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    *
    * @since 0.6.0
    */
+  @Contract(mutates = "this")
   boolean visitCubeZbdds(int zbdd, @NotNull ZbddVisitor visitor);
 
 
@@ -831,6 +832,7 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    *
    * @since 0.6.0
    */
+  @Contract(value = "_ -> new", mutates = "this")
   int @NotNull [] asSingleCubeZbdds(int zbdd);
 
 
