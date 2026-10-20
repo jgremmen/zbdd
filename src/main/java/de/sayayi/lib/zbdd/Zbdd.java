@@ -18,6 +18,7 @@ package de.sayayi.lib.zbdd;
 import de.sayayi.lib.zbdd.cache.ZbddCache;
 import de.sayayi.lib.zbdd.exception.InvalidVarException;
 import de.sayayi.lib.zbdd.exception.InvalidZbddException;
+import de.sayayi.lib.zbdd.exception.ZbddException;
 import de.sayayi.lib.zbdd.internal.ZbddCachedImpl;
 import de.sayayi.lib.zbdd.internal.ZbddConcurrent;
 import de.sayayi.lib.zbdd.internal.ZbddImpl;
@@ -151,7 +152,7 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * <p>
    * This method clears all variables and nodes. It does not free up allocated memory.
    *
-   * @throws de.sayayi.lib.zbdd.exception.ZbddException  if invoked from a {@link ZbddCallback callback}
+   * @throws ZbddException  if invoked from a {@link ZbddCallback callback}
    *
    * @see ZbddCache#clear()
    */
@@ -197,7 +198,7 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    *
    * @return  variable number
    *
-   * @throws de.sayayi.lib.zbdd.exception.ZbddException  if the highest supported variable number has been reached
+   * @throws ZbddException  if the highest supported variable number has been reached
    */
   @Contract(mutates = "this")
   @Range(from = 1, to = MAX_VALUE - 1)
@@ -214,7 +215,7 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    *
    * @return  variable number
    *
-   * @throws de.sayayi.lib.zbdd.exception.ZbddException  if the highest supported variable number has been reached
+   * @throws ZbddException  if the highest supported variable number has been reached
    *
    * @see #getVarObject(int)
    *
@@ -232,7 +233,9 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    *
    * @return  object associated with {@code var} or {@code null} if the variable was created without an object
    *
-   * @see #createVar() 
+   * @throws InvalidVarException  if {@code var} is not a valid variable
+   *
+   * @see #createVar()
    * @see #createVar(Object)
    */
   @Contract(pure = true)
@@ -279,6 +282,9 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * @param var  valid variable
    *
    * @return  zbdd set with {@code var} as its only element
+   *
+   * @throws InvalidVarException  if {@code var} is not a valid variable
+   * @throws ZbddException        if a new node is required, but the node capacity is exhausted and cannot be increased
    */
   @Contract(mutates = "this")
   int cube(int var);
@@ -300,6 +306,9 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * @param cubeVars  an array of valid variables
    *
    * @return  zbdd set with {@code cubeVars} as its only element
+   *
+   * @throws InvalidVarException  if any of {@code cubeVars} is not a valid variable
+   * @throws ZbddException        if a new node is required, but the node capacity is exhausted and cannot be increased
    */
   @Contract(mutates = "this")
   int cube(int @NotNull ... cubeVars);
@@ -312,6 +321,9 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * @param var   variable to check for
    *
    * @return  {@code true} if the zbdd set contains at least one cube with the given variable, {@code false} otherwise
+   *
+   * @throws InvalidZbddException  if {@code zbdd} is not a valid zbdd node
+   * @throws InvalidVarException   if {@code var} is not a valid variable
    *
    * @since 0.3.1
    */
@@ -328,6 +340,10 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * @param var   variable to filter out
    *
    * @return  zbdd node representing the 0-subset
+   *
+   * @throws InvalidZbddException  if {@code zbdd} is not a valid zbdd node
+   * @throws InvalidVarException   if {@code var} is not a valid variable
+   * @throws ZbddException         if a new node is required, but the node capacity is exhausted and cannot be increased
    */
   @Contract(mutates = "this")
   int subset0(int zbdd, int var);
@@ -343,6 +359,10 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * @param var   variable to filter by
    *
    * @return  zbdd node representing the 1-subset
+   *
+   * @throws InvalidZbddException  if {@code zbdd} is not a valid zbdd node
+   * @throws InvalidVarException   if {@code var} is not a valid variable
+   * @throws ZbddException         if a new node is required, but the node capacity is exhausted and cannot be increased
    */
   @Contract(mutates = "this")
   int subset1(int zbdd, int var);
@@ -357,6 +377,10 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * @param var   variable to toggle
    *
    * @return  zbdd node with the variable toggled
+   *
+   * @throws InvalidZbddException  if {@code zbdd} is not a valid zbdd node
+   * @throws InvalidVarException   if {@code var} is not a valid variable
+   * @throws ZbddException         if a new node is required, but the node capacity is exhausted and cannot be increased
    */
   @Contract(mutates = "this")
   int change(int zbdd, int var);
@@ -373,11 +397,11 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    *
    * @return  number of combinations in the zbdd set
    *
-   * @throws ArithmeticException  if the number of cubes exceeds {@link Integer#MAX_VALUE}
+   * @throws InvalidZbddException  if {@code zbdd} is not a valid zbdd node
+   * @throws ArithmeticException   if the number of cubes exceeds {@link Integer#MAX_VALUE}
    *
    * @see #countExact(int)
    */
-  @Contract(pure = true)
   int count(int zbdd);
 
 
@@ -390,6 +414,8 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * @param zbdd  zbdd node
    *
    * @return  number of combinations in the zbdd set, never {@code null}
+   *
+   * @throws InvalidZbddException  if {@code zbdd} is not a valid zbdd node
    *
    * @see #count(int)
    *
@@ -409,7 +435,10 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    *
    * @return  ZBDD node representing the union of all input sets
    *
-   * @throws IllegalArgumentException if no nodes are supplied
+   * @throws IllegalArgumentException  if no nodes are supplied
+   * @throws InvalidZbddException      if any of {@code p} is not a valid zbdd node
+   * @throws ZbddException             if a new node is required, but the node capacity is exhausted and cannot be
+   *                                   increased
    */
   @Contract(mutates = "this")
   int union(int... p);
@@ -424,6 +453,9 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * @param q  second zbdd node
    *
    * @return  zbdd node representing the union of {@code p} and {@code q}
+   *
+   * @throws InvalidZbddException  if {@code p} or {@code q} is not a valid zbdd node
+   * @throws ZbddException         if a new node is required, but the node capacity is exhausted and cannot be increased
    */
   @Contract(mutates = "this")
   int union(int p, int q);
@@ -438,6 +470,9 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * @param q  second zbdd node
    *
    * @return  zbdd node representing the intersection of {@code p} and {@code q}
+   *
+   * @throws InvalidZbddException  if {@code p} or {@code q} is not a valid zbdd node
+   * @throws ZbddException         if a new node is required, but the node capacity is exhausted and cannot be increased
    */
   @Contract(mutates = "this")
   int intersect(int p, int q);
@@ -452,6 +487,9 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * @param q  zbdd node to subtract
    *
    * @return  zbdd node representing {@code p} minus {@code q}
+   *
+   * @throws InvalidZbddException  if {@code p} or {@code q} is not a valid zbdd node
+   * @throws ZbddException         if a new node is required, but the node capacity is exhausted and cannot be increased
    */
   @Contract(mutates = "this")
   int difference(int p, int q);
@@ -467,6 +505,9 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * @param q  second zbdd node
    *
    * @return  zbdd node representing the product of {@code p} and {@code q}
+   *
+   * @throws InvalidZbddException  if {@code p} or {@code q} is not a valid zbdd node
+   * @throws ZbddException         if a new node is required, but the node capacity is exhausted and cannot be increased
    */
   @Contract(mutates = "this")
   int multiply(int p, int q);
@@ -482,7 +523,9 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    *
    * @return  zbdd node representing the quotient
    *
-   * @throws de.sayayi.lib.zbdd.exception.ZbddException  if {@code q} is the {@link #EMPTY empty} set
+   * @throws InvalidZbddException  if {@code p} or {@code q} is not a valid zbdd node
+   * @throws ZbddException         if {@code q} is the {@link #EMPTY empty} set
+   * @throws ZbddException         if a new node is required, but the node capacity is exhausted and cannot be increased
    */
   @Contract(mutates = "this")
   int divide(int p, int q);
@@ -498,7 +541,9 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    *
    * @return  zbdd node representing the remainder
    *
-   * @throws de.sayayi.lib.zbdd.exception.ZbddException  if {@code q} is the {@link #EMPTY empty} set
+   * @throws InvalidZbddException  if {@code p} or {@code q} is not a valid zbdd node
+   * @throws ZbddException         if {@code q} is the {@link #EMPTY empty} set
+   * @throws ZbddException         if a new node is required, but the node capacity is exhausted and cannot be increased
    */
   @Contract(mutates = "this")
   int modulo(int p, int q);
@@ -513,6 +558,9 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * @param zbdd  zbdd node to atomize
    *
    * @return  zbdd node where each variable from the input is a separate single-variable cube
+   *
+   * @throws InvalidZbddException  if {@code zbdd} is not a valid zbdd node
+   * @throws ZbddException         if a new node is required, but the node capacity is exhausted and cannot be increased
    */
   @Contract(mutates = "this")
   int atomize(int zbdd);
@@ -526,6 +574,9 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * @param zbdd  zbdd node
    *
    * @return  zbdd node representing {@code zbdd} without {@link #base()}
+   *
+   * @throws InvalidZbddException  if {@code zbdd} is not a valid zbdd node
+   * @throws ZbddException         if a new node is required, but the node capacity is exhausted and cannot be increased
    */
   @Contract(mutates = "this")
   int removeBase(int zbdd);
@@ -541,6 +592,9 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    *
    * @return  {@code true} if both zbdd sets {@code p} and {@code q} are not empty and zbdd set {@code q} is
    *          contained in zbdd set {@code p}, {@code false} otherwise
+   *
+   * @throws InvalidZbddException  if {@code p} or {@code q} is not a valid zbdd node
+   * @throws ZbddException         if a new node is required, but the node capacity is exhausted and cannot be increased
    */
   @Contract(mutates = "this")
   boolean contains(int p, int q);
@@ -578,6 +632,8 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * @param zbdd  zbdd node
    *
    * @return  variable or {@code -1} in case {@code zbdd} is the empty or base node
+   *
+   * @throws InvalidZbddException  if {@code zbdd} is not a valid zbdd node
    */
   @Contract(pure = true)
   int getVar(int zbdd);
@@ -591,6 +647,8 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * @param zbdd  zbdd node
    *
    * @return  zbdd node for the 0-branch
+   *
+   * @throws InvalidZbddException  if {@code zbdd} is not a valid zbdd node
    */
   @Contract(pure = true)
   int getP0(int zbdd);
@@ -604,6 +662,8 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * @param zbdd  zbdd node
    *
    * @return  zbdd node for the 1-branch
+   *
+   * @throws InvalidZbddException  if {@code zbdd} is not a valid zbdd node
    */
   @Contract(pure = true)
   int getP1(int zbdd);
@@ -626,8 +686,9 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * @return  zbdd node identifier
    *
    * @throws InvalidVarException   if {@code var} is not a valid variable
-   * @throws InvalidZbddException  if {@code p0} or {@code p1} is not a valid zbdd node, or if its variable is not
-   *                               lower than {@code var}
+   * @throws InvalidZbddException  if {@code p0} or {@code p1} is not a valid zbdd node, or if its variable is not lower
+   *                               than {@code var}
+   * @throws ZbddException         if a new node is required, but the node capacity is exhausted and cannot be increased
    */
   @Contract(mutates = "this")
   int getNode(int var, int p0, int p1);
@@ -644,7 +705,7 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    *
    * @return  the number of freed zbdd nodes
    *
-   * @throws de.sayayi.lib.zbdd.exception.ZbddException  if invoked from a {@link ZbddCallback callback}
+   * @throws ZbddException  if invoked from a {@link ZbddCallback callback}
    *
    * @see #incRef(int)
    * @see #decRef(int)
@@ -672,6 +733,8 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    *
    * @return  zbdd node
    *
+   * @throws InvalidZbddException  if {@code zbdd} is not a valid zbdd node
+   *
    * @see #gc()
    * @see #incRef(int[])
    * @see #decRef(int)
@@ -688,6 +751,9 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * @param zbdds  array of zbdd nodes, not {@code null}
    *
    * @return  zbdds
+   *
+   * @throws InvalidZbddException  if any of {@code zbdds} is not a valid zbdd node; the reference counts of the
+   *                               preceding nodes have been increased already
    *
    * @see #incRef(int)
    *
@@ -712,6 +778,8 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    *
    * @return  zbdd node
    *
+   * @throws InvalidZbddException  if {@code zbdd} is not a valid zbdd node
+   *
    * @see #gc()
    * @see #incRef(int)
    * @see #decRef(int[])
@@ -728,6 +796,9 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * @param zbdds  array of zbdd nodes, not {@code null}
    *
    * @return  zbdds
+   *
+   * @throws InvalidZbddException  if any of {@code zbdds} is not a valid zbdd node; the reference counts of the
+   *                               preceding nodes have been decreased already
    *
    * @see #decRef(int)
    * 
@@ -750,6 +821,8 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    *
    * @return  zbdd node info, never {@code null}
    *
+   * @throws InvalidZbddException  if {@code zbdd} is not a valid zbdd node
+   *
    * @since 0.5.0
    */
   @Contract(pure = true)
@@ -763,6 +836,8 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * @param zbdd  zbdd node
    *
    * @return  string representation of the set denoted by {@code zbdd}
+   *
+   * @throws InvalidZbddException  if {@code zbdd} is not a valid zbdd node
    */
   @Contract(value = "_ -> new", pure = true)
   @NotNull String toString(int zbdd);
@@ -777,6 +852,8 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * @param visitor  cube visitor, not {@code null}
    *
    * @return {@code false} if the {@code visitor} has aborted the continuation, {@code true} otherwise
+   *
+   * @throws InvalidZbddException  if {@code zbdd} is not a valid zbdd node
    */
   boolean visitCubes(int zbdd, @NotNull CubeVisitor visitor);
 
@@ -789,6 +866,9 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * @param visitor  zbdd visitor, not {@code null}
    *
    * @return {@code false} if the {@code visitor} has aborted the continuation, {@code true} otherwise
+   *
+   * @throws InvalidZbddException  if {@code zbdd} is not a valid zbdd node
+   * @throws ZbddException         if a new node is required, but the node capacity is exhausted and cannot be increased
    *
    * @since 0.6.0
    */
@@ -809,7 +889,7 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    *
    * @return  array with the generation sequence for all zbdd nodes, never {@code null}
    *
-   * @throws de.sayayi.lib.zbdd.exception.ZbddException  if invoked from a {@link ZbddCallback callback}
+   * @throws ZbddException  if invoked from a {@link ZbddCallback callback}
    *
    * @see #gc()
    *
@@ -829,6 +909,9 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * @param zbdd  zbdd node
    *
    * @return  an array of single cube zbdd nodes, never {@code null}
+   *
+   * @throws InvalidZbddException  if {@code zbdd} is not a valid zbdd node
+   * @throws ZbddException         if a new node is required, but the node capacity is exhausted and cannot be increased
    *
    * @since 0.6.0
    */
@@ -898,10 +981,10 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * A callback may use the zbdd instance it is registered with, including the creation of new nodes and the
    * {@linkplain Zbdd#registerCallback(ZbddCallback) registration} of further callbacks. However, it must not invoke
    * {@link Zbdd#gc() gc}, {@link Zbdd#clear() clear} or {@link Zbdd#calculateNodeDependency() calculateNodeDependency};
-   * these methods throw a {@link de.sayayi.lib.zbdd.exception.ZbddException ZbddException} when invoked from a
-   * callback. While a callback is running, new nodes are provided by increasing the node capacity, without garbage
-   * collection. Unreferenced nodes created in {@link #beforeGc()} are freed by the garbage collection in progress, and
-   * all nodes created in {@link #beforeClear()} are discarded by the clear operation in progress.
+   * these methods throw a {@link ZbddException ZbddException} when invoked from a callback. While a callback is
+   * running, new nodes are provided by increasing the node capacity, without garbage collection. Unreferenced nodes
+   * created in {@link #beforeGc()} are freed by the garbage collection in progress, and all nodes created in
+   * {@link #beforeClear()} are discarded by the clear operation in progress.
    *
    * @author Jeroen Gremmen
    * @since 0.5.0
@@ -967,7 +1050,7 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
      *
      * @param zbddCache  new zbdd cache instance to use for caching, not {@code null}
      *
-     * @throws de.sayayi.lib.zbdd.exception.ZbddException  if {@code zbddCache} is in use by another zbdd instance
+     * @throws ZbddException  if {@code zbddCache} is in use by another zbdd instance
      */
     @Contract(mutates = "this,param1")
     void setZbddCache(@NotNull ZbddCache zbddCache);
@@ -1048,11 +1131,11 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
 
 
   /**
-   * A ZbddNode provides a "live view" on a zbdd node. As the reference count or literal resolver changes, those
-   * changes reflect in the return values for the associated methods.
+   * A ZbddNode provides a "live view" on a zbdd node. As the reference count or literal resolver changes, those changes
+   * reflect in the return values for the associated methods.
    * <p>
-   * If the zbdd node was garbage collected, all methods in this interface, including {@code toString()},
-   * throw an exception stating that the zbdd is not valid.
+   * If the zbdd node was garbage collected, all methods in this interface, including {@code toString()}, throw an
+   * {@link InvalidZbddException} stating that the zbdd is not valid.
    *
    * @author Jeroen Gremmen
    * @since 0.5.0
