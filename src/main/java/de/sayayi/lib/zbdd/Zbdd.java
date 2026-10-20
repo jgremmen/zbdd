@@ -432,6 +432,8 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * @param q  divisor zbdd node
    *
    * @return  zbdd node representing the quotient
+   *
+   * @throws de.sayayi.lib.zbdd.exception.ZbddException  if {@code q} is the {@link #EMPTY empty} set
    */
   @Contract(mutates = "this")
   int divide(int p, int q);
@@ -446,6 +448,8 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * @param q  divisor zbdd node
    *
    * @return  zbdd node representing the remainder
+   *
+   * @throws de.sayayi.lib.zbdd.exception.ZbddException  if {@code q} is the {@link #EMPTY empty} set
    */
   @Contract(mutates = "this")
   int modulo(int p, int q);

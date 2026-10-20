@@ -16,6 +16,7 @@
 package de.sayayi.lib.zbdd;
 
 import de.sayayi.lib.zbdd.cache.ZbddFastCache;
+import de.sayayi.lib.zbdd.exception.ZbddException;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -31,6 +32,7 @@ import static de.sayayi.lib.zbdd.Zbdd.EMPTY;
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 
 
 /**
@@ -80,6 +82,28 @@ class ZbddDivideTest
     // { {} } / Q = {} for Q != { {} }
     assertEquals(EMPTY, zbdd.divide(BASE, cubeA));
     assertEquals(BASE, zbdd.modulo(BASE, cubeA));
+  }
+
+
+  @ParameterizedTest(name = "cached = {0}")
+  @DisplayName("Division by empty set")
+  @ValueSource(booleans = { false, true })
+  void divisionByEmpty(boolean cached)
+  {
+    final var zbdd = create(cached);
+    final var a = zbdd.createVar();
+    final var b = zbdd.createVar();
+    final var p = zbdd.incRef(zbdd.union(zbdd.cube(a, b), zbdd.cube(b)));  // { a.b, b }
+    final var cubeA = zbdd.incRef(zbdd.cube(a));
+
+    for(var dividend: new int[] { Zbdd.EMPTY, Zbdd.BASE, cubeA, p })
+    {
+      assertThrowsExactly(ZbddException.class, () -> zbdd.divide(dividend, Zbdd.EMPTY));
+      assertThrowsExactly(ZbddException.class, () -> zbdd.modulo(dividend, Zbdd.EMPTY));
+    }
+
+    // a failed division must not leave the instance unusable
+    assertEquals(Set.of(Set.of()), toModel(zbdd, zbdd.divide(cubeA, cubeA)));
   }
 
 

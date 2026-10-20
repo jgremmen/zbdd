@@ -851,7 +851,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   {
     final var mark = protectedNodes.size();
     try {
-      return __divide(checkZbdd(p, "p"), checkZbdd(q, "q"));
+      return __divide(checkZbdd(p, "p"), checkDivisor(q));
     } finally {
       protectedNodes.truncate(mark);
     }
@@ -909,7 +909,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   {
     final var mark = protectedNodes.size();
     try {
-      return __modulo(checkZbdd(p, "p"), checkZbdd(q, "q"));
+      return __modulo(checkZbdd(p, "p"), checkDivisor(q));
     } finally {
       protectedNodes.truncate(mark);
     }
@@ -1619,6 +1619,31 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     }
 
     return zbdd;
+  }
+
+
+  /**
+   * Validates the given divisor {@code q} for {@link #divide(int, int)} and {@link #modulo(int, int)}. Division by the
+   * empty set is undefined.
+   * <p>
+   * Internally, the divisor never becomes empty: the 1-branch of a node is never {@link #EMPTY} due to zero
+   * suppression, and the 0-branch is only used as a divisor if it is not empty.
+   *
+   * @param q  divisor zbdd node
+   *
+   * @return  the validated divisor
+   *
+   * @throws ZbddOutOfRangeException  if the divisor is out of range
+   * @throws InvalidZbddException     if the divisor is not valid
+   * @throws ZbddException            if the divisor is the empty set
+   */
+  @Contract(value = "_ -> param1")
+  private int checkDivisor(int q)
+  {
+    if (checkZbdd(q, "q") == EMPTY)
+      throw new ZbddException("division by empty set");
+
+    return q;
   }
 
 
