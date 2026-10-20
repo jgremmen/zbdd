@@ -1848,8 +1848,8 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
 
   /**
-   * Calculates a list of ZBDD nodes, where each ZBDD node references 2 other ZBDD nodes in the list with a lower
-   * index.
+   * Calculates a list of ZBDD nodes, where each non-terminal ZBDD node references 2 other ZBDD nodes in the list with
+   * a lower index.
    * <p>
    * Initially, each newly created ZBDD node references other ZBDD nodes with lower ZBDD numbers. Starting with the
    * first garbage collection, freed ZBDD numbers are going to be reused, if possible. This means that the initial
@@ -1858,9 +1858,12 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
    * The list returned by this method essentially describes the generation sequence for all ZBDD nodes in the correct
    * order.
    * <p>
-   * Note: this method will always perform a garbage collection
+   * The list always starts with the terminal nodes {@link #EMPTY} and {@link #BASE} at index 0 and 1, followed by all
+   * other ZBDD nodes remaining after the garbage collection, each of them exactly once.
+   * <p>
+   * Note: this method will always perform a garbage collection.
    *
-   * @return  array with the generation sequence for all ZBDD nodes, never {@code null}
+   * @return  array with the generation sequence for all ZBDD nodes, starting with {@code 0, 1}, never {@code null}
    *
    * @see #gc()
    *

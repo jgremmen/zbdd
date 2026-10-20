@@ -877,17 +877,20 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
 
 
   /**
-   * Calculates a list of zbdd nodes, where each zbdd node references 2 other zbdd nodes in the list with a lower index.
+   * Calculates a list of zbdd nodes, where each non-terminal zbdd node references 2 other zbdd nodes in the list with a
+   * lower index.
    * <p>
    * Initially, each newly created zbdd node references other zbdd nodes with lower zbdd numbers. Starting with the
    * first garbage collection, freed zbdd numbers are going to be reused, if possible. This means that the initial
-   * contract is no longer valid and new zbdd nodes may have a lower number than the zbdd nodes it references.
-   * The list returned by this method essentially describes the generation sequence for all zbdd nodes in the correct
-   * order.
+   * contract is no longer valid and new zbdd nodes may have a lower number than the zbdd nodes it references. The list
+   * returned by this method essentially describes the generation sequence for all zbdd nodes in the correct order.
    * <p>
-   * Note: this method will always perform a garbage collection
+   * The list always starts with the terminal nodes {@link #EMPTY} and {@link #BASE} at index 0 and 1, followed by all
+   * other zbdd nodes remaining after the garbage collection, each of them exactly once.
+   * <p>
+   * Note: this method will always perform a garbage collection.
    *
-   * @return  array with the generation sequence for all zbdd nodes, never {@code null}
+   * @return  array with the generation sequence for all zbdd nodes, starting with {@code 0, 1}, never {@code null}
    *
    * @throws ZbddException  if invoked from a {@link ZbddCallback callback}
    *
