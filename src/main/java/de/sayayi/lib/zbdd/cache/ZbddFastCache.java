@@ -98,6 +98,7 @@ public final class ZbddFastCache implements ZbddCache
 
   /** {@inheritDoc} */
   @Override
+  @Contract(mutates = "this")
   public void clear()
   {
     for(int n = 0, l = cache1.length; n < l; n += SLOT_ENTRY_SIZE1)
@@ -112,6 +113,7 @@ public final class ZbddFastCache implements ZbddCache
 
   /** {@inheritDoc} */
   @Override
+  @Contract(mutates = "this")
   public int getResult(@NotNull Operation1 operation, int p)
   {
     lookup1Count++;
@@ -145,6 +147,7 @@ public final class ZbddFastCache implements ZbddCache
 
   /** {@inheritDoc} */
   @Override
+  @Contract(mutates = "this")
   public void putResult(@NotNull Operation1 operation, int p, int result)
   {
     final var slotIndex = hash1(operation, p) * SLOT_CHAIN_SIZE1;
@@ -172,6 +175,7 @@ public final class ZbddFastCache implements ZbddCache
 
   /** {@inheritDoc} */
   @Override
+  @Contract(mutates = "this")
   public int getResult(@NotNull Operation2 operation, int p1, int p2)
   {
     lookup2Count++;
@@ -205,6 +209,7 @@ public final class ZbddFastCache implements ZbddCache
 
   /** {@inheritDoc} */
   @Override
+  @Contract(mutates = "this")
   public void putResult(@NotNull Operation2 operation, int p1, int p2, int result)
   {
     final var slotIndex = hash2(operation, p1, p2) * SLOT_CHAIN_SIZE2;

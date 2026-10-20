@@ -52,18 +52,21 @@ public interface ZbddCache
 {
   /**
    * Retrieves the cached result for a single-parameter operation.
+   * <p>
+   * Implementations may update internal state, such as lookup statistics or the replacement order of entries.
    *
    * @param operation  ZBDD operation, not {@code null}
    * @param p          operation parameter
    *
    * @return  {@link Integer#MIN_VALUE} if the result is not cached, otherwise the cached result
    */
-  @Contract(pure = true)
   int getResult(@NotNull Operation1 operation, int p);
 
 
   /**
    * Retrieves the cached result for a two-parameter operation.
+   * <p>
+   * Implementations may update internal state, such as lookup statistics or the replacement order of entries.
    *
    * @param operation  ZBDD operation, not {@code null}
    * @param p1         1st operation parameter
@@ -71,7 +74,6 @@ public interface ZbddCache
    *
    * @return  {@link Integer#MIN_VALUE} if the result is not cached, otherwise the cached result
    */
-  @Contract(pure = true)
   int getResult(@NotNull Operation2 operation, int p1, int p2);
 
 
