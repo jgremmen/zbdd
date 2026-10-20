@@ -115,9 +115,26 @@ class ZbddConcurrentTest
 
   @Test
   @DisplayName("Concurrent count with cache")
-  void concurrentCountWithCache() throws Exception
+  void concurrentCountWithCache() throws Exception {
+    assertConcurrentCounts(asConcurrent(createCached(new ZbddFastCache())));
+  }
+
+
+  @Test
+  @DisplayName("Concurrent count with cache wrapped through plain Zbdd type")
+  void concurrentCountWithCacheAsPlainZbdd() throws Exception
   {
-    final var zbdd = asConcurrent(createCached(new ZbddFastCache()));
+    // don't change Zbdd -> var!
+    final Zbdd cachedZbdd = createCached(new ZbddFastCache());
+    final var zbdd = asConcurrent(cachedZbdd);
+
+    assertInstanceOf(Zbdd.WithCache.class, zbdd);
+    assertConcurrentCounts(zbdd);
+  }
+
+
+  private static void assertConcurrentCounts(Zbdd.Concurrent zbdd) throws Exception
+  {
     final var vars = new int[14];
 
     for(var i = 0; i < vars.length; i++)

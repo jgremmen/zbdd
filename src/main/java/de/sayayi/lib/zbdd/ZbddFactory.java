@@ -97,17 +97,27 @@ public final class ZbddFactory
 
 
   /**
-   * Wraps the given {@code zbdd} instance to make it thread-safe. If the instance is already concurrent, it is
-   * returned as-is. After wrapping, access the underlying instance only through the returned wrapper; direct access
-   * through another reference bypasses synchronization.
+   * Wraps the given {@code zbdd} instance to make it thread-safe. If the instance is already concurrent, it is returned
+   * as-is. If the instance is {@link Zbdd.WithCache cached}, the returned wrapper preserves cache support and
+   * implements {@link Zbdd.WithCache} as well, regardless of the static type of {@code zbdd}. After wrapping, access
+   * the underlying instance only through the returned wrapper; direct access through another reference bypasses
+   * synchronization.
    *
    * @param zbdd  ZBDD instance to wrap, not {@code null}
    *
    * @return  thread-safe ZBDD instance, never {@code null}
+   *
+   * @see #asConcurrent(Zbdd.WithCache)
    */
   @Contract(pure = true)
-  public static @NotNull Zbdd.Concurrent asConcurrent(@NotNull Zbdd zbdd) {
-    return zbdd instanceof Zbdd.Concurrent ? (Zbdd.Concurrent)zbdd : new ZbddConcurrent(zbdd);
+  public static @NotNull Zbdd.Concurrent asConcurrent(@NotNull Zbdd zbdd)
+  {
+    if (zbdd instanceof Zbdd.Concurrent concurrent)
+      return concurrent;
+    else if (zbdd instanceof Zbdd.WithCache withCache)
+      return new ZbddConcurrent.WithCache(withCache);
+    else
+      return new ZbddConcurrent(zbdd);
   }
 
 
