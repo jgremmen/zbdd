@@ -263,7 +263,8 @@ stats.getRegisteredVars();      // number of registered variables
 
 ### Callbacks
 
-Register lifecycle callbacks for clear and GC events:
+Register lifecycle callbacks for clear and GC events. A callback may use the ZBDD instance, including creating nodes
+and registering further callbacks, but must not invoke `gc`, `clear` or `calculateNodeDependency`:
 
 ```java
 zbdd.registerCallback(new Zbdd.ZbddCallback() {

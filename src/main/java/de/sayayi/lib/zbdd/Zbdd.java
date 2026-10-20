@@ -105,8 +105,13 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
 
   /**
    * Registers a zbdd callback instance.
+   * <p>
+   * Callbacks may be registered from within a callback. A callback registered this way is invoked starting with the
+   * next event.
    *
    * @param callback  callback, not {@code null}
+   *
+   * @see ZbddCallback
    */
   @Contract(mutates = "this")
   void registerCallback(@NotNull ZbddCallback callback);
@@ -145,6 +150,8 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * well.
    * <p>
    * This method clears all variables and nodes. It does not free up allocated memory.
+   *
+   * @throws de.sayayi.lib.zbdd.exception.ZbddException  if invoked from a {@link ZbddCallback callback}
    *
    * @see ZbddCache#clear()
    */
@@ -637,6 +644,8 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    *
    * @return  the number of freed zbdd nodes
    *
+   * @throws de.sayayi.lib.zbdd.exception.ZbddException  if invoked from a {@link ZbddCallback callback}
+   *
    * @see #incRef(int)
    * @see #decRef(int)
    */
@@ -799,6 +808,8 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    *
    * @return  array with the generation sequence for all zbdd nodes, never {@code null}
    *
+   * @throws de.sayayi.lib.zbdd.exception.ZbddException  if invoked from a {@link ZbddCallback callback}
+   *
    * @see #gc()
    *
    * @since 0.3.1
@@ -879,7 +890,16 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * This interface provides various callback functions that might be of interest to classes working with Zbdd
    * instances.
    * <p>
+   * Callbacks are invoked synchronously by the zbdd instance they are registered with, in registration order.
    * Implementing classes must assure that all methods in this interface return without throwing an exception!
+   * <p>
+   * A callback may use the zbdd instance it is registered with, including the creation of new nodes and the
+   * {@linkplain Zbdd#registerCallback(ZbddCallback) registration} of further callbacks. However, it must not invoke
+   * {@link Zbdd#gc() gc}, {@link Zbdd#clear() clear} or {@link Zbdd#calculateNodeDependency() calculateNodeDependency};
+   * these methods throw a {@link de.sayayi.lib.zbdd.exception.ZbddException ZbddException} when invoked from a
+   * callback. While a callback is running, new nodes are provided by increasing the node capacity, without garbage
+   * collection. Unreferenced nodes created in {@link #beforeGc()} are freed by the garbage collection in progress, and
+   * all nodes created in {@link #beforeClear()} are discarded by the clear operation in progress.
    *
    * @author Jeroen Gremmen
    * @since 0.5.0

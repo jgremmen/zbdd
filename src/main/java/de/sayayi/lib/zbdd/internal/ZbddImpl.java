@@ -30,10 +30,11 @@ import org.jetbrains.annotations.MustBeInvokedByOverriders;
 import org.jetbrains.annotations.NotNull;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.StringJoiner;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.BinaryOperator;
+import java.util.function.Consumer;
 
 import static java.lang.Boolean.TRUE;
 import static java.lang.Integer.MAX_VALUE;
@@ -95,7 +96,6 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
   private final @NotNull ZbddCapacityAdvisor capacityAdvisor;
   private final @NotNull Statistics statistics;
-  private final @NotNull List<ZbddCallback> callbacks;
   private final @NotNull IntObjectMap varObjectMap;
 
   /**
@@ -103,6 +103,9 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
    * size on entry and truncates the stack to that size on exit, so an exception never leaves nodes protected.
    */
   private final @NotNull IntStack protectedNodes;
+
+  private final @NotNull List<ZbddCallback> callbacks;
+  private boolean callbacksRunning;
 
   private int lastVarNumber;
 
@@ -134,7 +137,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     initTerminalNode(BASE);
 
     statistics = new Statistics();
-    callbacks = new ArrayList<>();
+    callbacks = new CopyOnWriteArrayList<>();
     varObjectMap = new IntObjectMap();
     protectedNodes = new IntStack(24);
 
@@ -198,16 +201,20 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
    * <p>
    * This method clears all variables and nodes. It does not free up allocated memory.
    *
+   * @throws ZbddException  if a callback is running
+   *
    * @see ZbddCache#clear()
    */
   @Override
   @Contract(mutates = "this")
-  @MustBeInvokedByOverriders
   public void clear()
   {
-    callbacks.forEach(ZbddCallback::beforeClear);
+    if (callbacksRunning)
+      throw new ZbddException("clear must not be invoked from a zbdd callback");
+
+    invokeCallbacks(ZbddCallback::beforeClear);
     clearInternal();
-    callbacks.forEach(ZbddCallback::afterClear);
+    invokeCallbacks(ZbddCallback::afterClear);
   }
 
 
@@ -238,6 +245,23 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     varObjectMap.clear();
     protectedNodes.truncate(0);
     statistics.clear();
+  }
+
+
+  /**
+   * Invokes {@code action} for all registered callbacks. Callbacks registered during the invocation are not invoked
+   * until the next event.
+   *
+   * @param action  callback method to invoke, not {@code null}
+   */
+  private void invokeCallbacks(@NotNull Consumer<ZbddCallback> action)
+  {
+    callbacksRunning = true;
+    try {
+      callbacks.forEach(action);
+    } finally {
+      callbacksRunning = false;
+    }
   }
 
 
@@ -1273,6 +1297,8 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
    *
    * @return  the number of freed ZBDD nodes
    *
+   * @throws ZbddException  if a callback is running
+   *
    * @see #incRef(int)
    * @see #decRef(int)
    * @see #getNode(int, int, int)
@@ -1283,7 +1309,10 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   @SuppressWarnings("UnusedReturnValue")
   public int gc()
   {
-    callbacks.forEach(ZbddCallback::beforeGc);
+    if (callbacksRunning)
+      throw new ZbddException("gc must not be invoked from a zbdd callback");
+
+    invokeCallbacks(ZbddCallback::beforeGc);
 
     final var oldNodesFree = nodesFree;
 
@@ -1301,7 +1330,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     statistics.gcFreedNodes += gcFreedNodesCount;
     statistics.gcCount++;
 
-    callbacks.forEach(ZbddCallback::afterGc);
+    invokeCallbacks(ZbddCallback::afterGc);
 
     return gcFreedNodesCount;
   }
@@ -1411,7 +1440,8 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   @Contract(mutates = "this")
   private void ensureCapacity()
   {
-    if (nodesDead + nodesNew > 0 && capacityAdvisor.isGCRequired(statistics))
+    // garbage collection is not possible while callbacks are running, so new nodes are provided by growing only
+    if (!callbacksRunning && nodesDead + nodesNew > 0 && capacityAdvisor.isGCRequired(statistics))
     {
       gc();
       if (nodesFree >= capacityAdvisor.getMinimumFreeNodes(statistics))
