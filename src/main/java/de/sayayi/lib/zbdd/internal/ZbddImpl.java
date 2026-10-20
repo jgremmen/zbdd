@@ -381,7 +381,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
       if (zbddVar > var)
       {
-        final var stack = new IntStack((zbddVar - var) * 2);
+        final var stack = new IntStack(min(zbddVar - var, 12) * 2);
         final var visited = new IntObjectMap();
 
         visited.put(stack.push(zbdd), TRUE);

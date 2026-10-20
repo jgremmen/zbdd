@@ -131,4 +131,26 @@ class ZbddImplTest
     assertEquals(1, zbdd.count(cube));
     assertEquals(cube, zbdd.cube(lowVar, highVar));
   }
+
+
+  @Test
+  @DisplayName("Cube with variable for variables far apart")
+  void hasCubeWithVarForDistantVars() throws Exception
+  {
+    final var zbdd = new ZbddImpl(DefaultCapacityAdvisor.INSTANCE);
+    final var lowVar = zbdd.createVar();
+    final var midVar = zbdd.createVar();
+
+    // simulate MAX_VAR - 1 created variables
+    ReflectionUtils
+        .makeAccessible(ZbddImpl.class.getDeclaredField("lastVarNumber"))
+        .setInt(zbdd, MAX_VAR - 1);
+
+    final var highVar = zbdd.createVar();
+    final var set = zbdd.union(zbdd.cube(highVar), zbdd.cube(midVar, highVar));
+
+    assertTrue(zbdd.hasCubeWithVar(set, highVar));
+    assertTrue(zbdd.hasCubeWithVar(set, midVar));
+    assertFalse(zbdd.hasCubeWithVar(set, lowVar));
+  }
 }
