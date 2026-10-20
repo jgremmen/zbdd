@@ -257,4 +257,16 @@ class ZbddImplTest
     assertEquals(cube, zbdd.cube(var2));
     assertEquals(var2, nodeInfo.getVar());
   }
+
+
+  @Test
+  @DisplayName("Null visitor is rejected for the empty set")
+  @SuppressWarnings("DataFlowIssue")
+  void nullVisitorForEmptySet()
+  {
+    final var zbdd = new ZbddImpl(DefaultCapacityAdvisor.INSTANCE);
+
+    assertThrowsExactly(NullPointerException.class, () -> zbdd.visitCubes(EMPTY, null));
+    assertThrowsExactly(NullPointerException.class, () -> zbdd.visitCubeZbdds(EMPTY, null));
+  }
 }

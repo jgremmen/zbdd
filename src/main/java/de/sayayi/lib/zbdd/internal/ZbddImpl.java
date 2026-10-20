@@ -1797,8 +1797,9 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   @Override
   public boolean visitCubes(int zbdd, @NotNull CubeVisitor visitor)
   {
-    return zbdd == EMPTY ||
-        __visitCubes(checkZbdd(zbdd, "zbdd"), requireNonNull(visitor, "visitor must not be null"));
+    requireNonNull(visitor, "visitor must not be null");
+
+    return zbdd == EMPTY || __visitCubes(checkZbdd(zbdd, "zbdd"), visitor);
   }
 
 
