@@ -220,12 +220,12 @@ class ZbddTest
     final var v1 = zbdd.createVar();
     final var v2 = zbdd.createVar();
 
-    // { v2 } x power set of 40 variables: 41 nodes, but 2^40 paths
+    // { v2 } x power set of 28 variables: 29 nodes, but 2^28 paths
     var set = zbdd.cube(v2);
-    for(var n = 0; n < 40; n++)
+    for(var n = 0; n < 28; n++)
       set = zbdd.getNode(zbdd.createVar(), set, set);
 
-    assertEquals(1099511627776L, zbdd.count(set));
+    assertEquals(268435456, zbdd.count(set));
 
     final var sharedDag = set;
 
@@ -298,7 +298,7 @@ class ZbddTest
   void countLargeSharedChain()
   {
     final var zbdd = ZbddFactory.create();
-    final var varCount = 50;
+    final var varCount = 30;
 
     var node = Zbdd.base();
 

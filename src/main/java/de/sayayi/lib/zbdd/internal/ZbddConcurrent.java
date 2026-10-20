@@ -23,6 +23,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
+import java.math.BigInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
@@ -278,11 +279,24 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
-  public long count(int zbdd)
+  public int count(int zbdd)
   {
     lock.lock();
     try {
       return this.zbdd.count(zbdd);
+    } finally {
+      lock.unlock();
+    }
+  }
+
+
+  /** {@inheritDoc} */
+  @Override
+  public @NotNull BigInteger countExact(int zbdd)
+  {
+    lock.lock();
+    try {
+      return this.zbdd.countExact(zbdd);
     } finally {
       lock.unlock();
     }

@@ -31,7 +31,7 @@ algebra — such as solving constraint satisfaction problems, configuration anal
 
 ## Features
 
-- **Core set operations** — `union`, `intersection`, `difference`, `subset0`, `subset1`, `change`, and `count`
+- **Core set operations** — `union`, `intersection`, `difference`, `subset0`, `subset1`, `change`, `count`, and `countExact`
 - **Algebraic operations** — `multiply` (Cartesian product), `divide` (quotient), and `modulo` (remainder)
 - **Set manipulation** — `cube`, `atomize`, and `removeBase`
 - **Set queries** — `contains` and `hasCubeWithVar`
@@ -159,7 +159,8 @@ int cube2 = zbdd.cube(x, y);  // { x.y }
 | `hasCubeWithVar(zbdd, var)`     | Test whether any combination contains `var`                          |
 | `atomize(zbdd)`                 | Extract all individual variables as single-variable cubes            |
 | `removeBase(zbdd)`              | Remove the empty combination (base) from the set                     |
-| `count(zbdd)`                   | Number of combinations in the set                                    |
+| `count(zbdd)`                   | Number of combinations in the set (fails if it exceeds `int` range)  |
+| `countExact(zbdd)`              | Exact number of combinations in the set as `BigInteger`              |
 
 ### Reference Counting and Garbage Collection
 

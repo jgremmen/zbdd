@@ -24,6 +24,7 @@ import de.sayayi.lib.zbdd.internal.ZbddImpl;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
+import java.math.BigInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -341,13 +342,39 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
 
   /**
    * Returns the number of cubes (combinations) in the given {@code zbdd}.
+   * <p>
+   * The number of cubes can grow exponentially with the number of variables. For instance, the set of all combinations
+   * of 32 variables contains 2<sup>32</sup> cubes. Use {@link #countExact(int)} if the number of cubes may exceed
+   * {@link Integer#MAX_VALUE}.
    *
    * @param zbdd  zbdd node
    *
    * @return  number of combinations in the zbdd set
+   *
+   * @throws ArithmeticException  if the number of cubes exceeds {@link Integer#MAX_VALUE}
+   *
+   * @see #countExact(int)
    */
   @Contract(pure = true)
-  long count(int zbdd);
+  int count(int zbdd);
+
+
+  /**
+   * Returns the exact number of cubes (combinations) in the given {@code zbdd}, regardless of its magnitude.
+   * <p>
+   * This method is slower than {@link #count(int)} and its results are not cached. Use it only if the number of cubes
+   * may exceed {@link Long#MAX_VALUE}.
+   *
+   * @param zbdd  zbdd node
+   *
+   * @return  number of combinations in the zbdd set, never {@code null}
+   *
+   * @see #count(int)
+   *
+   * @since 0.8.0
+   */
+  @Contract(pure = true)
+  @NotNull BigInteger countExact(int zbdd);
 
 
   /**

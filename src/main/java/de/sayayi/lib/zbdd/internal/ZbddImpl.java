@@ -29,14 +29,18 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.MustBeInvokedByOverriders;
 import org.jetbrains.annotations.NotNull;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringJoiner;
+import java.util.function.BinaryOperator;
 
 import static java.lang.Boolean.TRUE;
 import static java.lang.Integer.MAX_VALUE;
 import static java.lang.Math.*;
 import static java.lang.System.arraycopy;
+import static java.math.BigInteger.ONE;
+import static java.math.BigInteger.ZERO;
 import static java.util.Arrays.copyOf;
 import static java.util.Arrays.sort;
 import static java.util.Locale.ROOT;
@@ -541,24 +545,67 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
    * @param zbdd  valid ZBDD node
    *
    * @return  number of cubes &ge; 0
+   *
+   * @throws ArithmeticException  if the number of cubes exceeds {@link Long#MAX_VALUE}
    */
   @Override
   @Contract(pure = true)
-  public long count(int zbdd) {
+  public int count(int zbdd) {
     return __count(checkZbdd(zbdd, "zbdd"));
   }
 
 
   /**
    * Internal implementation of {@link #count(int)} without parameter validation.
-   * <p>
-   * Counts are computed bottom-up and memoized per distinct node.
+   *
+   * @throws ArithmeticException  if the number of cubes exceeds {@link Long#MAX_VALUE}
    */
   @Contract(pure = true)
-  protected long __count(int zbdd)
+  protected int __count(int zbdd)
   {
-    if (zbdd < 2)
-      return zbdd;
+    return __countCubes(zbdd, 0, 1, (count1, count2) -> {
+      final var count = count1 + count2;
+
+      if (count < 0)
+        throw new ArithmeticException("number of cubes exceeds " + Integer.MAX_VALUE + ", use countExact instead");
+
+      return count;
+    });
+  }
+
+
+  /** {@inheritDoc} */
+  @Override
+  @Contract(pure = true)
+  public @NotNull BigInteger countExact(int zbdd) {
+    return __countCubes(checkZbdd(zbdd, "zbdd"), ZERO, ONE, BigInteger::add);
+  }
+
+
+  /**
+   * Counts the cubes in the given {@code zbdd} using the given arithmetic.
+   * <p>
+   * Counts are computed bottom-up and memoized per distinct node. The count of a node is the sum of the counts of its
+   * 0- and 1-branch, with {@code emptyCount} and {@code baseCount} as the counts of the terminal nodes.
+   *
+   * @param zbdd        valid zbdd node
+   * @param emptyCount  count for the {@link #EMPTY} node, not {@code null}
+   * @param baseCount   count for the {@link #BASE} node, not {@code null}
+   * @param add         function adding two counts, not {@code null}
+   *
+   * @return  number of cubes, never {@code null}
+   *
+   * @param <T>  count type
+   */
+  @Contract(pure = true)
+  @SuppressWarnings("unchecked")
+  private <T> @NotNull T __countCubes(int zbdd, @NotNull T emptyCount, @NotNull T baseCount,
+                                      @NotNull BinaryOperator<@NotNull T> add)
+  {
+    if (zbdd == EMPTY)
+      return emptyCount;
+    else if (zbdd == BASE)
+      return baseCount;
 
     final var zbddCountMap = new IntObjectMap();
     final var stack = new IntStack(__getVar(zbdd) + 1);
@@ -573,11 +620,11 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
         final var offset = z * NODE_RECORD_SIZE;
         final var p0 = nodes[offset + _P0];
         final var p1 = nodes[offset + _P1];
-        final var p0Count = p0 < 2 ? Long.valueOf(p0) : (Long)zbddCountMap.get(p0);
-        final var p1Count = p1 < 2 ? Long.valueOf(p1) : (Long)zbddCountMap.get(p1);
+        final var p0Count = p0 < 2 ? (p0 == EMPTY ? emptyCount : baseCount) : (T)zbddCountMap.get(p0);
+        final var p1Count = p1 < 2 ? (p1 == EMPTY ? emptyCount : baseCount) : (T)zbddCountMap.get(p1);
 
         if (p0Count != null && p1Count != null)
-          zbddCountMap.put(z, p0Count + p1Count);
+          zbddCountMap.put(z, add.apply(p0Count, p1Count));
         else
         {
           stack.push(z);
@@ -591,7 +638,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
       }
     } while(stack.isNotEmpty());
 
-    return (Long)zbddCountMap.get(zbdd);
+    return (T)zbddCountMap.get(zbdd);
   }
 
 
