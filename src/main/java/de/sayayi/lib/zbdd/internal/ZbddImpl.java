@@ -93,6 +93,12 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   private static final int _CHAIN = 4;     // hash-bucket chain head
   private static final int _REFCOUNT = 5;  // allocated-node reference count
 
+  // task kinds of the iterative operations; a task kind is pushed on top of the task's operands
+  static final int TASK_COMPUTE = 0;     // node or p, q: compute the result for the node or the operands p and q
+  static final int TASK_COMBINE = 1;     // node or var: combine the results of both branches
+  static final int TASK_COMBINE_P1 = 2;  // p1, var: combine the result of the 0-branch with the 1-branch p1
+  static final int TASK_CONTINUE = 3;    // p0, q0: continue a division with the quotient p0 / q0, if required
+
   private final @NotNull ZbddCapacityAdvisor capacityAdvisor;
   private final @NotNull Statistics statistics;
   private final @NotNull IntObjectMap varObjectMap;
@@ -101,7 +107,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
    * Nodes protected from garbage collection by currently running zbdd operations. Each operation saves the stack
    * size on entry and truncates the stack to that size on exit, so an exception never leaves nodes protected.
    */
-  private final @NotNull IntStack protectedNodes;
+  final @NotNull IntStack protectedNodes;
 
   private final @NotNull List<ZbddCallback> callbacks;
   private boolean callbacksRunning;
@@ -454,11 +460,14 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
   /**
    * Internal implementation of {@link #subset0(int, int)} without parameter validation.
+   * <p>
+   * The nodes above {@code var} are traversed depth-first using an explicit stack instead of recursion, so the number
+   * of variable levels is not limited by the thread's stack size.
    */
   @Contract(mutates = "this")
   protected int __subset0(int zbdd, int var)
   {
-    final int top = __getVar(zbdd);
+    var top = __getVar(zbdd);
 
     if (top < var)
       return zbdd;
@@ -467,14 +476,48 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
       return __getP0(zbdd);
 
     final var mark = saveAndProtect(zbdd);
+    final var tasks = new IntStack(24);
+    final var results = new IntStack(24);
 
-    final var p0 = protect(__subset0(__getP0(zbdd), var));
-    final var p1 = __subset0(__getP1(zbdd), var);
-    final var r = __getNode(top, p0, p1);
+    tasks.push(zbdd);
+    tasks.push(TASK_COMPUTE);
+
+    do {
+      final var task = tasks.pop();
+      final var node = tasks.pop();
+      final int r;
+
+      if (task == TASK_COMBINE)
+      {
+        final var p1 = results.pop();
+        final var p0 = results.pop();
+
+        r = __getNode(__getVar(node), p0, p1);
+
+        // release the protection of the branch results (leaf nodes are not protected)
+        protectedNodes.truncate(protectedNodes.size() - (p0 >= 2 ? 1 : 0) - (p1 >= 2 ? 1 : 0));
+      }
+      else if ((top = __getVar(node)) < var)
+        r = node;
+      else if (top == var)
+        r = __getP0(node);
+      else
+      {
+        tasks.push(node);
+        tasks.push(TASK_COMBINE);
+        tasks.push(__getP1(node));
+        tasks.push(TASK_COMPUTE);
+        tasks.push(__getP0(node));
+        tasks.push(TASK_COMPUTE);
+        continue;
+      }
+
+      results.push(protect(r));
+    } while(tasks.isNotEmpty());
 
     protectedNodes.truncate(mark);
 
-    return r;
+    return results.pop();
   }
 
 
@@ -494,11 +537,14 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
   /**
    * Internal implementation of {@link #subset1(int, int)} without parameter validation.
+   * <p>
+   * The nodes above {@code var} are traversed depth-first using an explicit stack instead of recursion, so the number
+   * of variable levels is not limited by the thread's stack size.
    */
   @Contract(mutates = "this")
   protected int __subset1(int zbdd, int var)
   {
-    final var top = __getVar(zbdd);
+    var top = __getVar(zbdd);
 
     if (top < var)
       return EMPTY;
@@ -507,14 +553,48 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
       return __getP1(zbdd);
 
     final var mark = saveAndProtect(zbdd);
+    final var tasks = new IntStack(24);
+    final var results = new IntStack(24);
 
-    final var p0 = protect(__subset1(__getP0(zbdd), var));
-    final var p1 = __subset1(__getP1(zbdd), var);
-    final var r = __getNode(top, p0, p1);
+    tasks.push(zbdd);
+    tasks.push(TASK_COMPUTE);
+
+    do {
+      final var task = tasks.pop();
+      final var node = tasks.pop();
+      final int r;
+
+      if (task == TASK_COMBINE)
+      {
+        final var p1 = results.pop();
+        final var p0 = results.pop();
+
+        r = __getNode(__getVar(node), p0, p1);
+
+        // release the protection of the branch results (leaf nodes are not protected)
+        protectedNodes.truncate(protectedNodes.size() - (p0 >= 2 ? 1 : 0) - (p1 >= 2 ? 1 : 0));
+      }
+      else if ((top = __getVar(node)) < var)
+        r = EMPTY;
+      else if (top == var)
+        r = __getP1(node);
+      else
+      {
+        tasks.push(node);
+        tasks.push(TASK_COMBINE);
+        tasks.push(__getP1(node));
+        tasks.push(TASK_COMPUTE);
+        tasks.push(__getP0(node));
+        tasks.push(TASK_COMPUTE);
+        continue;
+      }
+
+      results.push(protect(r));
+    } while(tasks.isNotEmpty());
 
     protectedNodes.truncate(mark);
 
-    return r;
+    return results.pop();
   }
 
 
@@ -534,31 +614,64 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
   /**
    * Internal implementation of {@link #change(int, int)} without parameter validation.
+   * <p>
+   * The nodes above {@code var} are traversed depth-first using an explicit stack instead of recursion, so the number
+   * of variable levels is not limited by the thread's stack size.
    */
   @Contract(mutates = "this")
-  protected int __change(final int zbdd, final int var)
+  protected int __change(int zbdd, int var)
   {
-    final var top = __getVar(zbdd);
+    var top = __getVar(zbdd);
 
     if (top < var)
       return __getNode(var, EMPTY, zbdd);
 
-    final var mark = saveAndProtect(zbdd);
-    final int r;
-
     if (top == var)
-      r = __getNode(var, __getP1(zbdd), __getP0(zbdd));
-    else
-    {
-      final var p0 = protect(__change(__getP0(zbdd), var));
-      final var p1 = __change(__getP1(zbdd), var);
+      return __getNode(var, __getP1(zbdd), __getP0(zbdd));
 
-      r = __getNode(top, p0, p1);
-    }
+    final var mark = saveAndProtect(zbdd);
+    final var tasks = new IntStack(24);
+    final var results = new IntStack(24);
+
+    tasks.push(zbdd);
+    tasks.push(TASK_COMPUTE);
+
+    do {
+      final var task = tasks.pop();
+      final var node = tasks.pop();
+      final int r;
+
+      if (task == TASK_COMBINE)
+      {
+        final var p1 = results.pop();
+        final var p0 = results.pop();
+
+        r = __getNode(__getVar(node), p0, p1);
+
+        // release the protection of the branch results (leaf nodes are not protected)
+        protectedNodes.truncate(protectedNodes.size() - (p0 >= 2 ? 1 : 0) - (p1 >= 2 ? 1 : 0));
+      }
+      else if ((top = __getVar(node)) < var)
+        r = __getNode(var, EMPTY, node);
+      else if (top == var)
+        r = __getNode(var, __getP1(node), __getP0(node));
+      else
+      {
+        tasks.push(node);
+        tasks.push(TASK_COMBINE);
+        tasks.push(__getP1(node));
+        tasks.push(TASK_COMPUTE);
+        tasks.push(__getP0(node));
+        tasks.push(TASK_COMPUTE);
+        continue;
+      }
+
+      results.push(protect(r));
+    } while(tasks.isNotEmpty());
 
     protectedNodes.truncate(mark);
 
-    return r;
+    return results.pop();
   }
 
 
@@ -710,6 +823,9 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
   /**
    * Internal implementation of {@link #union(int, int)} without parameter validation.
+   * <p>
+   * The nodes of {@code p} and {@code q} are traversed depth-first using an explicit stack instead of recursion, so the
+   * number of variable levels is not limited by the thread's stack size.
    */
   @Contract(mutates = "this")
   protected int __union(int p, int q)
@@ -719,37 +835,92 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     if (p == EMPTY)
       return q;
 
-    var p_var = __getVar(p);
-    var q_var = __getVar(q);
-
-    if (p_var > q_var)
-    {
-      // swap p <-> q, p_var <-> q_var
-      var tmp = p; p = q; q = tmp;
-      tmp = p_var; p_var = q_var; q_var = tmp;
-    }
-
     final var mark = saveAndProtect(p, q);
-    final int r;
+    final var tasks = new IntStack(24);
+    final var results = new IntStack(24);
 
-    if (p_var < q_var)
-    {
-      final var p0 = __union(p, __getP0(q));
+    tasks.push(p);
+    tasks.push(q);
+    tasks.push(TASK_COMPUTE);
 
-      r = __getNode(q_var, p0, __getP1(q));
-    }
-    else
-    {
-      // p_var = q_var
-      final var p0 = protect(__union(__getP0(p), __getP0(q)));
-      final var p1 = __union(__getP1(p), __getP1(q));
+    do {
+      final var task = tasks.pop();
+      final int r;
 
-      r = __getNode(p_var, p0, p1);
-    }
+      if (task == TASK_COMBINE)
+      {
+        final var p1 = results.pop();
+        final var p0 = results.pop();
+
+        r = __getNode(tasks.pop(), p0, p1);
+
+        // release the protection of the branch results (leaf nodes are not protected)
+        protectedNodes.truncate(protectedNodes.size() - (p0 >= 2 ? 1 : 0) - (p1 >= 2 ? 1 : 0));
+      }
+      else if (task == TASK_COMBINE_P1)
+      {
+        final var var = tasks.pop();
+        final var p1 = tasks.pop();
+        final var p0 = results.pop();
+
+        r = __getNode(var, p0, p1);
+
+        // release the protection of the branch result (leaf nodes are not protected)
+        protectedNodes.truncate(protectedNodes.size() - (p0 >= 2 ? 1 : 0));
+      }
+      else
+      {
+        q = tasks.pop();
+        p = tasks.pop();
+
+        if (q == EMPTY || p == q)
+          r = p;
+        else if (p == EMPTY)
+          r = q;
+        else
+        {
+          var p_var = __getVar(p);
+          var q_var = __getVar(q);
+
+          if (p_var > q_var)
+          {
+            // swap p <-> q, p_var <-> q_var
+            var tmp = p; p = q; q = tmp;
+            tmp = p_var; p_var = q_var; q_var = tmp;
+          }
+
+          if (p_var < q_var)
+          {
+            // union(p, q) = getNode(q_var, union(p, q0), q1)
+            tasks.push(__getP1(q));
+            tasks.push(q_var);
+            tasks.push(TASK_COMBINE_P1);
+            tasks.push(p);
+            tasks.push(__getP0(q));
+            tasks.push(TASK_COMPUTE);
+          }
+          else
+          {
+            tasks.push(p_var);
+            tasks.push(TASK_COMBINE);
+            tasks.push(__getP1(p));
+            tasks.push(__getP1(q));
+            tasks.push(TASK_COMPUTE);
+            tasks.push(__getP0(p));
+            tasks.push(__getP0(q));
+            tasks.push(TASK_COMPUTE);
+          }
+
+          continue;
+        }
+      }
+
+      results.push(protect(r));
+    } while(tasks.isNotEmpty());
 
     protectedNodes.truncate(mark);
 
-    return r;
+    return results.pop();
   }
 
 
@@ -769,6 +940,9 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
   /**
    * Internal implementation of {@link #intersect(int, int)} without parameter validation.
+   * <p>
+   * The nodes of {@code p} and {@code q} are traversed depth-first using an explicit stack instead of recursion, so the
+   * number of variable levels is not limited by the thread's stack size.
    */
   @Contract(mutates = "this")
   protected int __intersect(int p, int q)
@@ -778,27 +952,74 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     if (p == q)
       return p;
 
-    final var p_var = __getVar(p);
-    final var q_var = __getVar(q);
-    final int r;
-
     final var mark = saveAndProtect(p, q);
+    final var tasks = new IntStack(24);
+    final var results = new IntStack(24);
 
-    if (p_var > q_var)
-      r = __intersect(__getP0(p), q);
-    else if (p_var < q_var)
-      r = __intersect(p, __getP0(q));
-    else
-    {
-      final var p0 = protect(__intersect(__getP0(p), __getP0(q)));
-      final var p1 = __intersect(__getP1(p), __getP1(q));
+    tasks.push(p);
+    tasks.push(q);
+    tasks.push(TASK_COMPUTE);
 
-      r = __getNode(p_var, p0, p1);
-    }
+    do {
+      final var task = tasks.pop();
+      final int r;
+
+      if (task == TASK_COMBINE)
+      {
+        final var p1 = results.pop();
+        final var p0 = results.pop();
+
+        r = __getNode(tasks.pop(), p0, p1);
+
+        // release the protection of the branch results (leaf nodes are not protected)
+        protectedNodes.truncate(protectedNodes.size() - (p0 >= 2 ? 1 : 0) - (p1 >= 2 ? 1 : 0));
+      }
+      else
+      {
+        q = tasks.pop();
+        p = tasks.pop();
+
+        if (p == EMPTY || q == EMPTY)
+          r = EMPTY;
+        else if (p == q)
+          r = p;
+        else
+        {
+          final var p_var = __getVar(p);
+          final var q_var = __getVar(q);
+
+          if (p_var > q_var)
+          {
+            tasks.push(__getP0(p));
+            tasks.push(q);
+          }
+          else if (p_var < q_var)
+          {
+            tasks.push(p);
+            tasks.push(__getP0(q));
+          }
+          else
+          {
+            tasks.push(p_var);
+            tasks.push(TASK_COMBINE);
+            tasks.push(__getP1(p));
+            tasks.push(__getP1(q));
+            tasks.push(TASK_COMPUTE);
+            tasks.push(__getP0(p));
+            tasks.push(__getP0(q));
+          }
+
+          tasks.push(TASK_COMPUTE);
+          continue;
+        }
+      }
+
+      results.push(protect(r));
+    } while(tasks.isNotEmpty());
 
     protectedNodes.truncate(mark);
 
-    return r;
+    return results.pop();
   }
 
 
@@ -818,6 +1039,9 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
   /**
    * Internal implementation of {@link #difference(int, int)} without parameter validation.
+   * <p>
+   * The nodes of {@code p} and {@code q} are traversed depth-first using an explicit stack instead of recursion, so the
+   * number of variable levels is not limited by the thread's stack size.
    */
   @Contract(mutates = "this")
   protected int __difference(int p, int q)
@@ -829,27 +1053,91 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     if (q == EMPTY)
       return p;
 
-    final var p_var = __getVar(p);
-    final var q_var = __getVar(q);
-    final int r;
-
     final var mark = saveAndProtect(p, q);
+    final var tasks = new IntStack(24);
+    final var results = new IntStack(24);
 
-    if (p_var < q_var)
-      r = __difference(p, __getP0(q));
-    else if (p_var > q_var)
-      r = __getNode(p_var, __difference(__getP0(p), q), __getP1(p));
-    else
-    {
-      final var p0 = protect(__difference(__getP0(p), __getP0(q)));
-      final var p1 = __difference(__getP1(p), __getP1(q));
+    tasks.push(p);
+    tasks.push(q);
+    tasks.push(TASK_COMPUTE);
 
-      r = __getNode(p_var, p0, p1);
-    }
+    do {
+      final var task = tasks.pop();
+      final int r;
+
+      if (task == TASK_COMBINE)
+      {
+        final var p1 = results.pop();
+        final var p0 = results.pop();
+
+        r = __getNode(tasks.pop(), p0, p1);
+
+        // release the protection of the branch results (leaf nodes are not protected)
+        protectedNodes.truncate(protectedNodes.size() - (p0 >= 2 ? 1 : 0) - (p1 >= 2 ? 1 : 0));
+      }
+      else if (task == TASK_COMBINE_P1)
+      {
+        final var var = tasks.pop();
+        final var p1 = tasks.pop();
+        final var p0 = results.pop();
+
+        r = __getNode(var, p0, p1);
+
+        // release the protection of the branch result (leaf nodes are not protected)
+        protectedNodes.truncate(protectedNodes.size() - (p0 >= 2 ? 1 : 0));
+      }
+      else
+      {
+        q = tasks.pop();
+        p = tasks.pop();
+
+        if (p == EMPTY || p == q)
+          r = EMPTY;
+        else if (q == BASE)
+          r = __removeBase(p);
+        else if (q == EMPTY)
+          r = p;
+        else
+        {
+          final var p_var = __getVar(p);
+          final var q_var = __getVar(q);
+
+          if (p_var < q_var)
+          {
+            tasks.push(p);
+            tasks.push(__getP0(q));
+          }
+          else if (p_var > q_var)
+          {
+            // difference(p, q) = getNode(p_var, difference(p0, q), p1)
+            tasks.push(__getP1(p));
+            tasks.push(p_var);
+            tasks.push(TASK_COMBINE_P1);
+            tasks.push(__getP0(p));
+            tasks.push(q);
+          }
+          else
+          {
+            tasks.push(p_var);
+            tasks.push(TASK_COMBINE);
+            tasks.push(__getP1(p));
+            tasks.push(__getP1(q));
+            tasks.push(TASK_COMPUTE);
+            tasks.push(__getP0(p));
+            tasks.push(__getP0(q));
+          }
+
+          tasks.push(TASK_COMPUTE);
+          continue;
+        }
+      }
+
+      results.push(protect(r));
+    } while(tasks.isNotEmpty());
 
     protectedNodes.truncate(mark);
 
-    return r;
+    return results.pop();
   }
 
 
@@ -869,6 +1157,9 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
   /**
    * Internal implementation of {@link #multiply(int, int)} without parameter validation.
+   * <p>
+   * The products of the factored operands are computed depth-first using an explicit stack instead of recursion, so the
+   * number of variable levels is not limited by the thread's stack size.
    */
   @Contract(mutates = "this")
   protected int __multiply(int p, int q)
@@ -880,36 +1171,91 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     if (q == BASE)
       return p;
 
-    var p_var = __getVar(p);
-    var q_var = __getVar(q);
-
-    if (p_var > q_var)
-    {
-      // swap p <-> q, p_var <-> q_var
-      var tmp = p; p = q; q = tmp;
-      p_var = q_var;
-    }
-
     final var mark = saveAndProtect(p, q);
+    final var tasks = new IntStack(24);
+    final var results = new IntStack(24);
 
-    // factor P = p0 + v * p1
-    final var p0 = protect(__subset0(p, p_var));
-    final var p1 = protect(__subset1(p, p_var));
+    tasks.push(p);
+    tasks.push(q);
+    tasks.push(TASK_COMPUTE);
 
-    // factor Q = q0 + v * q1
-    final var q0 = protect(__subset0(q, p_var));
-    final var q1 = protect(__subset1(q, p_var));
+    do {
+      final var task = tasks.pop();
+      final int r;
 
-    // r = (p0 + v * p1) * (q0 + v * q1) = p0q0 + v * (p0q1 + p1q0 + p1q1)
-    final var p0q0 = protect(__multiply(p0, q0));
-    final var p0q1 = protect(__multiply(p0, q1));
-    final var p1q0 = protect(__multiply(p1, q0));
-    final var p1q1 = protect(__multiply(p1, q1));
-    final var r = __union(p0q0, __change(__union(__union(p0q1, p1q0), p1q1), p_var));
+      if (task == TASK_COMBINE)
+      {
+        final var var = tasks.pop();
+        final var operandsMark = tasks.pop();
+        final var p1q1 = results.pop();
+        final var p1q0 = results.pop();
+        final var p0q1 = results.pop();
+        final var p0q0 = results.pop();
+
+        // r = (p0 + v * p1) * (q0 + v * q1) = p0q0 + v * (p0q1 + p1q0 + p1q1)
+        r = __union(p0q0, __change(__union(__union(p0q1, p1q0), p1q1), var));
+
+        // release the protection of the factored operands and their products
+        protectedNodes.truncate(operandsMark);
+      }
+      else
+      {
+        q = tasks.pop();
+        p = tasks.pop();
+
+        if (p == EMPTY || q == EMPTY)
+          r = EMPTY;
+        else if (p == BASE)
+          r = q;
+        else if (q == BASE)
+          r = p;
+        else
+        {
+          var p_var = __getVar(p);
+          final var q_var = __getVar(q);
+
+          if (p_var > q_var)
+          {
+            // swap p <-> q, p_var <-> q_var
+            var tmp = p; p = q; q = tmp;
+            p_var = q_var;
+          }
+
+          tasks.push(protectedNodes.size());
+          tasks.push(p_var);
+          tasks.push(TASK_COMBINE);
+
+          // factor P = p0 + v * p1
+          final var p0 = protect(__subset0(p, p_var));
+          final var p1 = protect(__subset1(p, p_var));
+
+          // factor Q = q0 + v * q1
+          final var q0 = protect(__subset0(q, p_var));
+          final var q1 = protect(__subset1(q, p_var));
+
+          // compute the products p0q0, p0q1, p1q0 and p1q1 in this order
+          tasks.push(p1);
+          tasks.push(q1);
+          tasks.push(TASK_COMPUTE);
+          tasks.push(p1);
+          tasks.push(q0);
+          tasks.push(TASK_COMPUTE);
+          tasks.push(p0);
+          tasks.push(q1);
+          tasks.push(TASK_COMPUTE);
+          tasks.push(p0);
+          tasks.push(q0);
+          tasks.push(TASK_COMPUTE);
+          continue;
+        }
+      }
+
+      results.push(protect(r));
+    } while(tasks.isNotEmpty());
 
     protectedNodes.truncate(mark);
 
-    return r;
+    return results.pop();
   }
 
 
@@ -929,6 +1275,9 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
   /**
    * Internal implementation of {@link #divide(int, int)} without parameter validation.
+   * <p>
+   * The quotients of the factored operands are computed depth-first using an explicit stack instead of recursion, so
+   * the number of variable levels is not limited by the thread's stack size.
    */
   @Contract(mutates = "this")
   protected int __divide(int p, int q)
@@ -941,33 +1290,88 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
       return BASE;  // p / p = { ø }
 
     final var mark = saveAndProtect(p, q);
-    final var v = __getVar(q);
+    final var tasks = new IntStack(24);
+    final var results = new IntStack(24);
 
-    // factor P = p0 + v * p1
-    final var p0 = protect(__subset0(p, v));
-    final var p1 = protect(__subset1(p, v));
+    tasks.push(p);
+    tasks.push(q);
+    tasks.push(TASK_COMPUTE);
 
-    // factor Q = q0 + v * q1
-    final var q0 = protect(__subset0(q, v));
-    final var q1 = __subset1(q, v);
+    do {
+      final var task = tasks.pop();
+      int r;
 
-    final var r1 = __divide(p1, q1);
-    final int r;
+      if (task == TASK_CONTINUE)
+      {
+        final var q0 = tasks.pop();
+        final var p0 = tasks.pop();
 
-    if (r1 != EMPTY && q0 != EMPTY)
-    {
-      protect(r1);
+        if ((r = results.pop()) != EMPTY && q0 != EMPTY)
+        {
+          // r = r1 ∩ (p0 / q0); r1 remains protected on top of the results stack
+          results.push(r);
+          tasks.push(TASK_COMBINE);
+          tasks.push(p0);
+          tasks.push(q0);
+          tasks.push(TASK_COMPUTE);
+          continue;
+        }
 
-      final var r0 = __divide(p0, q0);
+        // r = r1; release the protection of the factored operands and r1
+        protectedNodes.truncate(tasks.pop());
+      }
+      else if (task == TASK_COMBINE)
+      {
+        final var r0 = results.pop();
+        final var r1 = results.pop();
 
-      r = __intersect(r1, r0);
-    }
-    else
-      r = r1;
+        r = __intersect(r1, r0);
+
+        // release the protection of the factored operands, r1 and r0
+        protectedNodes.truncate(tasks.pop());
+      }
+      else
+      {
+        q = tasks.pop();
+        p = tasks.pop();
+
+        if (q == BASE)
+          r = p;  // p / { ø } = p
+        else if (p == EMPTY || p == BASE)
+          r = EMPTY;  // {} / q = {} or { ø } / q = {} for q != { ø }
+        else if (p == q)
+          r = BASE;  // p / p = { ø }
+        else
+        {
+          final var v = __getVar(q);
+
+          tasks.push(protectedNodes.size());
+
+          // factor P = p0 + v * p1
+          final var p0 = protect(__subset0(p, v));
+          final var p1 = protect(__subset1(p, v));
+
+          // factor Q = q0 + v * q1
+          final var q0 = protect(__subset0(q, v));
+          final var q1 = protect(__subset1(q, v));
+
+          // r1 = p1 / q1 is computed first; the continuation decides whether p0 / q0 is required
+          tasks.push(p0);
+          tasks.push(q0);
+          tasks.push(TASK_CONTINUE);
+          tasks.push(p1);
+          tasks.push(q1);
+          tasks.push(TASK_COMPUTE);
+          continue;
+        }
+      }
+
+      results.push(protect(r));
+    } while(tasks.isNotEmpty());
 
     protectedNodes.truncate(mark);
 
-    return r;
+    return results.pop();
   }
 
 
@@ -1016,6 +1420,9 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
   /**
    * Internal implementation of {@link #atomize(int)} without parameter validation.
+   * <p>
+   * The nodes of {@code zbdd} are traversed depth-first using an explicit stack instead of recursion, so the number of
+   * variable levels is not limited by the thread's stack size.
    */
   @Contract(mutates = "this")
   protected int __atomize(int zbdd)
@@ -1024,42 +1431,112 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
       return EMPTY;
 
     final var mark = saveAndProtect(zbdd);
-    final var offset = zbdd * NODE_RECORD_SIZE;
-    final var p0_atomized = protect(__atomize(nodes[offset + _P0]));
-    final var p1_atomized = __atomize(nodes[offset + _P1]);
+    final var tasks = new IntStack(24);
+    final var results = new IntStack(24);
 
-    final var p0 = __atomize_union(p0_atomized, p1_atomized);
-    final var r = __getNode(nodes[offset + _VAR], p0, BASE);
+    tasks.push(zbdd);
+    tasks.push(TASK_COMPUTE);
+
+    do {
+      final var task = tasks.pop();
+      final var node = tasks.pop();
+      final int r;
+
+      if (task == TASK_COMBINE)
+      {
+        final var p1 = results.pop();
+        final var p0 = results.pop();
+
+        r = __getNode(nodes[node * NODE_RECORD_SIZE + _VAR], __atomize_union(p0, p1), BASE);
+
+        // release the protection of the branch results (leaf nodes are not protected)
+        protectedNodes.truncate(protectedNodes.size() - (p0 >= 2 ? 1 : 0) - (p1 >= 2 ? 1 : 0));
+      }
+      else if (node < 2)
+        r = EMPTY;
+      else
+      {
+        final var offset = node * NODE_RECORD_SIZE;
+
+        tasks.push(node);
+        tasks.push(TASK_COMBINE);
+        tasks.push(nodes[offset + _P1]);
+        tasks.push(TASK_COMPUTE);
+        tasks.push(nodes[offset + _P0]);
+        tasks.push(TASK_COMPUTE);
+        continue;
+      }
+
+      results.push(protect(r));
+    } while(tasks.isNotEmpty());
 
     protectedNodes.truncate(mark);
 
-    return r;
+    return results.pop();
   }
 
 
-  // union optimized for atomization; the 1-branch for every node points to base(1)
+  /**
+   * Union optimized for atomization: the 1-branch of every node in {@code p} and {@code q} points to base.
+   * <p>
+   * The 0-branch chains of {@code p} and {@code q} are traversed iteratively, so the number of variable levels is not
+   * limited by the thread's stack size.
+   *
+   * @param p  atomized zbdd node
+   * @param q  atomized zbdd node
+   *
+   * @return  atomized union of {@code p} and {@code q}
+   */
   @Contract(mutates = "this")
-  private int __atomize_union(int p, int q)
+  final int __atomize_union(int p, int q)
   {
-    // trivial cases: remove base from union
-    if (p < 2)
-      return q < 2 ? EMPTY : q;
-    if (q < 2 || p == q)
-      return p;
+    final var mark = saveAndProtect(p, q);
+    IntStack vars = null;
+    int r;
 
-    var p_var = __getVar(p);
-    var q_var = __getVar(q);
-
-    if (p_var > q_var)
+    // descend the 0-branch chains, collecting the variables of the result
+    for(;;)
     {
-      // swap p <-> q, p_var <-> q_var
-      var tmp = p; p = q; q = tmp;
-      tmp = p_var; p_var = q_var; q_var = tmp;
+      // trivial cases: remove base from union
+      if (p < 2)
+      {
+        r = q < 2 ? EMPTY : q;
+        break;
+      }
+
+      if (q < 2 || p == q)
+      {
+        r = p;
+        break;
+      }
+
+      var p_var = __getVar(p);
+      var q_var = __getVar(q);
+
+      if (p_var > q_var)
+      {
+        // swap p <-> q, p_var <-> q_var
+        var tmp = p; p = q; q = tmp;
+        tmp = p_var; p_var = q_var; q_var = tmp;
+      }
+
+      if (vars == null)
+        vars = new IntStack(24);
+
+      vars.push(q_var);
+
+      if (p_var == q_var)
+        p = __getP0(p);
+      q = __getP0(q);
     }
 
-    final var mark = saveAndProtect(p, q);
-    final var p0 = __atomize_union(p_var < q_var ? p : __getP0(p), __getP0(q));
-    final var r = __getNode(q_var, p0, BASE);
+    // rebuild the result bottom-up
+    if (vars != null)
+    {
+      do {
+        r = __getNode(vars.pop(), r, BASE);
+      } while(vars.isNotEmpty());
+    }
 
     protectedNodes.truncate(mark);
 
@@ -1083,6 +1560,9 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
   /**
    * Internal implementation of {@link #removeBase(int)} without parameter validation.
+   * <p>
+   * The 0-branch chain of {@code zbdd} is traversed using an explicit stack instead of recursion, so the number of
+   * variable levels is not limited by the thread's stack size.
    */
   @Contract(mutates = "this")
   protected int __removeBase(int zbdd)
@@ -1091,9 +1571,19 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
       return EMPTY;
 
     final var mark = saveAndProtect(zbdd);
-    final var offset = zbdd * NODE_RECORD_SIZE;
-    final var p0 = __removeBase(nodes[offset + _P0]);
-    final var r = __getNode(nodes[offset + _VAR], p0, nodes[offset + _P1]);
+    final var stack = new IntStack(24);
+
+    do {
+      stack.push(zbdd);
+    } while((zbdd = nodes[zbdd * NODE_RECORD_SIZE + _P0]) >= 2);
+
+    // rebuild the 0-branch chain bottom-up, ending in the empty set instead of the base set
+    var r = EMPTY;
+
+    do {
+      final var offset = stack.pop() * NODE_RECORD_SIZE;
+      r = __getNode(nodes[offset + _VAR], r, nodes[offset + _P1]);
+    } while(stack.isNotEmpty());
 
     protectedNodes.truncate(mark);
 
@@ -1546,7 +2036,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
    * @return  zbdd node
    */
   @Contract(value = "_ -> param1", mutates = "this")
-  private int protect(int zbdd)
+  final int protect(int zbdd)
   {
     protectedNodes.pushIfNotLeafNode(zbdd);
     return zbdd;
@@ -1566,7 +2056,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
    * @see #protect(int)
    */
   @Contract(mutates = "this")
-  private int saveAndProtect(int zbdd)
+  final int saveAndProtect(int zbdd)
   {
     final var mark = protectedNodes.size();
 
@@ -1592,7 +2082,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
    * @see #protect(int)
    */
   @Contract(mutates = "this")
-  private int saveAndProtect(int p, int q)
+  final int saveAndProtect(int p, int q)
   {
     final var mark = protectedNodes.size();
 

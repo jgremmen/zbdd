@@ -58,6 +58,9 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
    */
   private static final Map<ZbddCache,WeakReference<ZbddCachedImpl>> CACHE_OWNERS = new WeakHashMap<>();
 
+  // task kind of the iterative binary operations: p, q: store the result on top of the results stack for p and q
+  private static final int TASK_STORE = 4;
+
   private ZbddCache zbddCache;
 
 
@@ -128,7 +131,7 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
   @Contract(mutates = "this")
   protected int __subset0(int zbdd, int var)
   {
-    final int top = __getVar(zbdd);
+    var top = __getVar(zbdd);
 
     if (top < var)
       return zbdd;
@@ -136,11 +139,50 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
     if (top == var)
       return __getP0(zbdd);
 
-    int r = zbddCache.getResult(SUBSET0, zbdd, var);
-    if (r == MIN_VALUE)
-      zbddCache.putResult(SUBSET0, zbdd, var, r = super.__subset0(zbdd, var));
+    final var mark = saveAndProtect(zbdd);
+    final var tasks = new IntStack(24);
+    final var results = new IntStack(24);
 
-    return r;
+    tasks.push(zbdd);
+    tasks.push(TASK_COMPUTE);
+
+    do {
+      final var task = tasks.pop();
+      final var node = tasks.pop();
+      int r;
+
+      if (task == TASK_COMBINE)
+      {
+        final var p1 = results.pop();
+        final var p0 = results.pop();
+
+        r = __getNode(__getVar(node), p0, p1);
+
+        // release the protection of the branch results (leaf nodes are not protected)
+        protectedNodes.truncate(protectedNodes.size() - (p0 >= 2 ? 1 : 0) - (p1 >= 2 ? 1 : 0));
+        zbddCache.putResult(SUBSET0, node, var, r);
+      }
+      else if ((top = __getVar(node)) < var)
+        r = node;
+      else if (top == var)
+        r = __getP0(node);
+      else if ((r = zbddCache.getResult(SUBSET0, node, var)) == MIN_VALUE)
+      {
+        tasks.push(node);
+        tasks.push(TASK_COMBINE);
+        tasks.push(__getP1(node));
+        tasks.push(TASK_COMPUTE);
+        tasks.push(__getP0(node));
+        tasks.push(TASK_COMPUTE);
+        continue;
+      }
+
+      results.push(protect(r));
+    } while(tasks.isNotEmpty());
+
+    protectedNodes.truncate(mark);
+
+    return results.pop();
   }
 
 
@@ -155,7 +197,7 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
   @Contract(mutates = "this")
   protected int __subset1(int zbdd, int var)
   {
-    final int top = __getVar(zbdd);
+    var top = __getVar(zbdd);
 
     if (top < var)
       return EMPTY;
@@ -163,11 +205,50 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
     if (top == var)
       return __getP1(zbdd);
 
-    int r = zbddCache.getResult(SUBSET1, zbdd, var);
-    if (r == MIN_VALUE)
-      zbddCache.putResult(SUBSET1, zbdd, var, r = super.__subset1(zbdd, var));
+    final var mark = saveAndProtect(zbdd);
+    final var tasks = new IntStack(24);
+    final var results = new IntStack(24);
 
-    return r;
+    tasks.push(zbdd);
+    tasks.push(TASK_COMPUTE);
+
+    do {
+      final var task = tasks.pop();
+      final var node = tasks.pop();
+      int r;
+
+      if (task == TASK_COMBINE)
+      {
+        final var p1 = results.pop();
+        final var p0 = results.pop();
+
+        r = __getNode(__getVar(node), p0, p1);
+
+        // release the protection of the branch results (leaf nodes are not protected)
+        protectedNodes.truncate(protectedNodes.size() - (p0 >= 2 ? 1 : 0) - (p1 >= 2 ? 1 : 0));
+        zbddCache.putResult(SUBSET1, node, var, r);
+      }
+      else if ((top = __getVar(node)) < var)
+        r = EMPTY;
+      else if (top == var)
+        r = __getP1(node);
+      else if ((r = zbddCache.getResult(SUBSET1, node, var)) == MIN_VALUE)
+      {
+        tasks.push(node);
+        tasks.push(TASK_COMBINE);
+        tasks.push(__getP1(node));
+        tasks.push(TASK_COMPUTE);
+        tasks.push(__getP0(node));
+        tasks.push(TASK_COMPUTE);
+        continue;
+      }
+
+      results.push(protect(r));
+    } while(tasks.isNotEmpty());
+
+    protectedNodes.truncate(mark);
+
+    return results.pop();
   }
 
 
@@ -182,16 +263,58 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
   @Contract(mutates = "this")
   protected int __change(int zbdd, int var)
   {
-    final int top = __getVar(zbdd);
+    var top = __getVar(zbdd);
 
     if (top < var)
       return __getNode(var, EMPTY, zbdd);
 
-    int r = zbddCache.getResult(CHANGE, zbdd, var);
-    if (r == MIN_VALUE)
-      zbddCache.putResult(CHANGE, zbdd, var, r = super.__change(zbdd, var));
+    final var mark = saveAndProtect(zbdd);
+    final var tasks = new IntStack(24);
+    final var results = new IntStack(24);
 
-    return r;
+    tasks.push(zbdd);
+    tasks.push(TASK_COMPUTE);
+
+    do {
+      final var task = tasks.pop();
+      final var node = tasks.pop();
+      int r;
+
+      if (task == TASK_COMBINE)
+      {
+        final var p1 = results.pop();
+        final var p0 = results.pop();
+
+        r = __getNode(__getVar(node), p0, p1);
+
+        // release the protection of the branch results (leaf nodes are not protected)
+        protectedNodes.truncate(protectedNodes.size() - (p0 >= 2 ? 1 : 0) - (p1 >= 2 ? 1 : 0));
+        zbddCache.putResult(CHANGE, node, var, r);
+      }
+      else if ((top = __getVar(node)) < var)
+        r = __getNode(var, EMPTY, node);
+      else if ((r = zbddCache.getResult(CHANGE, node, var)) == MIN_VALUE)
+      {
+        if (top > var)
+        {
+          tasks.push(node);
+          tasks.push(TASK_COMBINE);
+          tasks.push(__getP1(node));
+          tasks.push(TASK_COMPUTE);
+          tasks.push(__getP0(node));
+          tasks.push(TASK_COMPUTE);
+          continue;
+        }
+
+        zbddCache.putResult(CHANGE, node, var, r = __getNode(var, __getP1(node), __getP0(node)));
+      }
+
+      results.push(protect(r));
+    } while(tasks.isNotEmpty());
+
+    protectedNodes.truncate(mark);
+
+    return results.pop();
   }
 
 
@@ -233,17 +356,107 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
     if (p == EMPTY)
       return q;
 
-    if (__getVar(p) > __getVar(q))
-    {
-      // swap p <-> q, p_var <-> q_var
-      int tmp = p; p = q; q = tmp;
-    }
+    final var mark = saveAndProtect(p, q);
+    final var tasks = new IntStack(24);
+    final var results = new IntStack(24);
 
-    int r = zbddCache.getResult(UNION, p, q);
-    if (r == MIN_VALUE)
-      zbddCache.putResult(UNION, p, q, r = super.__union(p, q));
+    tasks.push(p);
+    tasks.push(q);
+    tasks.push(TASK_COMPUTE);
 
-    return r;
+    do {
+      final var task = tasks.pop();
+      int r;
+
+      if (task == TASK_COMBINE)
+      {
+        final var var = tasks.pop();
+        final var p1 = results.pop();
+        final var p0 = results.pop();
+
+        r = __getNode(var, p0, p1);
+
+        // release the protection of the branch results (leaf nodes are not protected)
+        protectedNodes.truncate(protectedNodes.size() - (p0 >= 2 ? 1 : 0) - (p1 >= 2 ? 1 : 0));
+
+        q = tasks.pop();
+        p = tasks.pop();
+        zbddCache.putResult(UNION, p, q, r);
+      }
+      else if (task == TASK_COMBINE_P1)
+      {
+        final var var = tasks.pop();
+        final var p1 = tasks.pop();
+        final var p0 = results.pop();
+
+        r = __getNode(var, p0, p1);
+
+        // release the protection of the branch result (leaf nodes are not protected)
+        protectedNodes.truncate(protectedNodes.size() - (p0 >= 2 ? 1 : 0));
+
+        q = tasks.pop();
+        p = tasks.pop();
+        zbddCache.putResult(UNION, p, q, r);
+      }
+      else
+      {
+        q = tasks.pop();
+        p = tasks.pop();
+
+        if (q == EMPTY || p == q)
+          r = p;
+        else if (p == EMPTY)
+          r = q;
+        else
+        {
+          var p_var = __getVar(p);
+          var q_var = __getVar(q);
+
+          if (p_var > q_var)
+          {
+            // swap p <-> q, p_var <-> q_var
+            var tmp = p; p = q; q = tmp;
+            tmp = p_var; p_var = q_var; q_var = tmp;
+          }
+
+          if ((r = zbddCache.getResult(UNION, p, q)) == MIN_VALUE)
+          {
+            if (p_var < q_var)
+            {
+              // union(p, q) = getNode(q_var, union(p, q0), q1)
+              tasks.push(p);
+              tasks.push(q);
+              tasks.push(__getP1(q));
+              tasks.push(q_var);
+              tasks.push(TASK_COMBINE_P1);
+              tasks.push(p);
+              tasks.push(__getP0(q));
+            }
+            else
+            {
+              tasks.push(p);
+              tasks.push(q);
+              tasks.push(p_var);
+              tasks.push(TASK_COMBINE);
+              tasks.push(__getP1(p));
+              tasks.push(__getP1(q));
+              tasks.push(TASK_COMPUTE);
+              tasks.push(__getP0(p));
+              tasks.push(__getP0(q));
+            }
+
+            tasks.push(TASK_COMPUTE);
+            continue;
+          }
+        }
+      }
+
+      results.push(protect(r));
+    } while(tasks.isNotEmpty());
+
+    protectedNodes.truncate(mark);
+
+    return results.pop();
   }
 
 
@@ -263,11 +476,95 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
     if (p == q)
       return p;
 
-    int r = zbddCache.getResult(INTERSECT, p, q);
-    if (r == MIN_VALUE)
-      zbddCache.putResult(INTERSECT, p, q, r = super.__intersect(p, q));
+    final var mark = saveAndProtect(p, q);
+    final var tasks = new IntStack(24);
+    final var results = new IntStack(24);
 
-    return r;
+    tasks.push(p);
+    tasks.push(q);
+    tasks.push(TASK_COMPUTE);
+
+    do {
+      final var task = tasks.pop();
+      int r;
+
+      if (task == TASK_COMBINE)
+      {
+        final var var = tasks.pop();
+        final var p1 = results.pop();
+        final var p0 = results.pop();
+
+        r = __getNode(var, p0, p1);
+
+        // release the protection of the branch results (leaf nodes are not protected)
+        protectedNodes.truncate(protectedNodes.size() - (p0 >= 2 ? 1 : 0) - (p1 >= 2 ? 1 : 0));
+
+        q = tasks.pop();
+        p = tasks.pop();
+        zbddCache.putResult(INTERSECT, p, q, r);
+      }
+      else if (task == TASK_STORE)
+      {
+        q = tasks.pop();
+        p = tasks.pop();
+        zbddCache.putResult(INTERSECT, p, q, r = results.pop());
+        results.push(r);
+        continue;
+      }
+      else
+      {
+        q = tasks.pop();
+        p = tasks.pop();
+
+        if (p == EMPTY || q == EMPTY)
+          r = EMPTY;
+        else if (p == q)
+          r = p;
+        else if ((r = zbddCache.getResult(INTERSECT, p, q)) == MIN_VALUE)
+        {
+          final var p_var = __getVar(p);
+          final var q_var = __getVar(q);
+
+          if (p_var > q_var)
+          {
+            tasks.push(p);
+            tasks.push(q);
+            tasks.push(TASK_STORE);
+            tasks.push(__getP0(p));
+            tasks.push(q);
+          }
+          else if (p_var < q_var)
+          {
+            tasks.push(p);
+            tasks.push(q);
+            tasks.push(TASK_STORE);
+            tasks.push(p);
+            tasks.push(__getP0(q));
+          }
+          else
+          {
+            tasks.push(p);
+            tasks.push(q);
+            tasks.push(p_var);
+            tasks.push(TASK_COMBINE);
+            tasks.push(__getP1(p));
+            tasks.push(__getP1(q));
+            tasks.push(TASK_COMPUTE);
+            tasks.push(__getP0(p));
+            tasks.push(__getP0(q));
+          }
+
+          tasks.push(TASK_COMPUTE);
+          continue;
+        }
+      }
+
+      results.push(protect(r));
+    } while(tasks.isNotEmpty());
+
+    protectedNodes.truncate(mark);
+
+    return results.pop();
   }
 
 
@@ -287,11 +584,118 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
     if (q == EMPTY)
       return p;
 
-    int r = zbddCache.getResult(DIFFERENCE, p, q);
-    if (r == MIN_VALUE)
-      zbddCache.putResult(DIFFERENCE, p, q, r = super.__difference(p, q));
+    final var mark = saveAndProtect(p, q);
+    final var tasks = new IntStack(24);
+    final var results = new IntStack(24);
 
-    return r;
+    tasks.push(p);
+    tasks.push(q);
+    tasks.push(TASK_COMPUTE);
+
+    do {
+      final var task = tasks.pop();
+      int r;
+
+      if (task == TASK_COMBINE)
+      {
+        final var var = tasks.pop();
+        final var p1 = results.pop();
+        final var p0 = results.pop();
+
+        r = __getNode(var, p0, p1);
+
+        // release the protection of the branch results (leaf nodes are not protected)
+        protectedNodes.truncate(protectedNodes.size() - (p0 >= 2 ? 1 : 0) - (p1 >= 2 ? 1 : 0));
+
+        q = tasks.pop();
+        p = tasks.pop();
+        zbddCache.putResult(DIFFERENCE, p, q, r);
+      }
+      else if (task == TASK_COMBINE_P1)
+      {
+        final var var = tasks.pop();
+        final var p1 = tasks.pop();
+        final var p0 = results.pop();
+
+        r = __getNode(var, p0, p1);
+
+        // release the protection of the branch result (leaf nodes are not protected)
+        protectedNodes.truncate(protectedNodes.size() - (p0 >= 2 ? 1 : 0));
+
+        q = tasks.pop();
+        p = tasks.pop();
+        zbddCache.putResult(DIFFERENCE, p, q, r);
+      }
+      else if (task == TASK_STORE)
+      {
+        q = tasks.pop();
+        p = tasks.pop();
+        zbddCache.putResult(DIFFERENCE, p, q, r = results.pop());
+        results.push(r);
+        continue;
+      }
+      else
+      {
+        q = tasks.pop();
+        p = tasks.pop();
+
+        if (p == EMPTY || p == q)
+          r = EMPTY;
+        else if (q == EMPTY)
+          r = p;
+        else if ((r = zbddCache.getResult(DIFFERENCE, p, q)) == MIN_VALUE)
+        {
+          if (q == BASE)
+            zbddCache.putResult(DIFFERENCE, p, q, r = __removeBase(p));
+          else
+          {
+            final var p_var = __getVar(p);
+            final var q_var = __getVar(q);
+
+            if (p_var < q_var)
+            {
+              tasks.push(p);
+              tasks.push(q);
+              tasks.push(TASK_STORE);
+              tasks.push(p);
+              tasks.push(__getP0(q));
+            }
+            else if (p_var > q_var)
+            {
+              // difference(p, q) = getNode(p_var, difference(p0, q), p1)
+              tasks.push(p);
+              tasks.push(q);
+              tasks.push(__getP1(p));
+              tasks.push(p_var);
+              tasks.push(TASK_COMBINE_P1);
+              tasks.push(__getP0(p));
+              tasks.push(q);
+            }
+            else
+            {
+              tasks.push(p);
+              tasks.push(q);
+              tasks.push(p_var);
+              tasks.push(TASK_COMBINE);
+              tasks.push(__getP1(p));
+              tasks.push(__getP1(q));
+              tasks.push(TASK_COMPUTE);
+              tasks.push(__getP0(p));
+              tasks.push(__getP0(q));
+            }
+
+            tasks.push(TASK_COMPUTE);
+            continue;
+          }
+        }
+      }
+
+      results.push(protect(r));
+    } while(tasks.isNotEmpty());
+
+    protectedNodes.truncate(mark);
+
+    return results.pop();
   }
 
 
@@ -313,17 +717,100 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
     if (q == BASE)
       return p;
 
-    if (__getVar(p) > __getVar(q))
-    {
-      // swap p <-> q, p_var <-> q_var
-      int tmp = p; p = q; q = tmp;
-    }
+    final var mark = saveAndProtect(p, q);
+    final var tasks = new IntStack(24);
+    final var results = new IntStack(24);
 
-    int r = zbddCache.getResult(MULTIPLY, p, q);
-    if (r == MIN_VALUE)
-      zbddCache.putResult(MULTIPLY, p, q, r = super.__multiply(p, q));
+    tasks.push(p);
+    tasks.push(q);
+    tasks.push(TASK_COMPUTE);
 
-    return r;
+    do {
+      final var task = tasks.pop();
+      int r;
+
+      if (task == TASK_COMBINE)
+      {
+        final var var = tasks.pop();
+        final var operandsMark = tasks.pop();
+        final var p1q1 = results.pop();
+        final var p1q0 = results.pop();
+        final var p0q1 = results.pop();
+        final var p0q0 = results.pop();
+
+        // r = (p0 + v * p1) * (q0 + v * q1) = p0q0 + v * (p0q1 + p1q0 + p1q1)
+        r = __union(p0q0, __change(__union(__union(p0q1, p1q0), p1q1), var));
+
+        // release the protection of the factored operands and their products
+        protectedNodes.truncate(operandsMark);
+
+        q = tasks.pop();
+        p = tasks.pop();
+        zbddCache.putResult(MULTIPLY, p, q, r);
+      }
+      else
+      {
+        q = tasks.pop();
+        p = tasks.pop();
+
+        if (p == EMPTY || q == EMPTY)
+          r = EMPTY;
+        else if (p == BASE)
+          r = q;
+        else if (q == BASE)
+          r = p;
+        else
+        {
+          var p_var = __getVar(p);
+          final var q_var = __getVar(q);
+
+          if (p_var > q_var)
+          {
+            // swap p <-> q, p_var <-> q_var
+            var tmp = p; p = q; q = tmp;
+            p_var = q_var;
+          }
+
+          if ((r = zbddCache.getResult(MULTIPLY, p, q)) == MIN_VALUE)
+          {
+            tasks.push(p);
+            tasks.push(q);
+            tasks.push(protectedNodes.size());
+            tasks.push(p_var);
+            tasks.push(TASK_COMBINE);
+
+            // factor P = p0 + v * p1
+            final var p0 = protect(__subset0(p, p_var));
+            final var p1 = protect(__subset1(p, p_var));
+
+            // factor Q = q0 + v * q1
+            final var q0 = protect(__subset0(q, p_var));
+            final var q1 = protect(__subset1(q, p_var));
+
+            // compute the products p0q0, p0q1, p1q0 and p1q1 in this order
+            tasks.push(p1);
+            tasks.push(q1);
+            tasks.push(TASK_COMPUTE);
+            tasks.push(p1);
+            tasks.push(q0);
+            tasks.push(TASK_COMPUTE);
+            tasks.push(p0);
+            tasks.push(q1);
+            tasks.push(TASK_COMPUTE);
+            tasks.push(p0);
+            tasks.push(q0);
+            tasks.push(TASK_COMPUTE);
+            continue;
+          }
+        }
+      }
+
+      results.push(protect(r));
+    } while(tasks.isNotEmpty());
+
+    protectedNodes.truncate(mark);
+
+    return results.pop();
   }
 
 
@@ -345,11 +832,99 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
     else if (p == q)
       return BASE;  // p / p = { ø }
 
-    int r = zbddCache.getResult(DIVIDE, p, q);
-    if (r == MIN_VALUE)
-      zbddCache.putResult(DIVIDE, p, q, r = super.__divide(p, q));
+    final var mark = saveAndProtect(p, q);
+    final var tasks = new IntStack(24);
+    final var results = new IntStack(24);
 
-    return r;
+    tasks.push(p);
+    tasks.push(q);
+    tasks.push(TASK_COMPUTE);
+
+    do {
+      final var task = tasks.pop();
+      int r;
+
+      if (task == TASK_CONTINUE)
+      {
+        final var q0 = tasks.pop();
+        final var p0 = tasks.pop();
+
+        if ((r = results.pop()) != EMPTY && q0 != EMPTY)
+        {
+          // r = r1 ∩ (p0 / q0); r1 remains protected on top of the results stack
+          results.push(r);
+          tasks.push(TASK_COMBINE);
+          tasks.push(p0);
+          tasks.push(q0);
+          tasks.push(TASK_COMPUTE);
+          continue;
+        }
+
+        // r = r1; release the protection of the factored operands and r1
+        protectedNodes.truncate(tasks.pop());
+
+        q = tasks.pop();
+        p = tasks.pop();
+        zbddCache.putResult(DIVIDE, p, q, r);
+      }
+      else if (task == TASK_COMBINE)
+      {
+        final var r0 = results.pop();
+        final var r1 = results.pop();
+
+        r = __intersect(r1, r0);
+
+        // release the protection of the factored operands, r1 and r0
+        protectedNodes.truncate(tasks.pop());
+
+        q = tasks.pop();
+        p = tasks.pop();
+        zbddCache.putResult(DIVIDE, p, q, r);
+      }
+      else
+      {
+        q = tasks.pop();
+        p = tasks.pop();
+
+        if (q == BASE)
+          r = p;  // p / { ø } = p
+        else if (p == EMPTY || p == BASE)
+          r = EMPTY;  // {} / q = {} or { ø } / q = {} for q != { ø }
+        else if (p == q)
+          r = BASE;  // p / p = { ø }
+        else if ((r = zbddCache.getResult(DIVIDE, p, q)) == MIN_VALUE)
+        {
+          final var v = __getVar(q);
+
+          tasks.push(p);
+          tasks.push(q);
+          tasks.push(protectedNodes.size());
+
+          // factor P = p0 + v * p1
+          final var p0 = protect(__subset0(p, v));
+          final var p1 = protect(__subset1(p, v));
+
+          // factor Q = q0 + v * q1
+          final var q0 = protect(__subset0(q, v));
+          final var q1 = protect(__subset1(q, v));
+
+          // r1 = p1 / q1 is computed first; the continuation decides whether p0 / q0 is required
+          tasks.push(p0);
+          tasks.push(q0);
+          tasks.push(TASK_CONTINUE);
+          tasks.push(p1);
+          tasks.push(q1);
+          tasks.push(TASK_COMPUTE);
+          continue;
+        }
+      }
+
+      results.push(protect(r));
+    } while(tasks.isNotEmpty());
+
+    protectedNodes.truncate(mark);
+
+    return results.pop();
   }
 
 
@@ -387,10 +962,55 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
       return EMPTY;
 
     int r = zbddCache.getResult(ATOMIZE, zbdd);
-    if (r == MIN_VALUE)
-      zbddCache.putResult(ATOMIZE, zbdd, r = super.__atomize(zbdd));
+    if (r != MIN_VALUE)
+      return r;
 
-    return r;
+    final var mark = saveAndProtect(zbdd);
+    final var tasks = new IntStack(24);
+    final var results = new IntStack(24);
+
+    // the cache has been checked for zbdd already, so start with its branches
+    tasks.push(zbdd);
+    tasks.push(TASK_COMBINE);
+    tasks.push(__getP1(zbdd));
+    tasks.push(TASK_COMPUTE);
+    tasks.push(__getP0(zbdd));
+    tasks.push(TASK_COMPUTE);
+
+    do {
+      final var task = tasks.pop();
+      final var node = tasks.pop();
+
+      if (task == TASK_COMBINE)
+      {
+        final var p1 = results.pop();
+        final var p0 = results.pop();
+
+        r = __getNode(__getVar(node), __atomize_union(p0, p1), BASE);
+
+        // release the protection of the branch results (leaf nodes are not protected)
+        protectedNodes.truncate(protectedNodes.size() - (p0 >= 2 ? 1 : 0) - (p1 >= 2 ? 1 : 0));
+        zbddCache.putResult(ATOMIZE, node, r);
+      }
+      else if (node < 2)
+        r = EMPTY;
+      else if ((r = zbddCache.getResult(ATOMIZE, node)) == MIN_VALUE)
+      {
+        tasks.push(node);
+        tasks.push(TASK_COMBINE);
+        tasks.push(__getP1(node));
+        tasks.push(TASK_COMPUTE);
+        tasks.push(__getP0(node));
+        tasks.push(TASK_COMPUTE);
+        continue;
+      }
+
+      results.push(protect(r));
+    } while(tasks.isNotEmpty());
+
+    protectedNodes.truncate(mark);
+
+    return results.pop();
   }
 
 
@@ -409,8 +1029,27 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
       return EMPTY;
 
     int r = zbddCache.getResult(REMOVE_BASE, zbdd);
-    if (r == MIN_VALUE)
-      zbddCache.putResult(REMOVE_BASE, zbdd, r = super.__removeBase(zbdd));
+    if (r != MIN_VALUE)
+      return r;
+
+    final var mark = saveAndProtect(zbdd);
+    final var stack = new IntStack(24);
+
+    // descend the 0-branch chain until a terminal node or a cached result is reached
+    do {
+      stack.push(zbdd);
+    } while((zbdd = __getP0(zbdd)) >= 2 && (r = zbddCache.getResult(REMOVE_BASE, zbdd)) == MIN_VALUE);
+
+    if (zbdd < 2)
+      r = EMPTY;
+
+    // rebuild the 0-branch chain bottom-up
+    do {
+      final var node = stack.pop();
+      zbddCache.putResult(REMOVE_BASE, node, r = __getNode(__getVar(node), r, __getP1(node)));
+    } while(stack.isNotEmpty());
+
+    protectedNodes.truncate(mark);
 
     return r;
   }
