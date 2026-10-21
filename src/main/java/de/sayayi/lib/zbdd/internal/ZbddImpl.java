@@ -523,6 +523,114 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   }
 
 
+  /**
+   * {@inheritDoc}
+   *
+   * @since 0.8.0
+   */
+  @Override
+  @Contract(mutates = "this")
+  public int subset0(int zbdd, int @NotNull ... vars)
+  {
+    final var mark = saveAndProtect(checkZbdd(zbdd, "zbdd"));
+    try {
+      return __subset0Cube(zbdd, protect(cube(vars)));
+    } finally {
+      protectedNodes.truncate(mark);
+    }
+  }
+
+
+  /**
+   * Internal implementation of {@link #subset0(int, int...)} without parameter validation.
+   * <p>
+   * The variables to filter out are passed as a {@code cube}, so the remaining variables of each traversal step are
+   * represented by a node of the cube. Cube variables above the top variable of a node cannot be part of the node and
+   * are skipped, a cube variable equal to the top variable selects the 0-branch of the node. This way the nodes are
+   * traversed just once for all variables.
+   * <p>
+   * The nodes above the lowest cube variable are traversed depth-first using an explicit stack instead of recursion, so
+   * the number of variable levels is not limited by the thread's stack size. The remaining cube variables for a node
+   * are determined by its top variable, so the result for each node is computed only once, keeping the running time
+   * linear in the number of nodes and not in the (potentially exponential) number of paths.
+   *
+   * @param zbdd  zbdd node
+   * @param cube  cube node with the variables to filter out
+   *
+   * @return  zbdd node representing the 0-subset for all variables of {@code cube}
+   *
+   * @since 0.8.0
+   */
+  @Contract(mutates = "this")
+  protected int __subset0Cube(int zbdd, int cube)
+  {
+    if (zbdd < 2 || cube < 2)
+      return zbdd;
+
+    final var mark = saveAndProtect(zbdd, cube);
+    final var tasks = new IntStack(24);
+    final var results = new IntStack(24);
+    final var subsets = new IntObjectMap();
+
+    tasks.push(zbdd);
+    tasks.push(cube);
+    tasks.push(TASK_COMPUTE);
+
+    do {
+      final var task = tasks.pop();
+      final int r;
+
+      if (task == TASK_COMBINE)
+      {
+        final var node = tasks.pop();
+        final var p1 = results.pop();
+        final var p0 = results.pop();
+
+        // the result remains protected until the operation has finished, as it is looked up again for shared nodes
+        subsets.put(node, protect(r = __getNode(__getVar(node), p0, p1)));
+      }
+      else
+      {
+        cube = tasks.pop();
+        var node = tasks.pop();
+        final Object subset;
+
+        // skip the cube variables above the top variable of the node and take the 0-branch for a matching variable
+        for(int top = __getVar(node), cubeVar; node >= 2 && cube >= 2 && (cubeVar = __getVar(cube)) >= top;
+            cube = __getP1(cube))
+        {
+          if (cubeVar == top)
+            top = __getVar(node = __getP0(node));
+        }
+
+        // nodes not requiring a new node are reachable from zbdd and therefore protected
+        if (node < 2 || cube < 2)
+          r = node;
+        else if ((subset = subsets.get(node)) != null)
+          r = (Integer)subset;
+        else
+        {
+          tasks.push(node);
+          tasks.push(TASK_COMBINE);
+          tasks.push(__getP1(node));
+          tasks.push(cube);
+          tasks.push(TASK_COMPUTE);
+          tasks.push(__getP0(node));
+          tasks.push(cube);
+          tasks.push(TASK_COMPUTE);
+          continue;
+        }
+      }
+
+      results.push(r);
+    } while(tasks.isNotEmpty());
+
+    protectedNodes.truncate(mark);
+
+    return results.pop();
+  }
+
+
   /** {@inheritDoc} */
   @Override
   @Contract(mutates = "this")

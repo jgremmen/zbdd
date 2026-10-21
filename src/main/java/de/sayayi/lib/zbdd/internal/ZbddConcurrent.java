@@ -268,6 +268,20 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   /** {@inheritDoc} */
   @Override
   @Contract(mutates = "this")
+  public int subset0(int zbdd, int @NotNull ... vars)
+  {
+    lock.lock();
+    try {
+      return this.zbdd.subset0(zbdd, vars);
+    } finally {
+      lock.unlock();
+    }
+  }
+
+
+  /** {@inheritDoc} */
+  @Override
+  @Contract(mutates = "this")
   public int subset1(int zbdd, int var)
   {
     lock.lock();

@@ -15,6 +15,7 @@
  */
 package de.sayayi.lib.zbdd;
 
+import de.sayayi.lib.zbdd.cache.ZbddFastCache;
 import de.sayayi.lib.zbdd.exception.InvalidVarException;
 import de.sayayi.lib.zbdd.exception.InvalidZbddException;
 import de.sayayi.lib.zbdd.exception.ZbddException;
@@ -373,6 +374,101 @@ class ZbddTest
 
     // subset0 with a variable not in any cube returns the original set
     assertEquals(r, zbdd.subset0(r, zbdd.createVar()));
+  }
+
+
+  @ParameterizedTest(name = "cached: {0}")
+  @DisplayName("Operation 'subset0' with multiple variables")
+  @ValueSource(booleans = { false, true })
+  void subset0MultipleVars(boolean cached)
+  {
+    final var zbdd = cached ? ZbddFactory.createCached(new ZbddFastCache()) : ZbddFactory.create();
+    final var v1 = zbdd.createVar();
+    final var v2 = zbdd.createVar();
+    final var v3 = zbdd.createVar();
+    final var v4 = zbdd.createVar();
+    final var v5 = zbdd.createVar();
+    final var v6 = zbdd.createVar();
+    final var v7 = zbdd.createVar();
+    final var v8 = zbdd.createVar();
+
+    // trivial cases
+    assertEquals(Zbdd.empty(), zbdd.subset0(Zbdd.empty(), v1, v2));
+    assertEquals(Zbdd.base(), zbdd.subset0(Zbdd.base(), v1, v2));
+
+    // build zbdd r = { v1.v2.v5, v3.v4.v8, v2.v6, v1.v7.v8, v5.v6.v7, v3.v8 }
+    final var c1 = zbdd.incRef(zbdd.cube(v1, v2, v5));
+    final var c2 = zbdd.incRef(zbdd.cube(v3, v4, v8));
+    final var c3 = zbdd.incRef(zbdd.cube(v2, v6));
+    final var c4 = zbdd.incRef(zbdd.cube(v1, v7, v8));
+    final var c5 = zbdd.incRef(zbdd.cube(v5, v6, v7));
+    final var c6 = zbdd.incRef(zbdd.cube(v3, v8));
+    final var r = zbdd.incRef(zbdd.union(c1, c2, c3, c4, c5, c6));
+
+    // no variables returns the original set
+    assertEquals(r, zbdd.subset0(r));
+
+    // single variable is identical to subset0(r, var)
+    assertEquals(zbdd.subset0(r, v4), zbdd.subset0(r, new int[] { v4 }));
+
+    // subset0(r, v1, v6) -> cubes without v1 and v6: { v3.v4.v8, v3.v8 }
+    final var r0_v1v6 = zbdd.incRef(zbdd.subset0(r, v6, v1));
+    assertEquals(2, zbdd.count(r0_v1v6));
+    assertTrue(zbdd.contains(r0_v1v6, c2));
+    assertTrue(zbdd.contains(r0_v1v6, c6));
+
+    // duplicate variables are ignored
+    assertEquals(r0_v1v6, zbdd.subset0(r, v1, v6, v1, v6));
+
+    // all variables in use leaves no cube
+    assertEquals(Zbdd.empty(), zbdd.subset0(r, v1, v2, v3, v4, v5, v6, v7, v8));
+
+    // variables not in any cube return the original set
+    assertEquals(r, zbdd.subset0(r, zbdd.createVar(), zbdd.createVar()));
+
+    assertThrowsExactly(InvalidVarException.class, () -> zbdd.subset0(r, v1, 0));
+    assertThrowsExactly(ZbddOutOfRangeException.class, () -> zbdd.subset0(-1, v1, v2));
+  }
+
+
+  @ParameterizedTest(name = "cached: {0}")
+  @DisplayName("Operation 'subset0' with multiple variables equals repeated single variable 'subset0'")
+  @ValueSource(booleans = { false, true })
+  void subset0MultipleVarsRandom(boolean cached)
+  {
+    final var zbdd = cached ? ZbddFactory.createCached(new ZbddFastCache()) : ZbddFactory.create();
+    final var random = new Random(4711);
+    final var vars = new int[16];
+
+    for(int i = 0; i < vars.length; i++)
+      vars[i] = zbdd.createVar();
+
+    for(int round = 0; round < 50; round++)
+    {
+      var set = Zbdd.empty();
+
+      for(int c = 0; c < 40; c++)
+      {
+        final var tmp = zbdd.incRef(set);
+        final var cubeVars = random.ints(random.nextInt(6), 0, vars.length).map(i -> vars[i]).toArray();
+
+        set = zbdd.union(tmp, zbdd.cube(cubeVars));
+        zbdd.decRef(tmp);
+      }
+
+      zbdd.incRef(set);
+
+      final var filterVars = random.ints(random.nextInt(8), 0, vars.length).map(i -> vars[i]).toArray();
+      var expected = set;
+
+      for(var var: filterVars)
+        expected = zbdd.subset0(expected, var);
+
+      zbdd.incRef(expected);
+      assertEquals(expected, zbdd.subset0(set, filterVars));
+      zbdd.decRef(expected);
+      zbdd.decRef(set);
+    }
   }
 
 

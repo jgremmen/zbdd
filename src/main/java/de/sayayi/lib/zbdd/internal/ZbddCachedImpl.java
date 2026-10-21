@@ -189,6 +189,30 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
   /**
    * {@inheritDoc}
    * <p>
+   * This implementation caches the result for {@code zbdd} and {@code cube} using the {@link ZbddCache}. The results
+   * of the nodes below {@code zbdd} are not cached, as they depend on the cube and are rarely shared between
+   * invocations with different cubes.
+   *
+   * @since 0.8.0
+   */
+  @Override
+  @Contract(mutates = "this")
+  protected int __subset0Cube(int zbdd, int cube)
+  {
+    if (zbdd < 2 || cube < 2)
+      return zbdd;
+
+    var r = zbddCache.getResult(SUBSET0_CUBE, zbdd, cube);
+    if (r == MIN_VALUE)
+      zbddCache.putResult(SUBSET0_CUBE, zbdd, cube, r = super.__subset0Cube(zbdd, cube));
+
+    return r;
+  }
+
+
+  /**
+   * {@inheritDoc}
+   * <p>
    * This implementation caches results using the {@link ZbddCache}.
    *
    * @since 0.1.3

@@ -137,6 +137,13 @@ public interface ZbddCache
     /** Subset restricting a variable to 0 (excluded). */
     SUBSET0,
 
+    /**
+     * Subset restricting all variables of a cube to 0 (excluded).
+     *
+     * @since 0.8.0
+     */
+    SUBSET0_CUBE,
+
     /** Subset restricting a variable to 1 (included). */
     SUBSET1,
 

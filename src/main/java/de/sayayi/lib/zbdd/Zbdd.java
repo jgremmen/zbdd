@@ -355,6 +355,29 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
 
 
   /**
+   * Returns a zbdd representing the subset where none of the given variables is present.
+   * <p>
+   * This operation extracts all combinations from the zbdd where none of the {@code vars} appears. The result is the
+   * same as applying {@link #subset0(int, int)} for each variable in turn, but the zbdd is traversed only once for all
+   * variables, which is considerably faster if many variables are filtered out. Duplicate variables are ignored and if
+   * no variables are given, {@code zbdd} is returned unchanged.
+   *
+   * @param zbdd  zbdd node
+   * @param vars  variables to filter out
+   *
+   * @return  zbdd node representing the 0-subset for all variables
+   *
+   * @throws InvalidZbddException  if {@code zbdd} is not a valid zbdd node
+   * @throws InvalidVarException   if any of {@code vars} is not a valid variable
+   * @throws ZbddException         if a new node is required, but the node capacity is exhausted and cannot be increased
+   *
+   * @since 0.8.0
+   */
+  @Contract(mutates = "this")
+  int subset0(int zbdd, int @NotNull ... vars);
+
+
+  /**
    * Returns a zbdd representing the subset where the given variable is present (1-branch).
    * <p>
    * This operation extracts all combinations from the zbdd where {@code var} appears, with the variable removed

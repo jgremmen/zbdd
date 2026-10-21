@@ -22,6 +22,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.util.Arrays;
 import java.util.stream.Stream;
 
 import static de.sayayi.lib.zbdd.ZbddFactory.asConcurrent;
@@ -80,6 +81,7 @@ class QueensTest
         createCached(new SimpleCapacityAdvisor(tableSize), new ZbddFastCache(65536)));
     final var vars = getVars(zbdd, n);
 
+    final var attackingVars = new int[3 * n];
     int solution = Zbdd.base();
     int ct;
 
@@ -91,19 +93,22 @@ class QueensTest
 
       for(int c = 0; c < n; c++)
       {
-        int sc = solution;
         final int tmp0 = zbdd.incRef(tmp);
+        int a = 0;
 
+        // collect the squares in the previous rows attacking square (s, c) by column or diagonal
         for(int r = 0; r < s; r++)
         {
-          sc = zbdd.subset0(sc, vars[r][c]);
+          attackingVars[a++] = vars[r][c];
 
           if ((ct = c - (s - r)) >= 0)
-            sc = zbdd.subset0(sc, vars[r][ct]);
+            attackingVars[a++] = vars[r][ct];
 
           if ((ct = c + (s - r)) < n)
-            sc = zbdd.subset0(sc, vars[r][ct]);
+            attackingVars[a++] = vars[r][ct];
         }
+
+        final int sc = zbdd.subset0(solution, Arrays.copyOf(attackingVars, a));
 
         tmp = zbdd.union(tmp0, zbdd.change(sc, vars[s][c]));
         zbdd.decRef(tmp0);
