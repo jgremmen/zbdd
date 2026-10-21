@@ -791,7 +791,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
    *
    * @return  number of cubes &ge; 0
    *
-   * @throws ArithmeticException  if the number of cubes exceeds {@link Long#MAX_VALUE}
+   * @throws ArithmeticException  if the number of cubes exceeds {@link Integer#MAX_VALUE}
    */
   @Override
   public int count(int zbdd) {
@@ -802,7 +802,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   /**
    * Internal implementation of {@link #count(int)} without parameter validation.
    *
-   * @throws ArithmeticException  if the number of cubes exceeds {@link Long#MAX_VALUE}
+   * @throws ArithmeticException  if the number of cubes exceeds {@link Integer#MAX_VALUE}
    */
   @Contract(pure = true)
   protected int __count(int zbdd)
