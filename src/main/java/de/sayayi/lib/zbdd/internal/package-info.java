@@ -22,14 +22,14 @@
  * <p>
  * This package is not exported by the module {@code de.sayayi.lib.zbdd}. If the library is used on the class path
  * instead of the module path, the module system does not enforce this and the public classes in this package are
- * accessible. Using them directly, e.g. by invoking one of their constructors, is not supported. Zbdd instances must
- * be created through {@link de.sayayi.lib.zbdd.ZbddFactory ZbddFactory} only.
+ * accessible. Using them directly, e.g. by invoking one of their constructors, is not supported. Zbdd instances must be
+ * created through {@link de.sayayi.lib.zbdd.ZbddFactory ZbddFactory} only.
  * <p>
  * Key components:
  * <ul>
  *   <li>
- *     {@link de.sayayi.lib.zbdd.internal.ZbddImpl} - Core ZBDD implementation providing the fundamental operations
- *     on Zero-suppressed Binary Decision Diagrams.
+ *     {@link de.sayayi.lib.zbdd.internal.ZbddImpl} - Core ZBDD implementation providing the fundamental operations on
+ *     Zero-suppressed Binary Decision Diagrams.
  *   </li>
  *   <li>
  *     {@link de.sayayi.lib.zbdd.internal.ZbddCachedImpl} - ZBDD implementation enhanced with operation caching for
@@ -46,6 +46,10 @@
  *   <li>
  *     {@code IntObjectMap} - Lightweight map used by the ZBDD implementations to associate {@code int} keys with
  *     object values.
+ *   </li>
+ *   <li>
+ *     {@code IntIntMap} - Lightweight map used by the ZBDD implementations to associate {@code int} keys with
+ *     {@code int} values.
  *   </li>
  *   <li>
  *     {@code IntStack} - Lightweight, growable stack of {@code int} values used by the ZBDD implementations.

@@ -570,7 +570,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     final var mark = saveAndProtect(zbdd, cube);
     final var tasks = new IntStack(24);
     final var results = new IntStack(24);
-    final var subsets = new IntObjectMap();
+    final var subsets = new IntIntMap();
 
     tasks.push(zbdd);
     tasks.push(cube);
@@ -593,7 +593,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
       {
         cube = tasks.pop();
         var node = tasks.pop();
-        final Object subset;
+        final int subset;
 
         // skip the cube variables above the top variable of the node and take the 0-branch for a matching variable
         for(int top = __getVar(node), cubeVar; node >= 2 && cube >= 2 && (cubeVar = __getVar(cube)) >= top;
@@ -606,8 +606,8 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
         // nodes not requiring a new node are reachable from zbdd and therefore protected
         if (node < 2 || cube < 2)
           r = node;
-        else if ((subset = subsets.get(node)) != null)
-          r = (Integer)subset;
+        else if ((subset = subsets.get(node)) != IntIntMap.NO_VALUE)
+          r = subset;
         else
         {
           tasks.push(node);
