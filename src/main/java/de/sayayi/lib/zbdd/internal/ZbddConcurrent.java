@@ -445,7 +445,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
   /** {@inheritDoc} */
   @Override
-  @Contract(mutates = "this")
+  @Contract(pure = true)
   public boolean contains(int p, int q)
   {
     lock.lock();

@@ -535,7 +535,7 @@ class ZbddTest
     final var ab_ac_b_c = zbdd.union(ab, zbdd.cube(b), zbdd.cube(c), ac);
     final var r = zbdd.union(ab_ac_b_c, Zbdd.base());
 
-    assertFalse(zbdd.contains(r, Zbdd.empty()));
+    assertTrue(zbdd.contains(r, Zbdd.empty()));
     assertTrue(zbdd.contains(r, Zbdd.base()));
     assertTrue(zbdd.contains(r, ab));
     assertTrue(zbdd.contains(r, ac));

@@ -590,18 +590,18 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
   /**
    * Tells if the given zbdd set {@code q} is contained in zbdd {@code p}.
    * <p>
-   * A zbdd set {@code q} is contained in {@code p} if every combination in {@code q} is also in {@code p}.
+   * A zbdd set {@code q} is contained in {@code p} if every combination in {@code q} is also in {@code p}. Hence, the
+   * {@link #EMPTY empty} set is contained in every zbdd set, including itself, and no zbdd set other than the empty set
+   * is contained in the empty set.
    *
    * @param p  zbdd set to test
    * @param q  zbdd set which is expected to be a subset of {@code p}
    *
-   * @return  {@code true} if both zbdd sets {@code p} and {@code q} are not empty and zbdd set {@code q} is
-   *          contained in zbdd set {@code p}, {@code false} otherwise
+   * @return  {@code true} if zbdd set {@code q} is contained in zbdd set {@code p}, {@code false} otherwise
    *
    * @throws InvalidZbddException  if {@code p} or {@code q} is not a valid zbdd node
-   * @throws ZbddException         if a new node is required, but the node capacity is exhausted and cannot be increased
    */
-  @Contract(mutates = "this")
+  @Contract(pure = true)
   boolean contains(int p, int q);
 
 

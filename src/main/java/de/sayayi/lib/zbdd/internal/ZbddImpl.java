@@ -28,6 +28,7 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.math.BigInteger;
+import java.util.HashSet;
 import java.util.List;
 import java.util.StringJoiner;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -1100,34 +1101,79 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   }
 
 
-  /**
-   * Tells if the given ZBDD set {@code q} is contained in ZBDD set {@code p}.
-   *
-   * @param p  provided ZBDD set to test
-   * @param q  ZBDD set which is expected to be part of ZBDD set {@code p}
-   *
-   * @return  {@code true} if both ZBDD sets {@code p} and {@code q} are not empty and ZBDD set {@code q} is
-   *          contained in ZBDD set {@code p}, {@code false} otherwise
-   */
+  /** {@inheritDoc} */
   @Override
-  @Contract(mutates = "this")
-  public boolean contains(int p, int q)
-  {
-    final var mark = protectedNodes.size();
-    try {
-      return __contains(checkZbdd(p, "p"), checkZbdd(q, "q"));
-    } finally {
-      protectedNodes.truncate(mark);
-    }
+  @Contract(pure = true)
+  public boolean contains(int p, int q) {
+    return __contains(checkZbdd(p, "p"), checkZbdd(q, "q"));
   }
 
 
   /**
    * Internal implementation of {@link #contains(int, int)} without parameter validation.
+   * <p>
+   * Both ZBDDs are traversed in parallel, depth-first. Each pair of nodes is checked at most once, so the running time
+   * is linear in the number of distinct node pairs and not in the (potentially exponential) number of paths.
+   *
+   * @since 0.8.0
    */
-  @Contract(mutates = "this")
-  protected boolean __contains(int p, int q) {
-    return p != EMPTY && q != EMPTY && (p == q || __intersect(p, q) == q);
+  @Contract(pure = true)
+  protected final boolean __contains(int p, int q)
+  {
+    final var stack = new IntStack(24);
+    final var visited = new HashSet<Long>();
+
+    for(;;)
+    {
+      // q is contained in p, if q = {} or p = q
+      if (q != EMPTY && p != q)
+      {
+        if (p == EMPTY)
+          return false;
+
+        if (q == BASE)
+        {
+          // the empty combination is reachable from p following the 0-branches only
+          while(p >= 2)
+            p = __getP0(p);
+
+          if (p == EMPTY)
+            return false;
+        }
+        else if (p == BASE)
+          return false;
+        else if (visited.add(((long)p << 32) | q))
+        {
+          final var pVar = __getVar(p);
+          final var qVar = __getVar(q);
+
+          // q has a combination with qVar, which p does not have
+          if (qVar > pVar)
+            return false;
+
+          if (qVar < pVar)
+          {
+            // combinations of q do not contain pVar
+            p = __getP0(p);
+            continue;
+          }
+
+          // same top variable: q0 must be contained in p0 and q1 in p1
+          stack.push(__getP1(q));
+          stack.push(__getP1(p));
+
+          p = __getP0(p);
+          q = __getP0(q);
+          continue;
+        }
+      }
+
+      if (!stack.isNotEmpty())
+        return true;
+
+      p = stack.pop();
+      q = stack.pop();
+    }
   }
 
 
