@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import static de.sayayi.lib.zbdd.ZbddFactory.createCached;
+import static java.util.Arrays.copyOf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
@@ -246,18 +247,24 @@ class SudokuTest
 
   private int getIncrementalSolutionForValue(int row, int col, int boxRow1, int boxCol1, int value, int prunedSolution)
   {
+    final var conflictingVars = new int[20];
+    var conflictingCount = 0;
+
     // same row
     for(var c = 1; c < col; c++)
-      prunedSolution = zbdd.subset0(prunedSolution, var(c, row, value));
+      conflictingVars[conflictingCount++] = var(c, row, value);
 
     // same column
     for(var r = 1; r < row; r++)
-      prunedSolution = zbdd.subset0(prunedSolution, var(col, r, value));
+      conflictingVars[conflictingCount++] = var(col, r, value);
 
-    // same box
-    for(var r = boxRow1; r <= row; r++)
-      for(var c = boxCol1; c < col || (r < row && c < boxCol1 + 3); c++)
-        prunedSolution = zbdd.subset0(prunedSolution, var(c, r, value));
+    // same box, without the cells in the same row or column
+    for(var r = boxRow1; r < row; r++)
+      for(var c = boxCol1; c < boxCol1 + 3; c++)
+        if (c != col)
+          conflictingVars[conflictingCount++] = var(c, r, value);
+
+    prunedSolution = zbdd.subset0(prunedSolution, copyOf(conflictingVars, conflictingCount));
 
     return zbdd.change(prunedSolution, var(col, row, value));
   }
