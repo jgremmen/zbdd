@@ -28,6 +28,7 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.math.BigInteger;
+import java.util.BitSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.StringJoiner;
@@ -38,7 +39,6 @@ import java.util.function.Consumer;
 import static java.lang.Boolean.TRUE;
 import static java.lang.Integer.MAX_VALUE;
 import static java.lang.Math.*;
-import static java.lang.System.arraycopy;
 import static java.math.BigInteger.ONE;
 import static java.math.BigInteger.ZERO;
 import static java.util.Arrays.copyOf;
@@ -2434,87 +2434,48 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     // make sure we're only dealing with valid nodes
     gc();
 
-    final var zbddCount = nodesCapacity - nodesFree;
-    final var zbddSequence = new int[zbddCount];
-    final var sortedZbdds = new int[zbddCount];
+    final var zbddSequence = new int[nodesCapacity - nodesFree];
+    final var sequenced = new BitSet(nodesCapacity);
+    final var path = new IntStack(24);
 
-    zbddSequence[1] = 1;
+    zbddSequence[0] = EMPTY;
+    zbddSequence[1] = BASE;
 
     var resultIdx = 2;
-    var startZbdd = 2;
 
-    do {
-      for(int zbdd = startZbdd, offset = startZbdd * NODE_RECORD_SIZE;
-          zbdd < nodesCapacity && resultIdx < zbddCount;
-          offset += NODE_RECORD_SIZE, zbdd++)
-      {
-        zbddProcessed: {
-          if (calculateNodeDependency_findZbdd(sortedZbdds, resultIdx, zbdd) || nodes[offset + _VAR] == -1)
-            break zbddProcessed;
+    // post-order depth-first traversal: a node is sequenced after both of its branches
+    for(int zbdd = 2, offset = 2 * NODE_RECORD_SIZE; zbdd < nodesCapacity; zbdd++, offset += NODE_RECORD_SIZE)
+    {
+      if (nodes[offset + _VAR] == -1 || sequenced.get(zbdd))
+        continue;
 
-          if (calculateNodeDependency_findZbdd(sortedZbdds, resultIdx, nodes[offset + _P0]) &&
-              calculateNodeDependency_findZbdd(sortedZbdds, resultIdx, nodes[offset + _P1]))
-          {
-            calculateNodeDependency_addZbdd(sortedZbdds, resultIdx, zbdd);
-            zbddSequence[resultIdx++] = zbdd;
-            break zbddProcessed;
-          }
+      path.push(zbdd);
 
-          continue;
+      do {
+        final var node = path.pop();
+        final var nodeOffset = node * NODE_RECORD_SIZE;
+        final var p0 = nodes[nodeOffset + _P0];
+        final var p1 = nodes[nodeOffset + _P1];
+
+        if (p0 >= 2 && !sequenced.get(p0))
+        {
+          path.push(node);
+          path.push(p0);
         }
-
-        if (zbdd == startZbdd)
-          startZbdd++;
-      }
-    } while(resultIdx < zbddCount);
+        else if (p1 >= 2 && !sequenced.get(p1))
+        {
+          path.push(node);
+          path.push(p1);
+        }
+        else
+        {
+          sequenced.set(node);
+          zbddSequence[resultIdx++] = node;
+        }
+      } while(path.isNotEmpty());
+    }
 
     return zbddSequence;
-  }
-
-
-  @Contract(pure = true)
-  private boolean calculateNodeDependency_findZbdd(int[] sortedResults, int resultCount, int zbdd)
-  {
-    if (zbdd < 2)
-      return true;
-
-    for(int low = 2, high = resultCount - 1; low <= high;)
-    {
-      final var mid = (low + high) >>> 1;
-      final var midZbdd = sortedResults[mid];
-
-      if (midZbdd < zbdd)
-        low = mid + 1;
-      else if (midZbdd > zbdd)
-        high = mid - 1;
-      else
-        return true;
-    }
-
-    return false;
-  }
-
-
-  @Contract(mutates = "param1")
-  private void calculateNodeDependency_addZbdd(int[] sortedResults, int resultCount, int zbdd)
-  {
-    var low = 2;
-
-    for(var high = resultCount - 1; low <= high;)
-    {
-      final var mid = (low + high) >>> 1;
-      final var midZbdd = sortedResults[mid];
-
-      if (midZbdd < zbdd)
-        low = mid + 1;
-      else if (midZbdd > zbdd)
-        high = mid - 1;
-    }
-
-    if (low < resultCount)
-      arraycopy(sortedResults, low, sortedResults, low + 1, resultCount - low);
-
-    sortedResults[low] = zbdd;
   }
 
 
