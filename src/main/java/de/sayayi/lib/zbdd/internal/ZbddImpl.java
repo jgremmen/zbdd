@@ -76,6 +76,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 {
   private static final int GC_VAR_MARK_MASK = 0x8000_0000;  // high-bit mark in _VAR during GC
   private static final int NODE_RECORD_SIZE = 6;            // ints per node record
+  private static final int FREE_LIST_END = -1;              // _NEXT of the last node in the free list
 
   /** Maximum number of nodes supported by a single ZBDD instance. */
   public static final int MAX_NODES = MAX_VALUE / NODE_RECORD_SIZE;
@@ -237,7 +238,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     for(int zbdd = 2, offset = 2 * NODE_RECORD_SIZE; zbdd++ < nodesCapacity; offset += NODE_RECORD_SIZE)
     {
       nodes[offset + _VAR] = -1;
-      nodes[offset + _NEXT] = zbdd == nodesCapacity ? -1 : zbdd;
+      nodes[offset + _NEXT] = zbdd == nodesCapacity ? FREE_LIST_END : zbdd;
       nodes[offset + _CHAIN] = 0;
     }
 
@@ -1958,7 +1959,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
   private void gc_freeUnreferencedNodes()
   {
-    nextFreeNode = -1;
+    nextFreeNode = FREE_LIST_END;
     nodesFree = 0;
     nodesDead = 0;
     nodesNew = 0;
@@ -2017,7 +2018,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
     statistics.capacityIncreaseCount++;
 
-    nextFreeNode = 0;
+    nextFreeNode = FREE_LIST_END;
     nodesFree = nodesCapacity - oldNodesCapacity;
 
     // initialize new nodes
