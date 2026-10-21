@@ -36,7 +36,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 
-import static java.lang.Boolean.TRUE;
 import static java.lang.Integer.MAX_VALUE;
 import static java.lang.Math.*;
 import static java.math.BigInteger.ONE;
@@ -407,9 +406,9 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
       if (zbddVar > var)
       {
         final var stack = new IntStack(min(zbddVar - var, 12) * 2);
-        final var visited = new IntObjectMap();
+        final var visited = new IntIntMap();
 
-        visited.put(stack.push(zbdd), TRUE);
+        visited.put(stack.push(zbdd), 1);
 
         do {
           final var offset = stack.pop() * NODE_RECORD_SIZE;
@@ -439,10 +438,10 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
    * @param visited  visited nodes, not {@code null}
    * @param zbdd     zbdd node
    */
-  private static void __hasCubeWithVar_pushUnvisited(@NotNull IntStack stack, @NotNull IntObjectMap visited, int zbdd)
+  private static void __hasCubeWithVar_pushUnvisited(@NotNull IntStack stack, @NotNull IntIntMap visited, int zbdd)
   {
-    if (zbdd >= 2 && visited.get(zbdd) == null)
-      visited.put(stack.push(zbdd), TRUE);
+    if (zbdd >= 2 && visited.get(zbdd) == IntIntMap.NO_VALUE)
+      visited.put(stack.push(zbdd), 1);
   }
 
 
