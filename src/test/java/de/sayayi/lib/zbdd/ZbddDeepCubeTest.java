@@ -138,6 +138,22 @@ class ZbddDeepCubeTest
     final var cubeWithoutLowestVar = zbdd.incRef(zbdd.cube(copyOfRange(vars, 1, VAR_COUNT)));
     final var cubes = zbdd.incRef(zbdd.union(cube, cubeWithoutLowestVar));
 
+    final var evenVars = new int[(VAR_COUNT + 1) / 2];
+    final var oddVars = new int[VAR_COUNT / 2];
+
+    for(var i = 0; i < VAR_COUNT; i++)
+      if (i % 2 == 0)
+        evenVars[i / 2] = vars[i];
+      else
+        oddVars[i / 2] = vars[i];
+
+    final var evenCube = zbdd.incRef(zbdd.cube(evenVars));
+    final var oddCube = zbdd.incRef(zbdd.cube(oddVars));
+
+    // the operands have different top variables on every level
+    assertEquals(cube, zbdd.multiply(evenCube, oddCube));
+    assertEquals(cube, zbdd.multiply(oddCube, evenCube));
+
     // both operands share the top variable on every level
     assertEquals(cube, zbdd.multiply(cube, cube));
     assertEquals(cube, zbdd.multiply(cubes, cube));

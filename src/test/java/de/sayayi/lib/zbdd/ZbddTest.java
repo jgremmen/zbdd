@@ -948,10 +948,10 @@ class ZbddTest
     for(int i = 0; i < v.length; i++)
       v[i] = zbdd.createVar();
 
-    final var x = zbdd.incRef(zbdd.union(zbdd.cube(v[0], v[1]), zbdd.cube(v[2], v[3])));
-    final var y = zbdd.incRef(zbdd.union(zbdd.cube(v[4], v[5]), zbdd.cube(v[0], v[3])));
+    final var x = zbdd.incRef(zbdd.union(zbdd.cube(v[0], v[1]), zbdd.cube(v[2], v[3]), zbdd.cube(v[4])));
+    final var y = zbdd.incRef(zbdd.union(zbdd.cube(v[4], v[5]), zbdd.cube(v[0], v[3]), zbdd.cube(v[2])));
 
-    // the product requires more nodes than available and fails deep inside the recursion
+    // the product requires more nodes than available and fails while intermediate results are protected
     assertThrowsExactly(ZbddException.class, () -> zbdd.multiply(x, y));
 
     zbdd.decRef(x);

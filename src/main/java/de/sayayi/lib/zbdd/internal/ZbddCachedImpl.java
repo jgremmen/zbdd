@@ -59,7 +59,7 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
   private static final Map<ZbddCache,WeakReference<ZbddCachedImpl>> CACHE_OWNERS = new WeakHashMap<>();
 
   // task kind of the iterative binary operations: p, q: store the result on top of the results stack for p and q
-  private static final int TASK_STORE = 4;
+  private static final int TASK_STORE = 5;
 
   private ZbddCache zbddCache;
 
@@ -732,17 +732,33 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
       if (task == TASK_COMBINE)
       {
         final var var = tasks.pop();
-        final var operandsMark = tasks.pop();
+        final var resultsMark = tasks.pop();
+        final var pq1 = results.pop();
+        final var pq0 = results.pop();
+
+        r = __getNode(var, pq0, pq1);
+
+        // release the protection of the products
+        protectedNodes.truncate(resultsMark);
+
+        q = tasks.pop();
+        p = tasks.pop();
+        zbddCache.putResult(MULTIPLY, p, q, r);
+      }
+      else if (task == TASK_COMBINE_PRODUCTS)
+      {
+        final var var = tasks.pop();
+        final var resultsMark = tasks.pop();
         final var p1q1 = results.pop();
         final var p1q0 = results.pop();
         final var p0q1 = results.pop();
         final var p0q0 = results.pop();
 
         // r = (p0 + v * p1) * (q0 + v * q1) = p0q0 + v * (p0q1 + p1q0 + p1q1)
-        r = __union(p0q0, __change(__union(__union(p0q1, p1q0), p1q1), var));
+        r = __getNode(var, p0q0, __union(__union(p0q1, p1q0), p1q1));
 
-        // release the protection of the factored operands and their products
-        protectedNodes.truncate(operandsMark);
+        // release the protection of the products
+        protectedNodes.truncate(resultsMark);
 
         q = tasks.pop();
         p = tasks.pop();
@@ -762,13 +778,13 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
         else
         {
           var p_var = __getVar(p);
-          final var q_var = __getVar(q);
+          var q_var = __getVar(q);
 
           if (p_var > q_var)
           {
             // swap p <-> q, p_var <-> q_var
             var tmp = p; p = q; q = tmp;
-            p_var = q_var;
+            tmp = p_var; p_var = q_var; q_var = tmp;
           }
 
           if ((r = zbddCache.getResult(MULTIPLY, p, q)) == MIN_VALUE)
@@ -776,30 +792,42 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
             tasks.push(p);
             tasks.push(q);
             tasks.push(protectedNodes.size());
-            tasks.push(p_var);
-            tasks.push(TASK_COMBINE);
+            tasks.push(q_var);
 
-            // factor P = p0 + v * p1
-            final var p0 = protect(__subset0(p, p_var));
-            final var p1 = protect(__subset1(p, p_var));
+            if (p_var < q_var)
+            {
+              // v = q_var does not occur in p: r = p * (q0 + v * q1) = p * q0 + v * (p * q1)
+              tasks.push(TASK_COMBINE);
+              tasks.push(p);
+              tasks.push(__getP1(q));
+              tasks.push(TASK_COMPUTE);
+              tasks.push(p);
+              tasks.push(__getP0(q));
+              tasks.push(TASK_COMPUTE);
+            }
+            else
+            {
+              // compute the products p0q0, p0q1, p1q0 and p1q1 in this order
+              final var p0 = __getP0(p);
+              final var p1 = __getP1(p);
+              final var q0 = __getP0(q);
+              final var q1 = __getP1(q);
 
-            // factor Q = q0 + v * q1
-            final var q0 = protect(__subset0(q, p_var));
-            final var q1 = protect(__subset1(q, p_var));
+              tasks.push(TASK_COMBINE_PRODUCTS);
+              tasks.push(p1);
+              tasks.push(q1);
+              tasks.push(TASK_COMPUTE);
+              tasks.push(p1);
+              tasks.push(q0);
+              tasks.push(TASK_COMPUTE);
+              tasks.push(p0);
+              tasks.push(q1);
+              tasks.push(TASK_COMPUTE);
+              tasks.push(p0);
+              tasks.push(q0);
+              tasks.push(TASK_COMPUTE);
+            }
 
-            // compute the products p0q0, p0q1, p1q0 and p1q1 in this order
-            tasks.push(p1);
-            tasks.push(q1);
-            tasks.push(TASK_COMPUTE);
-            tasks.push(p1);
-            tasks.push(q0);
-            tasks.push(TASK_COMPUTE);
-            tasks.push(p0);
-            tasks.push(q1);
-            tasks.push(TASK_COMPUTE);
-            tasks.push(p0);
-            tasks.push(q0);
-            tasks.push(TASK_COMPUTE);
             continue;
           }
         }

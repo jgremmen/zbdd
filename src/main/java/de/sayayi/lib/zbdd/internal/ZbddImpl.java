@@ -93,11 +93,12 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   private static final int _CHAIN = 4;     // hash-bucket chain head
   private static final int _REFCOUNT = 5;  // allocated-node reference count
 
-  // task kinds of the iterative operations; a task kind is pushed on top of the task's operands
-  static final int TASK_COMPUTE = 0;     // node or p, q: compute the result for the node or the operands p and q
-  static final int TASK_COMBINE = 1;     // node or var: combine the results of both branches
-  static final int TASK_COMBINE_P1 = 2;  // p1, var: combine the result of the 0-branch with the 1-branch p1
-  static final int TASK_CONTINUE = 3;    // p0, q0: continue a division with the quotient p0 / q0, if required
+  // task kinds of the iterative operations
+  static final int TASK_COMPUTE = 0;           // node or p, q: compute the result for the node or the operands p and q
+  static final int TASK_COMBINE = 1;           // node or var: combine the results of both branches
+  static final int TASK_COMBINE_P1 = 2;        // p1, var: combine the result of the 0-branch with the 1-branch p1
+  static final int TASK_CONTINUE = 3;          // p0, q0: continue a division with the quotient p0 / q0, if required
+  static final int TASK_COMBINE_PRODUCTS = 4;  // var: combine the products p0q0, p0q1, p1q0 and p1q1
 
   private final @NotNull ZbddCapacityAdvisor capacityAdvisor;
   private final @NotNull Statistics statistics;
@@ -1158,6 +1159,10 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   /**
    * Internal implementation of {@link #multiply(int, int)} without parameter validation.
    * <p>
+   * Both operands are factored by the higher of their top variables {@code v}, so the factors are the branches of the
+   * operand nodes. If {@code v} is the top variable of {@code q} only, the product is
+   * {@code getNode(v, p * q0, p * q1)} and no union is required.
+   * <p>
    * The products of the factored operands are computed depth-first using an explicit stack instead of recursion, so the
    * number of variable levels is not limited by the thread's stack size.
    */
@@ -1186,17 +1191,29 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
       if (task == TASK_COMBINE)
       {
         final var var = tasks.pop();
-        final var operandsMark = tasks.pop();
+        final var resultsMark = tasks.pop();
+        final var pq1 = results.pop();
+        final var pq0 = results.pop();
+
+        r = __getNode(var, pq0, pq1);
+
+        // release the protection of the products
+        protectedNodes.truncate(resultsMark);
+      }
+      else if (task == TASK_COMBINE_PRODUCTS)
+      {
+        final var var = tasks.pop();
+        final var resultsMark = tasks.pop();
         final var p1q1 = results.pop();
         final var p1q0 = results.pop();
         final var p0q1 = results.pop();
         final var p0q0 = results.pop();
 
         // r = (p0 + v * p1) * (q0 + v * q1) = p0q0 + v * (p0q1 + p1q0 + p1q1)
-        r = __union(p0q0, __change(__union(__union(p0q1, p1q0), p1q1), var));
+        r = __getNode(var, p0q0, __union(__union(p0q1, p1q0), p1q1));
 
-        // release the protection of the factored operands and their products
-        protectedNodes.truncate(operandsMark);
+        // release the protection of the products
+        protectedNodes.truncate(resultsMark);
       }
       else
       {
@@ -1212,40 +1229,52 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
         else
         {
           var p_var = __getVar(p);
-          final var q_var = __getVar(q);
+          var q_var = __getVar(q);
 
           if (p_var > q_var)
           {
             // swap p <-> q, p_var <-> q_var
             var tmp = p; p = q; q = tmp;
-            p_var = q_var;
+            tmp = p_var; p_var = q_var; q_var = tmp;
           }
 
           tasks.push(protectedNodes.size());
-          tasks.push(p_var);
-          tasks.push(TASK_COMBINE);
+          tasks.push(q_var);
 
-          // factor P = p0 + v * p1
-          final var p0 = protect(__subset0(p, p_var));
-          final var p1 = protect(__subset1(p, p_var));
+          if (p_var < q_var)
+          {
+            // v = q_var does not occur in p: r = p * (q0 + v * q1) = p * q0 + v * (p * q1)
+            tasks.push(TASK_COMBINE);
+            tasks.push(p);
+            tasks.push(__getP1(q));
+            tasks.push(TASK_COMPUTE);
+            tasks.push(p);
+            tasks.push(__getP0(q));
+            tasks.push(TASK_COMPUTE);
+          }
+          else
+          {
+            // compute the products p0q0, p0q1, p1q0 and p1q1 in this order
+            final var p0 = __getP0(p);
+            final var p1 = __getP1(p);
+            final var q0 = __getP0(q);
+            final var q1 = __getP1(q);
 
-          // factor Q = q0 + v * q1
-          final var q0 = protect(__subset0(q, p_var));
-          final var q1 = protect(__subset1(q, p_var));
+            tasks.push(TASK_COMBINE_PRODUCTS);
+            tasks.push(p1);
+            tasks.push(q1);
+            tasks.push(TASK_COMPUTE);
+            tasks.push(p1);
+            tasks.push(q0);
+            tasks.push(TASK_COMPUTE);
+            tasks.push(p0);
+            tasks.push(q1);
+            tasks.push(TASK_COMPUTE);
+            tasks.push(p0);
+            tasks.push(q0);
+            tasks.push(TASK_COMPUTE);
+          }
 
-          // compute the products p0q0, p0q1, p1q0 and p1q1 in this order
-          tasks.push(p1);
-          tasks.push(q1);
-          tasks.push(TASK_COMPUTE);
-          tasks.push(p1);
-          tasks.push(q0);
-          tasks.push(TASK_COMPUTE);
-          tasks.push(p0);
-          tasks.push(q1);
-          tasks.push(TASK_COMPUTE);
-          tasks.push(p0);
-          tasks.push(q0);
-          tasks.push(TASK_COMPUTE);
           continue;
         }
       }
