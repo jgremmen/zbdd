@@ -30,20 +30,26 @@ import static java.util.Locale.US;
 /**
  * A high-performance, fixed-size {@link ZbddCache} implementation optimized for speed with minimal memory overhead.
  * <p>
- * The cache uses a slot-based design where each slot holds a short chain of entries. When a slot's chain is full,
- * the least recently used entry is evicted. The cache size is specified at construction time and cannot be changed
- * afterward.
+ * The cache uses a slot-based design where each slot holds a short chain of 8 entries. New entries are inserted at the
+ * front of the chain. When a slot's chain is full, the entry at the end of the chain is evicted. A hit moves the entry
+ * to the front of the chain only if it is found in the back half of the chain; hits in the front half leave the order
+ * unchanged. This approximates a least recently used eviction policy while avoiding the cost of reordering the chain on
+ * every hit. The cache size is specified at construction time and cannot be changed afterward.
  * <p>
- * This implementation is not thread-safe: its internal counters and arrays are mutated without synchronization.
- * It is safe to use only when accessed exclusively through a {@link de.sayayi.lib.zbdd.Zbdd.Concurrent
- * Zbdd.Concurrent} wrapper, or otherwise confined to a single thread.
+ * This implementation is not thread-safe: its internal counters and arrays are mutated without synchronization. It is
+ * safe to use only when accessed exclusively through a {@link de.sayayi.lib.zbdd.Zbdd.Concurrent Zbdd.Concurrent}
+ * wrapper, or otherwise confined to a single thread.
  *
  * @author Jeroen Gremmen
  * @since 0.1.3
  */
 public final class ZbddFastCache implements ZbddCache
 {
-  /** The minimum allowed cache size. */
+  /**
+   * The minimum allowed cache size, in {@code int}s. This size yields a cache with 288 entries.
+   *
+   * @see #ZbddFastCache(int)
+   */
   public static final int MIN_CACHE_SIZE = 1024;
 
   private static final int CHAIN_CAPACITY = 8;
@@ -73,7 +79,7 @@ public final class ZbddFastCache implements ZbddCache
 
 
   /**
-   * Creates a new cache with the {@linkplain #MIN_CACHE_SIZE minimum cache size}.
+   * Creates a new cache with the {@linkplain #MIN_CACHE_SIZE minimum cache size}, holding up to 288 entries.
    */
   public ZbddFastCache() {
     this(MIN_CACHE_SIZE);
@@ -81,10 +87,16 @@ public final class ZbddFastCache implements ZbddCache
 
 
   /**
-   * Creates a new cache with the given size. If the given {@code size} is less than {@link #MIN_CACHE_SIZE},
-   * the minimum cache size is used instead.
+   * Creates a new cache with the given size. If the given {@code size} is less than {@link #MIN_CACHE_SIZE}, the
+   * minimum cache size is used instead.
+   * <p>
+   * The size is not a number of entries, but the number of {@code int}s allocated for the cache, so the cache occupies
+   * about {@code 4 * size} bytes. The cache is divided into {@code size / 56} slots (rounded down), each holding up to
+   * 8 entries for operations with one argument and up to 8 entries for operations with two arguments. The cache
+   * therefore holds up to {@code 16 * (size / 56)} entries, which is about {@code size / 3.5}. For example, a size of
+   * {@code 65536} yields 1170 slots and up to 18720 entries.
    *
-   * @param size  requested cache size
+   * @param size  requested cache size, in {@code int}s
    */
   public ZbddFastCache(int size)
   {

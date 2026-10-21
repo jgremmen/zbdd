@@ -71,7 +71,10 @@ public interface ZbddLiteralResolver
 
 
   /**
-   * Returns the string representation for the base element, which represents the empty set.
+   * Returns the string representation for the base element, which represents the empty combination (a cube without any
+   * variables). The {@linkplain Zbdd#base() base set} is the set containing only this combination; it must not be
+   * confused with the {@linkplain Zbdd#empty() empty set}, which contains no combinations at all.
+   * <p>
    * The default implementation returns {@code "{}"}.
    *
    * @return  base name, never {@code null}

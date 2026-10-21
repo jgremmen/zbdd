@@ -129,8 +129,8 @@ public interface ZbddStatistics
 
 
   /**
-   * Returns the number of node lookups that resulted in a cache hit, meaning an existing node was reused
-   * rather than creating a new one.
+   * Returns the number of node lookups that found an existing node, meaning an existing node was reused rather than
+   * creating a new one. This is unrelated to the operation cache.
    *
    * @return  node lookup hit count, always &ge; 0
    */
@@ -139,7 +139,8 @@ public interface ZbddStatistics
 
 
   /**
-   * Returns the ratio of node lookups that resulted in a cache hit. A higher ratio indicates better node reuse.
+   * Returns the ratio of node lookups that found an existing node. A higher ratio indicates better node reuse.
+   * This is unrelated to the operation cache.
    *
    * @return  hit ratio in the range {@code 0.0} to {@code 1.0}, or {@code NaN} if no lookups have been performed
    */
@@ -150,7 +151,8 @@ public interface ZbddStatistics
 
 
   /**
-   * Returns the ratio of node lookups that resulted in a cache miss. A lower ratio indicates better node reuse.
+   * Returns the ratio of node lookups that created a new node. A lower ratio indicates better node reuse.
+   * This is unrelated to the operation cache.
    *
    * @return  miss ratio in the range {@code 0.0} to {@code 1.0}, or {@code NaN} if no lookups have been performed
    */
@@ -161,8 +163,8 @@ public interface ZbddStatistics
 
 
   /**
-   * Returns the total number of garbage collection runs that have been performed. Garbage collection reclaims
-   * dead nodes and makes them available for reuse.
+   * Returns the total number of garbage collection runs that have been performed. Garbage collection reclaims dead
+   * nodes and makes them available for reuse.
    *
    * @return  garbage collection count, always &ge; 0
    */

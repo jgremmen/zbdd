@@ -256,7 +256,7 @@ stats.getNewNodes();            // nodes that have never been referenced (e.g. i
 stats.getUnreferencedNodes();   // new + dead nodes, candidates for GC
 stats.getGCCount();             // number of GC runs
 stats.getGCFreedNodes();        // cumulative freed nodes
-stats.getNodeLookupHitRatio();  // cache hit ratio (0.0 – 1.0)
+stats.getNodeLookupHitRatio();  // ratio of node lookups reusing an existing node (0.0 – 1.0)
 stats.getMemoryUsage();         // estimated memory in bytes
 stats.getRegisteredVars();      // number of registered variables
 ```
