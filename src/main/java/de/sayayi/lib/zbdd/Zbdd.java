@@ -872,11 +872,11 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
 
 
   /**
-   * Visit all elements in the set represented by {@code zbdd}. For each element {@link ZbddVisitor#visitZbdd(int)}
+   * Visit all elements in the set represented by {@code zbdd}. For each element {@link CubeZbddVisitor#visitZbdd(int)}
    * is invoked. The zbdd node passed to this function represents a set with only the element visited.
    *
    * @param zbdd     zbdd node
-   * @param visitor  zbdd visitor, not {@code null}
+   * @param visitor  cube zbdd visitor, not {@code null}
    *
    * @return {@code false} if the {@code visitor} has aborted the continuation, {@code true} otherwise
    *
@@ -886,7 +886,7 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * @since 0.6.0
    */
   @Contract(mutates = "this")
-  boolean visitCubeZbdds(int zbdd, @NotNull ZbddVisitor visitor);
+  boolean visitCubeZbdds(int zbdd, @NotNull CubeZbddVisitor visitor);
 
 
   /**
@@ -963,12 +963,14 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
 
 
   /**
-   * Zbdd node visitor interface to be used with {@link #visitCubeZbdds(int, ZbddVisitor)}.
+   * Zbdd node visitor interface to be used with {@link #visitCubeZbdds(int, CubeZbddVisitor)}.
+   * <p>
+   * Up to version 0.7.x, this interface was named {@code ZbddVisitor}.
    *
    * @since 0.6.0
    */
   @FunctionalInterface
-  interface ZbddVisitor
+  interface CubeZbddVisitor
   {
     /**
      * This method is invoked for each zbdd node representing a single cube in the zbdd set.
@@ -979,7 +981,7 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
      *
      * @return  {@code true} to continue visiting, {@code false} to abort
      *
-     * @see #visitCubeZbdds(int, ZbddVisitor)
+     * @see #visitCubeZbdds(int, CubeZbddVisitor)
      */
     boolean visitZbdd(int zbdd);
   }
@@ -1083,9 +1085,10 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * threads therefore never access the wrapped zbdd simultaneously.
    * <p>
    * User code invoked synchronously while the lock is held, such as {@link ZbddCallback callbacks},
-   * {@link CubeVisitor cube visitors}, {@link ZbddVisitor zbdd visitors} and the {@link ZbddLiteralResolver literal
-   * resolver}, may invoke methods of this instance on the same thread without deadlocking. As other threads are blocked
-   * for as long as the lock is held, such user code should return as fast as possible.
+   * {@link CubeVisitor cube visitors}, {@link CubeZbddVisitor cube zbdd visitors} and the
+   * {@link ZbddLiteralResolver literal resolver}, may invoke methods of this instance on the same thread without
+   * deadlocking. As other threads are blocked for as long as the lock is held, such user code should return as fast as
+   * possible.
    * <p>
    * Each method invocation is performed under the lock, which is released as soon as the method returns. As a result, a
    * zbdd returned by a method may be recycled by a garbage collection triggered by another thread before the caller is

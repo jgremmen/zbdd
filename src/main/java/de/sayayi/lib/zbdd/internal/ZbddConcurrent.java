@@ -40,9 +40,10 @@ import static java.util.Objects.requireNonNull;
  * <p>
  * As the lock is reentrant, user code invoked synchronously during a locked operation (e.g.
  * {@link de.sayayi.lib.zbdd.Zbdd.ZbddCallback#beforeGc() ZbddCallback.beforeGc()}, a user-supplied
- * {@link de.sayayi.lib.zbdd.Zbdd.CubeVisitor CubeVisitor}/{@link de.sayayi.lib.zbdd.Zbdd.ZbddVisitor ZbddVisitor} or
- * the {@link de.sayayi.lib.zbdd.ZbddLiteralResolver ZbddLiteralResolver}) can safely re-enter other {@code Zbdd}
- * methods on the same thread without deadlocking.
+ * {@link de.sayayi.lib.zbdd.Zbdd.CubeVisitor CubeVisitor}/
+ * {@link de.sayayi.lib.zbdd.Zbdd.CubeZbddVisitor CubeZbddVisitor} or the
+ * {@link de.sayayi.lib.zbdd.ZbddLiteralResolver ZbddLiteralResolver}) can safely re-enter other {@code Zbdd} methods on
+ * the same thread without deadlocking.
  * <p>
  * Instances are created through {@link de.sayayi.lib.zbdd.ZbddFactory#asConcurrent(Zbdd) ZbddFactory.asConcurrent}.
  *
@@ -655,7 +656,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   /** {@inheritDoc} */
   @Override
   @Contract(mutates = "this")
-  public boolean visitCubeZbdds(int zbdd, @NotNull ZbddVisitor visitor)
+  public boolean visitCubeZbdds(int zbdd, @NotNull CubeZbddVisitor visitor)
   {
     lock.lock();
     try {

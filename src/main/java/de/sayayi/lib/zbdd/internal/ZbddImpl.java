@@ -2344,7 +2344,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   /** {@inheritDoc} */
   @Override
   @Contract(mutates = "this")
-  public boolean visitCubeZbdds(int zbdd, @NotNull ZbddVisitor visitor)
+  public boolean visitCubeZbdds(int zbdd, @NotNull CubeZbddVisitor visitor)
   {
     requireNonNull(visitor, "visitor must not be null");
 
