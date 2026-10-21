@@ -412,20 +412,28 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
           var p_var = __getVar(p);
           var q_var = __getVar(q);
 
-          if (p_var > q_var)
+          if (p > q)
           {
-            // swap p <-> q, p_var <-> q_var
+            // normalize the cache key: swap p <-> q, p_var <-> q_var
             var tmp = p; p = q; q = tmp;
             tmp = p_var; p_var = q_var; q_var = tmp;
           }
 
           if ((r = zbddCache.getResult(UNION, p, q)) == MIN_VALUE)
           {
+            tasks.push(p);
+            tasks.push(q);
+
+            if (p_var > q_var)
+            {
+              // swap p <-> q, p_var <-> q_var
+              var tmp = p; p = q; q = tmp;
+              tmp = p_var; p_var = q_var; q_var = tmp;
+            }
+
             if (p_var < q_var)
             {
               // union(p, q) = getNode(q_var, union(p, q0), q1)
-              tasks.push(p);
-              tasks.push(q);
               tasks.push(__getP1(q));
               tasks.push(q_var);
               tasks.push(TASK_COMBINE_P1);
@@ -434,8 +442,6 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
             }
             else
             {
-              tasks.push(p);
-              tasks.push(q);
               tasks.push(p_var);
               tasks.push(TASK_COMBINE);
               tasks.push(__getP1(p));
@@ -516,7 +522,13 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
         q = tasks.pop();
         p = tasks.pop();
 
-        if (p == EMPTY || q == EMPTY)
+        if (p > q)
+        {
+          // normalize the cache key: swap p <-> q
+          final var tmp = p; p = q; q = tmp;
+        }
+
+        if (p == EMPTY)
           r = EMPTY;
         else if (p == q)
           r = p;
@@ -780,9 +792,9 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
           var p_var = __getVar(p);
           var q_var = __getVar(q);
 
-          if (p_var > q_var)
+          if (p > q)
           {
-            // swap p <-> q, p_var <-> q_var
+            // normalize the cache key: swap p <-> q, p_var <-> q_var
             var tmp = p; p = q; q = tmp;
             tmp = p_var; p_var = q_var; q_var = tmp;
           }
@@ -791,6 +803,14 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
           {
             tasks.push(p);
             tasks.push(q);
+
+            if (p_var > q_var)
+            {
+              // swap p <-> q, p_var <-> q_var
+              var tmp = p; p = q; q = tmp;
+              tmp = p_var; p_var = q_var; q_var = tmp;
+            }
+
             tasks.push(protectedNodes.size());
             tasks.push(q_var);
 
