@@ -15,18 +15,17 @@
  */
 package de.sayayi.lib.zbdd;
 
-import de.sayayi.lib.zbdd.cache.ZbddFastCache;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.util.Arrays;
 import java.util.stream.Stream;
 
 import static de.sayayi.lib.zbdd.ZbddFactory.asConcurrent;
-import static de.sayayi.lib.zbdd.ZbddFactory.createCached;
+import static de.sayayi.lib.zbdd.ZbddFactory.create;
+import static java.util.Arrays.copyOf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
@@ -77,38 +76,40 @@ class QueensTest
   @MethodSource("queensParameters")
   void queens(int n, int solutionsExpected, int tableSize)
   {
-    final var zbdd = asConcurrent(
-        createCached(new SimpleCapacityAdvisor(tableSize), new ZbddFastCache(65536)));
+    final var zbdd = asConcurrent(create(new SimpleCapacityAdvisor(tableSize)));
     final var vars = getVars(zbdd, n);
-
     final var attackingVars = new int[3 * n];
-    int solution = Zbdd.base();
+
+    var solution = Zbdd.base();
     int ct;
 
-    for(int s = 0; s < n; s++)
+    // the variables of row 0 are on top of the zbdd, so the rows are filled bottom-up: placing a queen in row s only
+    // adds a single node on top of the partial solution, and filtering out the attacked squares stops at the lowest
+    // attacking square instead of traversing the entire partial solution
+    for(var s = n; s-- > 0;)
     {
-      int tmp = Zbdd.empty();
+      var tmp = Zbdd.empty();
 
       zbdd.incRef(solution);
 
-      for(int c = 0; c < n; c++)
+      for(var c = 0; c < n; c++)
       {
-        final int tmp0 = zbdd.incRef(tmp);
-        int a = 0;
+        final var tmp0 = zbdd.incRef(tmp);
+        var attackingCount = 0;
 
-        // collect the squares in the previous rows attacking square (s, c) by column or diagonal
-        for(int r = 0; r < s; r++)
+        // collect the squares in the previously filled rows attacking square (s, c) by column or diagonal
+        for(var r = s + 1; r < n; r++)
         {
-          attackingVars[a++] = vars[r][c];
+          attackingVars[attackingCount++] = vars[r][c];
 
-          if ((ct = c - (s - r)) >= 0)
-            attackingVars[a++] = vars[r][ct];
+          if ((ct = c - (r - s)) >= 0)
+            attackingVars[attackingCount++] = vars[r][ct];
 
-          if ((ct = c + (s - r)) < n)
-            attackingVars[a++] = vars[r][ct];
+          if ((ct = c + (r - s)) < n)
+            attackingVars[attackingCount++] = vars[r][ct];
         }
 
-        final int sc = zbdd.subset0(solution, Arrays.copyOf(attackingVars, a));
+        final var sc = zbdd.subset0(solution, copyOf(attackingVars, attackingCount));
 
         tmp = zbdd.union(tmp0, zbdd.change(sc, vars[s][c]));
         zbdd.decRef(tmp0);
@@ -122,7 +123,7 @@ class QueensTest
     assertEquals(solutionsExpected, solutions);
 
     zbdd.gc();
-    System.out.println("Queens " + n + "x" + n + "  (" + solutions + ")");
+    System.out.println("Queens " + n + 'x' + n + "  (" + solutions + ')');
     System.out.println("  " + zbdd.getStatistics());
 
     if (n < 9)
@@ -135,7 +136,6 @@ class QueensTest
       });
     }
 
-    System.out.println(zbdd.getZbddCache());
     System.out.println();
   }
 
