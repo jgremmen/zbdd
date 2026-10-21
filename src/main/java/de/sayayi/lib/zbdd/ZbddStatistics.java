@@ -142,11 +142,13 @@ public interface ZbddStatistics
    * Returns the ratio of node lookups that found an existing node. A higher ratio indicates better node reuse.
    * This is unrelated to the operation cache.
    *
-   * @return  hit ratio in the range {@code 0.0} to {@code 1.0}, or {@code NaN} if no lookups have been performed
+   * @return  hit ratio in the range {@code 0.0} to {@code 1.0}, or {@code 0.0} if no lookups have been performed
    */
   @Contract(pure = true)
-  default double getNodeLookupHitRatio() {
-    return getNodeLookupHitCount() / (double)getNodeLookups();
+  default double getNodeLookupHitRatio()
+  {
+    final var nodeLookups = getNodeLookups();
+    return nodeLookups == 0 ? 0.0 : getNodeLookupHitCount() / (double)nodeLookups;
   }
 
 
@@ -154,11 +156,11 @@ public interface ZbddStatistics
    * Returns the ratio of node lookups that created a new node. A lower ratio indicates better node reuse.
    * This is unrelated to the operation cache.
    *
-   * @return  miss ratio in the range {@code 0.0} to {@code 1.0}, or {@code NaN} if no lookups have been performed
+   * @return  miss ratio in the range {@code 0.0} to {@code 1.0}, or {@code 0.0} if no lookups have been performed
    */
   @Contract(pure = true)
   default double getNodeLookupMissRatio() {
-    return 1.0 - getNodeLookupHitRatio();
+    return getNodeLookups() == 0 ? 0.0 : 1.0 - getNodeLookupHitRatio();
   }
 
 

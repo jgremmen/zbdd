@@ -111,6 +111,30 @@ class ZbddImplTest
 
 
   @Test
+  @DisplayName("Lookup ratios without lookups")
+  void lookupRatiosWithoutLookups()
+  {
+    final var zbdd = new ZbddImpl(DefaultCapacityAdvisor.INSTANCE);
+
+    for(var statistics: new ZbddStatistics[] { zbdd.getStatistics(), new ZbddConcurrent(zbdd).getStatistics() })
+    {
+      assertEquals(0, statistics.getNodeLookups());
+      assertEquals(0.0, statistics.getNodeLookupHitRatio());
+      assertEquals(0.0, statistics.getNodeLookupMissRatio());
+    }
+
+    final var var = zbdd.createVar();
+    zbdd.cube(var);  // miss
+    zbdd.cube(var);  // hit
+
+    final var statistics = zbdd.getStatistics();
+
+    assertEquals(0.5, statistics.getNodeLookupHitRatio());
+    assertEquals(0.5, statistics.getNodeLookupMissRatio());
+  }
+
+
+  @Test
   @DisplayName("Highest variable survives garbage collection")
   void highestVarSurvivesGc() throws Exception
   {

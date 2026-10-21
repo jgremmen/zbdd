@@ -1056,7 +1056,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
     {
       lock.lock();
       try {
-        return statistics.getNodeLookupHitCount() / (double)statistics.getNodeLookups();
+        return statistics.getNodeLookupHitRatio();
       } finally {
         lock.unlock();
       }
@@ -1069,7 +1069,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
     {
       lock.lock();
       try {
-        return 1.0 - statistics.getNodeLookupHitRatio();
+        return statistics.getNodeLookupMissRatio();
       } finally {
         lock.unlock();
       }
