@@ -212,8 +212,23 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
       throw new ZbddException("clear must not be invoked from a zbdd callback");
 
     invokeCallbacks(ZbddCallback::beforeClear);
+    beforeNodesRecycled();
     clearInternal();
     invokeCallbacks(ZbddCallback::afterClear);
+  }
+
+
+  /**
+   * Invoked by {@link #clear()} and {@link #gc()} after the {@link ZbddCallback#beforeClear() beforeClear} or
+   * {@link ZbddCallback#beforeGc() beforeGc} callbacks have run and before any node is discarded or freed. Node numbers
+   * known up to this point, including those of nodes created by these callbacks, may be recycled afterwards.
+   * <p>
+   * The default implementation does nothing.
+   *
+   * @since 0.8.0
+   */
+  @Contract(mutates = "this")
+  protected void beforeNodesRecycled() {
   }
 
 
@@ -1976,6 +1991,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
       throw new ZbddException("gc must not be invoked from a zbdd callback");
 
     invokeCallbacks(ZbddCallback::beforeGc);
+    beforeNodesRecycled();
 
     final var oldNodesFree = nodesFree;
 

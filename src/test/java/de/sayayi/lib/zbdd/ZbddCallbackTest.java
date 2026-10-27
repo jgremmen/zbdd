@@ -156,6 +156,64 @@ class ZbddCallbackTest
   }
 
 
+  @Test
+  @DisplayName("Results cached in beforeGc are not returned after the gc has freed them")
+  void cachedResultsFromBeforeGc()
+  {
+    final var zbdd = ZbddFactory.createCached(new ZbddFastCache());
+    final var a = zbdd.incRef(zbdd.cube(zbdd.createVar()));
+    final var b = zbdd.incRef(zbdd.cube(zbdd.createVar()));
+
+    zbdd.registerCallback(new ZbddCallback() {
+      @Override public void beforeGc() { zbdd.union(a, b); }
+    });
+
+    zbdd.gc();
+
+    final var union = zbdd.union(a, b);
+
+    assertTrue(zbdd.isValidZbdd(union));
+    assertEquals("{ v2, v1 }", zbdd.toString(union));
+  }
+
+
+  @Test
+  @DisplayName("Results cached in beforeClear are not returned after the clear has discarded them")
+  void cachedResultsFromBeforeClear()
+  {
+    final var zbdd = ZbddFactory.createCached(new ZbddFastCache());
+    final var a = zbdd.cube(zbdd.createVar());
+    final var b = zbdd.cube(zbdd.createVar());
+
+    zbdd.registerCallback(new ZbddCallback() {
+      boolean cleared;
+
+      @Override
+      public void beforeClear()
+      {
+        if (!cleared)
+        {
+          cleared = true;
+          zbdd.union(a, b);
+        }
+      }
+    });
+
+    zbdd.clear();
+
+    final var v1 = zbdd.createVar();
+    final var v2 = zbdd.createVar();
+    final var v3 = zbdd.createVar();
+    final var cube1 = zbdd.cube(v1);  // same node number as a
+    final var cube3 = zbdd.cube(v3);  // same node number as b
+    zbdd.cube(v2);
+
+    assertEquals(a, cube1);
+    assertEquals(b, cube3);
+    assertEquals("{ v3, v1 }", zbdd.toString(zbdd.union(cube1, cube3)));
+  }
+
+
 
 
   private static final class SmallCapacityAdvisor implements ZbddCapacityAdvisor

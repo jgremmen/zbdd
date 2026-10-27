@@ -287,14 +287,18 @@ public final class ZbddFastCache implements ZbddCache
 
 
   /**
-   * Returns a string representation of this cache, showing the hit ratio and capacity usage.
+   * Returns a string representation of this cache, showing the hit ratio and capacity usage. The hit ratio is
+   * {@code 0.0%} if no lookups have been performed.
    *
    * @return  string representation of this cache
    */
+  @Override
   public String toString()
   {
+    final var lookupCount = lookup1Count + lookup2Count;
+
     return getClass().getSimpleName() + "[hits=" +
-        format(US, "%.1f%%", lookupHitCount / (double)(lookup1Count + lookup2Count) * 100.0) +
+        format(US, "%.1f%%", lookupCount == 0 ? 0.0 : lookupHitCount / (double)lookupCount * 100.0) +
         ",capacity=" + format(US, "%.1f%%", (cacheElementCount1 + cacheElementCount2) / (double)capacity * 100.0) +
         ']';
   }

@@ -125,6 +125,22 @@ class ZbddFastCacheTest
   }
 
 
+  @DisplayName("String representation without lookups")
+  @Test
+  void toStringWithoutLookups()
+  {
+    final var cache = new ZbddFastCache();
+
+    assertEquals("ZbddFastCache[hits=0.0%,capacity=0.0%]", cache.toString());
+
+    cache.putResult(COUNT, 2, 1);
+    assertEquals(1, cache.getResult(COUNT, 2));
+    assertEquals(MIN_VALUE, cache.getResult(COUNT, 3));
+
+    assertEquals("ZbddFastCache[hits=50.0%,capacity=0.3%]", cache.toString());
+  }
+
+
   private static void assertRetained(int retained, int entries)
   {
     assertTrue(retained >= (int)(entries * 0.98),

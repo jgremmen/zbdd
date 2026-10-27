@@ -37,8 +37,9 @@ import static java.util.Objects.requireNonNull;
  * Extension of {@link ZbddImpl} that adds operation result caching via a {@link ZbddCache}. Each ZBDD operation
  * first checks the cache for a previously computed result before delegating to the base implementation.
  * <p>
- * The cache is automatically cleared before garbage collection and when the ZBDD is cleared, ensuring consistency
- * between cached results and the current state of the diagram.
+ * The cache is automatically cleared before garbage collection and when the ZBDD is cleared, after the
+ * {@code beforeGc}/{@code beforeClear} callbacks have run, ensuring consistency between cached results and the current
+ * state of the diagram.
  * <p>
  * Instances are created through the {@link de.sayayi.lib.zbdd.ZbddFactory ZbddFactory}.
  *
@@ -76,11 +77,21 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
     super(capacityAdvisor);
 
     setZbddCache(zbddCache);
+  }
 
-    registerCallback(new ZbddCallback() {
-      @Override public void beforeClear() { ZbddCachedImpl.this.zbddCache.clear(); }
-      @Override public void beforeGc() { ZbddCachedImpl.this.zbddCache.clear(); }
-    });
+
+  /**
+   * {@inheritDoc}
+   * <p>
+   * This implementation clears the cache. As this happens after all {@code beforeGc}/{@code beforeClear} callbacks have
+   * run, results cached by these callbacks are discarded as well.
+   *
+   * @since 0.8.0
+   */
+  @Override
+  @Contract(mutates = "this")
+  protected void beforeNodesRecycled() {
+    zbddCache.clear();
   }
 
 
