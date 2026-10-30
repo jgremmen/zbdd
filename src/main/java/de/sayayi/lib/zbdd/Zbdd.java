@@ -22,6 +22,7 @@ import de.sayayi.lib.zbdd.exception.ZbddException;
 import de.sayayi.lib.zbdd.internal.ZbddCachedImpl;
 import de.sayayi.lib.zbdd.internal.ZbddConcurrent;
 import de.sayayi.lib.zbdd.internal.ZbddImpl;
+import de.sayayi.lib.zbdd.internal.ZbddNative;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Range;
@@ -83,7 +84,7 @@ import static java.lang.Integer.MAX_VALUE;
  * }</pre>
  *
  * <h2>Implementations</h2>
- * This interface, as well as {@link WithCache} and {@link Concurrent}, is sealed on purpose. Zbdd node numbers,
+ * This interface, as well as {@link WithCache}, {@link Native} and {@link Concurrent}, is sealed on purpose. Zbdd node numbers,
  * reference counting, garbage collection, operation caching and locking depend on invariants that are guaranteed only
  * by the implementations provided by this library. Custom implementations, including decorators or wrappers, are
  * therefore not permitted. Instances are created through {@link ZbddFactory}.
@@ -95,7 +96,7 @@ import static java.lang.Integer.MAX_VALUE;
  * @author Jeroen Gremmen
  * @since 0.5.0
  */
-public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
+public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.Native, Zbdd.WithCache, ZbddImpl
 {
   /** Constant representing the empty ZBDD set (contains no elements). */
   int EMPTY = 0;
@@ -1093,8 +1094,39 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
      *
      * @throws ZbddException  if {@code zbddCache} is in use by another zbdd instance
      */
-    @Contract(mutates = "this,param1")
     void setZbddCache(@NotNull ZbddCache zbddCache);
+  }
+
+
+
+
+  /**
+   * Zbdd implementation backed by a native library, keeping its nodes outside the Java heap. Instances are created by
+   * {@link ZbddFactory#createNative()} and similar methods.
+   * <p>
+   * The native memory is released when the instance becomes unreachable. As the JVM is not aware of that memory, an
+   * unreachable instance doesn't cause a garbage collection by itself, so {@link #close()} releases it right away.
+   * <p>
+   * Results of operations are cached in native memory. This cache is part of the native library and is not a
+   * {@link ZbddCache}.
+   *
+   * @author Jeroen Gremmen
+   * @since 0.8.0
+   */
+  sealed interface Native extends Zbdd, AutoCloseable permits ZbddNative, ZbddConcurrent.Native
+  {
+    /**
+     * Releases the native memory immediately. It is safe to invoke this method multiple times. Any method working with
+     * nodes, variables or statistics invoked after this method fails with a {@link ZbddException}.
+     * <p>
+     * A {@link Concurrent concurrent} instance waits for the operation of another thread to finish.
+     *
+     * @throws ZbddException  if invoked from a visitor, a callback or the capacity advisor, as the native memory is still
+     *                        in use by the operation invoking them
+     */
+    @Override
+    @Contract(mutates = "this")
+    void close();
   }
 
 

@@ -1,0 +1,299 @@
+/*
+ * Copyright 2026 Jeroen Gremmen
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+apply plugin: 'base'
+apply plugin: 'java-base'
+
+
+layout.buildDirectory = new File(rootDir, '.build/native')
+
+
+// zig only ever runs in a container, see docker/zig.Dockerfile for the verification of its archive
+def zigVersion = '0.17.0'
+def zigImage = "zbdd-zig:${zigVersion}"
+def zigCacheVolume = 'zbdd-zig-cache'
+def zigDockerfile = file('docker/zig.Dockerfile')
+
+// Wine only ever runs in a container as well, see docker/wine.Dockerfile
+def wineDockerfile = file('docker/wine.Dockerfile')
+def winePlatform = 'linux/amd64'
+def wineDebianRelease = 'bookworm-slim'
+def wineBaseImage = "debian:${wineDebianRelease}"
+def wineImage = 'zbdd-wine:latest'
+ext.wineJavaImage = 'zbdd-wine-java:latest'
+
+// a long-running Gradle daemon may have been started with a PATH not containing docker, e.g. from an IDE
+def dockerExecutable = {
+  ((System.getenv('PATH') ?: '').split(File.pathSeparator).toList() +
+      ['/usr/local/bin', '/opt/homebrew/bin', '/Applications/Docker.app/Contents/Resources/bin'])
+      .collect { new File(it, 'docker') }
+      .find { it.canExecute() }?.path ?: 'docker'
+}
+
+// used to select the tests this host can run, not for compiling
+def hostOs = System.getProperty('os.name').toLowerCase(Locale.ROOT).with {
+  it.startsWith('windows') ? 'windows' : it.startsWith('mac') ? 'macos' : 'linux'
+}
+def hostArch = System.getProperty('os.arch').with { it == 'amd64' || it == 'x86_64' ? 'x86_64' : it }
+
+def jniInclude = javaToolchains.compilerFor {
+  languageVersion = JavaLanguageVersion.of(21)
+}.map { it.metadata.installationPath.dir('include').asFile }
+
+
+interface InjectedExecOperations {
+  @javax.inject.Inject
+  ExecOperations getExecOperations()
+}
+
+def execOperations = objects.newInstance(InjectedExecOperations).execOperations
+
+def docker = { List<Object> arguments, boolean showOutput = false ->
+  execOperations.exec {
+    commandLine([dockerExecutable()] + arguments)
+
+    if (!showOutput)
+      standardOutput = new ByteArrayOutputStream()
+  }
+}
+
+/*
+ * Passes a new container to the given closure and removes it afterwards. Files are copied into and out of containers
+ * instead of mounted, as the paths of this build may not exist where the Docker daemon runs, which is the case for a CI
+ * job running in a container itself.
+ */
+def withContainer = { List<Object> createArguments, Closure action ->
+  def container = "zbdd-${UUID.randomUUID()}"
+
+  try {
+    docker(['create', '--name', container] + createArguments)
+    action(container)
+  } finally {
+    execOperations.exec {
+      commandLine dockerExecutable(), 'rm', '-f', container
+      standardOutput = new ByteArrayOutputStream()
+      errorOutput = new ByteArrayOutputStream()
+      ignoreExitValue = true
+    }
+  }
+}
+
+// Runs zig cc in a new container, in directory /work, and copies the result named by the last argument to the given file
+def zigCc = { List<String> arguments, File output ->
+  output.parentFile.mkdirs()
+
+  withContainer(['-v', "${zigCacheVolume}:/zig-cache", zigImage, 'zig', 'cc'] + arguments) { container ->
+    docker(['cp', file('.').path, "${container}:/work/native"])
+    docker(['cp', jniInclude.get().path, "${container}:/work/jdk-include"])
+    docker(['start', '-a', container], true)
+    docker(['cp', "${container}:/work/${arguments.last()}", output.path])
+  }
+}
+
+// Runs a command under Wine in a new container, in directory /work, with the given files copied there under the name
+// they are mapped to. Also used by the root project for the Java tests.
+ext.runInWine = { String image, Map<File, String> files, List<String> command ->
+  withContainer(['--platform', winePlatform, image, 'wine'] + command) { container ->
+    files.each { source, name -> docker(['cp', source.path, "${container}:/work/${name}"]) }
+    docker(['start', '-a', container], true)
+  }
+}
+
+// Wine runs x86_64 binaries, which a daemon on another architecture can only do if it provides emulation
+def wineAvailable = {
+  execOperations.exec {
+    commandLine dockerExecutable(), 'run', '--rm', '--platform', winePlatform, wineBaseImage, 'true'
+    standardOutput = new ByteArrayOutputStream()
+    errorOutput = new ByteArrayOutputStream()
+    ignoreExitValue = true
+  }.exitValue == 0
+}.memoize()
+
+
+tasks.register('buildZigImage', Exec) {
+  group = 'build'
+  description = "Builds the Docker image with zig ${zigVersion}, Docker reuses it if nothing has changed."
+
+  doFirst {
+    commandLine dockerExecutable(), 'build', '-q', '-t', zigImage, '--build-arg', "ZIG_VERSION=${zigVersion}",
+        '-f', zigDockerfile.path, zigDockerfile.parentFile.path
+  }
+
+  standardOutput = new ByteArrayOutputStream()
+}
+
+
+def registerWineImage = { String taskName, String image, String target, String release, Closure enabled ->
+  tasks.register(taskName, Exec) {
+    group = 'build'
+    description = "Builds the Docker image ${image} with Wine, Docker reuses it if nothing has changed."
+
+    onlyIf('Docker daemon can run linux/amd64') { enabled() }
+
+    doFirst {
+      commandLine dockerExecutable(), 'build', '-q', '-t', image, '--platform', winePlatform, '--target', target,
+          '--build-arg', "DEBIAN_RELEASE=${release}", '-f', wineDockerfile.path, wineDockerfile.parentFile.path
+    }
+
+    standardOutput = new ByteArrayOutputStream()
+  }
+}
+
+registerWineImage('buildWineImage', wineImage, 'wine', wineDebianRelease, wineAvailable)
+// Wine 8 crashes the Windows JVM, so the Java tests need the newer Wine of this release
+registerWineImage('buildWineJavaImage', ext.wineJavaImage, 'java', 'trixie-slim', { true })
+
+
+def commonFlags = [
+    '-std=c11', '-O2', '-s', '-shared', '-fvisibility=hidden', '-fno-sanitize=all', '-fno-stack-protector',
+    '-fno-stack-check', '-Wall', '-Wextra', '-Wno-sign-compare', '-Werror'
+]
+
+def coreSources = ['zb_ctx.c', 'zb_small.c', 'zb_large.c']
+
+def targets = [
+    LinuxX64: [
+        triple: 'x86_64-linux-gnu', directory: 'linux-x86_64', library: 'libzbdd.so',
+        platform: 'zb_platform_posix.c', testTriple: 'x86_64-linux-musl', testFlags: ['-static'], flags: ['-nostdlib'],
+        host: hostOs == 'linux' && hostArch == 'x86_64'
+    ],
+    WindowsX64: [
+        triple: 'x86_64-windows-gnu', directory: 'windows-x86_64', library: 'zbdd.dll',
+        platform: 'zb_platform_win32.c', testTriple: 'x86_64-windows-gnu', testFlags: [],
+        flags: ['-nostdlib', '-lkernel32', '-Wl,-e,DllMain'],
+        host: hostOs == 'windows' && hostArch == 'x86_64'
+    ],
+    MacosArm64: [
+        triple: 'aarch64-macos.11.0', directory: 'macos-arm64', library: 'libzbdd.dylib',
+        platform: 'zb_platform_posix.c', testTriple: 'aarch64-macos.11.0', testFlags: [],
+        flags: ['-Wl,-install_name,libzbdd.dylib'],
+        host: hostOs == 'macos' && hostArch == 'aarch64'
+    ]
+]
+
+def nativeSources = fileTree('src')
+def nativeIncludes = fileTree('include')
+def libsDir = layout.buildDirectory.dir('libs')
+
+def compileTasks = targets.collect { name, target ->
+  tasks.register("compileNative${name}") {
+    group = 'build'
+    description = "Compiles the native library for ${target.triple}."
+
+    dependsOn 'buildZigImage'
+
+    def output = libsDir.get().file("${target.directory}/${target.library}").asFile
+
+    inputs.files nativeSources, nativeIncludes, zigDockerfile
+    inputs.property('zigVersion', zigVersion)
+    inputs.property('flags', commonFlags + target.flags + target.triple)
+    outputs.file output
+
+    doLast {
+      zigCc(['-target', target.triple] + commonFlags + target.flags +
+          ['-Inative/src', '-Inative/include', '-Ijdk-include'] +
+          (coreSources + [target.platform, 'zb_jni.c']).collect { "native/src/${it}".toString() } +
+          ['-o', target.library], output)
+    }
+  }
+}
+
+
+def relativeToRoot = { File file -> rootDir.toPath().relativize(file.toPath()).toString() }
+def testFlags = ['-std=c11', '-O1', '-g', '-DZB_TEST', '-Wall', '-Wextra', '-Wno-sign-compare', '-Inative/src']
+def testSources = coreSources.collect { "native/src/${it}" } + 'native/test/zb_test.c'
+
+
+def registerCTest = { String taskName, Map target, Closure enabled, Closure run ->
+  def binaryName = "zb_test${target.library.endsWith('.dll') ? '.exe' : ''}"
+  def binary = layout.buildDirectory.file("test/${target.directory}/${binaryName}").get().asFile
+
+  def compile = tasks.register("${taskName}Compile") {
+    dependsOn 'buildZigImage'
+    onlyIf { enabled() }
+
+    inputs.files nativeSources, fileTree('test'), zigDockerfile
+    outputs.file binary
+
+    doLast {
+      zigCc(['-target', target.testTriple] + target.testFlags + testFlags + testSources +
+          "native/src/${target.platform}".toString() + ['-o', binaryName], binary)
+    }
+  }
+
+  tasks.register(taskName) {
+    group = 'verification'
+    description = "Runs the tests of the C core for ${target.triple}."
+
+    dependsOn compile
+    onlyIf('this target can run here') { enabled() }
+
+    doLast { run(binary) }
+  }
+}
+
+def hostTarget = targets.values().find { it.host }
+
+if (hostTarget == null)
+  logger.lifecycle('Skipping native tests: no native library is built for this host.')
+
+// tests of an unsupported host are skipped, the libraries for all targets are built regardless
+registerCTest('testNativeC', hostTarget ?: targets.LinuxX64, { hostTarget != null }) { File binary ->
+  execOperations.exec { commandLine binary.path }
+}
+
+registerCTest('testNativeCWindows', targets.WindowsX64, wineAvailable) { File binary ->
+  runInWine(wineImage, [(binary): binary.name], [binary.name])
+}
+
+tasks.named('testNativeCWindows') { dependsOn 'buildWineImage' }
+
+
+tasks.register('testNativeSanitized', Exec) {
+  group = 'verification'
+  description = 'Runs the tests of the C core with AddressSanitizer and UBSan, this requires a host clang.'
+
+  def binary = layout.buildDirectory.file('test/sanitized/zb_test').get().asFile
+
+  workingDir rootDir
+
+  doFirst { binary.parentFile.mkdirs() }
+
+  commandLine 'sh', '-c',
+      "clang ${testFlags.join(' ')} -fsanitize=address,undefined -fno-sanitize-recover=undefined " +
+      "${testSources.join(' ')} native/src/zb_platform_posix.c -o '${relativeToRoot(binary)}' && " +
+      "'${relativeToRoot(binary)}'"
+}
+
+
+check {
+  dependsOn 'testNativeC', 'testNativeCWindows'
+}
+
+
+configurations {
+  nativeLibs {
+    canBeConsumed = true
+    canBeResolved = false
+  }
+}
+
+
+artifacts {
+  add('nativeLibs', libsDir.get().asFile) {
+    builtBy compileTasks
+  }
+}

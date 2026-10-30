@@ -225,9 +225,9 @@ class ZbddDeepCubeTest
   {
     return switch(variant) {
       case "cached" -> ZbddFactory.createCached(new ZbddFastCache(65536));
-      case "concurrent" -> ZbddFactory.asConcurrent(ZbddFactory.create());
+      case "concurrent" -> ZbddFactory.asConcurrent(ZbddTestSupport.create());
       case "cached+concurrent" -> ZbddFactory.asConcurrent(ZbddFactory.createCached(new ZbddFastCache(65536)));
-      default -> ZbddFactory.create();
+      default -> ZbddTestSupport.create();
     };
   }
 }

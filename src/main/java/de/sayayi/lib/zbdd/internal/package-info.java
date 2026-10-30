@@ -36,6 +36,10 @@
  *     improved performance.
  *   </li>
  *   <li>
+ *     {@link de.sayayi.lib.zbdd.internal.ZbddNative} - ZBDD implementation backed by a native library, with an
+ *     operation cache in native memory.
+ *   </li>
+ *   <li>
  *     {@link de.sayayi.lib.zbdd.internal.ZbddConcurrent} - Thread-safe ZBDD implementation supporting concurrent
  *     access.
  *   </li>

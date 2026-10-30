@@ -1,0 +1,134 @@
+/*
+ * Copyright 2026 Jeroen Gremmen
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+//file:noinspection GroovyAssignabilityCheck
+
+
+def hostOsName = System.getProperty('os.name').toLowerCase(Locale.ROOT)
+def hostArchName = System.getProperty('os.arch')
+def x86_64 = hostArchName == 'amd64' || hostArchName == 'x86_64'
+def nativeHost = ((hostOsName.startsWith('linux') || hostOsName.startsWith('windows')) && x86_64) ||
+    (hostOsName.startsWith('mac') && (hostArchName == 'aarch64' || hostArchName == 'arm64'))
+
+// tests specific to the java implementations
+def javaOnlyTests = [
+    'de.sayayi.lib.zbdd.internal.ZbddImplTest',
+    'de.sayayi.lib.zbdd.internal.IntIntMapTest',
+    'de.sayayi.lib.zbdd.internal.IntObjectMapTest',
+    'de.sayayi.lib.zbdd.internal.NativeLoaderTest',
+    'de.sayayi.lib.zbdd.cache.*',
+    'de.sayayi.lib.zbdd.ZbddCacheKeyTest',
+    'de.sayayi.lib.zbdd.ZbddCacheOwnershipTest'
+]
+
+// tests comparing the native implementation with the java implementation, which run as part of the regular test task
+def nativeOnlyTests = [
+    'de.sayayi.lib.zbdd.internal.ZbddNative*Test'
+]
+
+def registerNativeTest = { String taskName, String impl ->
+  tasks.register(taskName, Test) {
+    group = 'verification'
+    description = "Runs the test suite against the ${impl} implementation."
+
+    onlyIf('native library available for this host') { nativeHost }
+
+    useJUnitPlatform()
+
+    javaLauncher = javaToolchains.launcherFor {
+      languageVersion = JavaLanguageVersion.of(21)
+    }
+
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+
+    systemProperty 'zbdd.test.impl', impl
+
+    filter {
+      (javaOnlyTests + nativeOnlyTests).each { excludeTestsMatching it }
+    }
+  }
+}
+
+registerNativeTest('testNative', 'native')
+
+
+// Gradle's test task passes Unix paths to the JVM it forks, so the Windows JVM is started with JUnit's console launcher.
+// ZBDD_WINE_JAVA enables this task, as the Windows JVM has not been seen working under Wine yet.
+def wineJava = System.getenv('ZBDD_WINE_JAVA') != null
+
+tasks.register('testNativeWindows') {
+  group = 'verification'
+  description = 'Runs the test suite against the Windows library with a Windows JVM under Wine.'
+
+  dependsOn classes, testClasses
+
+  if (wineJava)
+    dependsOn ':native:buildWineJavaImage'
+
+  onlyIf('ZBDD_WINE_JAVA is set') { wineJava }
+
+  doLast {
+    def classpath = (sourceSets.test.runtimeClasspath.files + configurations.junitConsole.files).findAll { it.exists() }
+    def files = classpath.withIndex().collectEntries { file, index -> [(file): "cp-${index}-${file.name}".toString()] }
+    def nativeProject = project(':native')
+
+    nativeProject.runInWine(nativeProject.wineJavaImage, files, ['/opt/windows-jdk/bin/java.exe',
+        '-Dzbdd.test.impl=native',
+        '-cp', files.values().collect { "Z:\\work\\${it}" }.join(';'),
+        'org.junit.platform.console.ConsoleLauncher', 'execute',
+        '--select-package', 'de.sayayi.lib.zbdd', '--details', 'summary', '--fail-if-no-tests'] +
+        javaOnlyTests.collect { "--exclude-classname=${it.replace('.', '\\.').replace('*', '.*')}".toString() })
+  }
+}
+
+
+def nativeTests = ['testNative', 'testNativeWindows', ':native:check']
+
+jar.dependsOn nativeTests
+check.dependsOn nativeTests
+
+
+tasks.named('sourcesJar') {
+  from('native') {
+    into 'native'
+  }
+}
+
+
+tasks.register('verifyNativeJar') {
+  group = 'verification'
+  description = 'Verifies that the jar contains the native libraries of all targets.'
+
+  dependsOn jar
+
+  doLast {
+    def expected = [
+        'META-INF/native/linux-x86_64/libzbdd.so',
+        'META-INF/native/windows-x86_64/zbdd.dll',
+        'META-INF/native/macos-arm64/libzbdd.dylib'
+    ]
+    def present = []
+
+    zipTree(jar.archiveFile).visit { if (!it.directory) present << it.relativePath.pathString }
+
+    def missing = expected - present
+    if (!missing.empty)
+      throw new GradleException("native libraries missing from ${jar.archiveFile.get().asFile.name}: ${missing}")
+  }
+}
+
+check.dependsOn 'verifyNativeJar'

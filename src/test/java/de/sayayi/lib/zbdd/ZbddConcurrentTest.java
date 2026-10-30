@@ -31,7 +31,7 @@ class ZbddConcurrentTest
   @DisplayName("No concurrency zbdd")
   void noConcurrencyZbdd()
   {
-    final var zbdd = ZbddFactory.create();
+    final var zbdd = ZbddTestSupport.create();
     final int cube = zbdd.cube(zbdd.createVar(), zbdd.createVar());
 
     final var state1Complete = new CountDownLatch(1);
@@ -64,7 +64,7 @@ class ZbddConcurrentTest
   @DisplayName("With concurrency zbdd")
   void concurrencyZbdd() throws Exception
   {
-    final var zbdd = asConcurrent(ZbddFactory.create());
+    final var zbdd = asConcurrent(ZbddTestSupport.create());
     final int cube = zbdd.cube(zbdd.createVar(), zbdd.createVar());
 
     final var state1Complete = new CountDownLatch(1);
@@ -200,7 +200,7 @@ class ZbddConcurrentTest
   @DisplayName("Literal resolver re-entering locked methods")
   void literalResolverReentrance()
   {
-    final var zbdd = asConcurrent(ZbddFactory.create());
+    final var zbdd = asConcurrent(ZbddTestSupport.create());
     final var cube = zbdd.incRef(zbdd.cube(zbdd.createVar()));
 
     // toString(int) acquires the lock

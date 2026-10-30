@@ -24,7 +24,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.util.stream.Stream;
 
 import static de.sayayi.lib.zbdd.ZbddFactory.asConcurrent;
-import static de.sayayi.lib.zbdd.ZbddFactory.create;
 import static java.util.Arrays.copyOf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -76,7 +75,7 @@ class QueensTest
   @MethodSource("queensParameters")
   void queens(int n, int solutionsExpected, int tableSize)
   {
-    final var zbdd = asConcurrent(create(new SimpleCapacityAdvisor(tableSize)));
+    final var zbdd = asConcurrent(ZbddTestSupport.create(new SimpleCapacityAdvisor(tableSize)));
     final var vars = getVars(zbdd, n);
     final var attackingVars = new int[3 * n];
 

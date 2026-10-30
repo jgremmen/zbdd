@@ -177,7 +177,7 @@ class ZbddDivideTest
 
 
   private static @NotNull Zbdd create(boolean cached) {
-    return cached ? ZbddFactory.createCached(new ZbddFastCache()) : ZbddFactory.create();
+    return cached ? ZbddFactory.createCached(new ZbddFastCache()) : ZbddTestSupport.create();
   }
 
 

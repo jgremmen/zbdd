@@ -47,7 +47,7 @@ class ZbddCallbackTest
   @ValueSource(booleans = { false, true })
   void registerFromCallback(boolean cached)
   {
-    final var zbdd = cached ? ZbddFactory.createCached(new ZbddFastCache(1024)) : ZbddFactory.create();
+    final var zbdd = cached ? ZbddFactory.createCached(new ZbddFastCache(1024)) : ZbddTestSupport.create();
     final var events = new ArrayList<String>();
 
     zbdd.registerCallback(new ZbddCallback() {
@@ -84,7 +84,7 @@ class ZbddCallbackTest
   @ValueSource(booleans = { false, true })
   void rejectedFromCallback(boolean concurrent)
   {
-    final Zbdd zbdd = concurrent ? ZbddFactory.asConcurrent(ZbddFactory.create()) : ZbddFactory.create();
+    final Zbdd zbdd = concurrent ? ZbddFactory.asConcurrent(ZbddTestSupport.create()) : ZbddTestSupport.create();
     final var cube = zbdd.incRef(zbdd.cube(zbdd.createVar()));
     final var failures = new ArrayList<String>();
     final Function<Executable,String> rejection =
@@ -117,7 +117,7 @@ class ZbddCallbackTest
   @DisplayName("Node creation in beforeGc grows the nodes capacity without nested garbage collection")
   void createNodesInBeforeGc()
   {
-    final var zbdd = ZbddFactory.create(new SmallCapacityAdvisor());
+    final var zbdd = ZbddTestSupport.create(new SmallCapacityAdvisor());
     final var statistics = zbdd.getStatistics();
     final var vars = new int[64];
 

@@ -373,9 +373,9 @@ class ZbddNodeDependencyTest
   {
     return switch(variant) {
       case "cached" -> ZbddFactory.createCached(new ZbddFastCache());
-      case "concurrent" -> ZbddFactory.asConcurrent(ZbddFactory.create());
+      case "concurrent" -> ZbddFactory.asConcurrent(ZbddTestSupport.create());
       case "cached+concurrent" -> ZbddFactory.asConcurrent(ZbddFactory.createCached(new ZbddFastCache()));
-      default -> ZbddFactory.create();
+      default -> ZbddTestSupport.create();
     };
   }
 }

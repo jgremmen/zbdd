@@ -52,7 +52,7 @@ class ZbddTest
   @SuppressWarnings("ConstantConditions")
   void createVar()
   {
-    final var zbdd = ZbddFactory.create();
+    final var zbdd = ZbddTestSupport.create();
     final var var = zbdd.createVar();
     final var r = zbdd.cube(var);
 
@@ -87,7 +87,7 @@ class ZbddTest
   @DisplayName("Operation 'change'")
   void change()
   {
-    final var zbdd = ZbddFactory.create();
+    final var zbdd = ZbddTestSupport.create();
     final var v1 = zbdd.createVar();
     final var v2 = zbdd.createVar();
     final var v3 = zbdd.createVar();
@@ -160,7 +160,7 @@ class ZbddTest
   @DisplayName("Operation 'hasCubeWithVar'")
   void hasCubeWithVar()
   {
-    final var zbdd = ZbddFactory.create();
+    final var zbdd = ZbddTestSupport.create();
     final var v1 = zbdd.createVar();
     final var v2 = zbdd.createVar();
     final var v3 = zbdd.createVar();
@@ -217,7 +217,7 @@ class ZbddTest
   @DisplayName("Operation 'hasCubeWithVar' on shared DAG")
   void hasCubeWithVarSharedDag()
   {
-    final var zbdd = ZbddFactory.create();
+    final var zbdd = ZbddTestSupport.create();
     final var v1 = zbdd.createVar();
     final var v2 = zbdd.createVar();
 
@@ -241,7 +241,7 @@ class ZbddTest
   @DisplayName("Operation 'count'")
   void count()
   {
-    final var zbdd = ZbddFactory.create();
+    final var zbdd = ZbddTestSupport.create();
     final var a = zbdd.createVar();
     final var b = zbdd.createVar();
     final var c = zbdd.createVar();
@@ -260,7 +260,7 @@ class ZbddTest
   @DisplayName("Operation 'count' for empty and base terminal nodes")
   void countTerminals()
   {
-    final var zbdd = ZbddFactory.create();
+    final var zbdd = ZbddTestSupport.create();
 
     assertEquals(0, zbdd.count(Zbdd.empty()));
     assertEquals(1, zbdd.count(Zbdd.base()));
@@ -274,7 +274,7 @@ class ZbddTest
   @DisplayName("Operation 'count' on a diamond-shaped shared DAG")
   void countDiamondSharedDag()
   {
-    final var zbdd = ZbddFactory.create();
+    final var zbdd = ZbddTestSupport.create();
 
     // variables are created bottom-up, as a node may only reference nodes with a lower variable
     final var c = zbdd.createVar();
@@ -298,7 +298,7 @@ class ZbddTest
   @DisplayName("Operation 'count' remains efficient for a large, compact, fully shared ZBDD")
   void countLargeSharedChain()
   {
-    final var zbdd = ZbddFactory.create();
+    final var zbdd = ZbddTestSupport.create();
     final var varCount = 30;
 
     var node = Zbdd.base();
@@ -318,7 +318,7 @@ class ZbddTest
   @DisplayName("Operation 'subset0'")
   void subset0()
   {
-    final var zbdd = ZbddFactory.create();
+    final var zbdd = ZbddTestSupport.create();
     final var v1 = zbdd.createVar();
     final var v2 = zbdd.createVar();
     final var v3 = zbdd.createVar();
@@ -382,7 +382,7 @@ class ZbddTest
   @ValueSource(booleans = { false, true })
   void subset0MultipleVars(boolean cached)
   {
-    final var zbdd = cached ? ZbddFactory.createCached(new ZbddFastCache()) : ZbddFactory.create();
+    final var zbdd = cached ? ZbddFactory.createCached(new ZbddFastCache()) : ZbddTestSupport.create();
     final var v1 = zbdd.createVar();
     final var v2 = zbdd.createVar();
     final var v3 = zbdd.createVar();
@@ -436,7 +436,7 @@ class ZbddTest
   @ValueSource(booleans = { false, true })
   void subset0MultipleVarsRandom(boolean cached)
   {
-    final var zbdd = cached ? ZbddFactory.createCached(new ZbddFastCache()) : ZbddFactory.create();
+    final var zbdd = cached ? ZbddFactory.createCached(new ZbddFastCache()) : ZbddTestSupport.create();
     final var random = new Random(4711);
     final var vars = new int[16];
 
@@ -476,7 +476,7 @@ class ZbddTest
   @DisplayName("Operation 'subset1'")
   void subset1()
   {
-    final var zbdd = ZbddFactory.create();
+    final var zbdd = ZbddTestSupport.create();
     final var v1 = zbdd.createVar();
     final var v2 = zbdd.createVar();
     final var v3 = zbdd.createVar();
@@ -541,7 +541,7 @@ class ZbddTest
   @DisplayName("Operation 'multiply'")
   void multiply()
   {
-    final var zbdd = ZbddFactory.create();
+    final var zbdd = ZbddTestSupport.create();
 
     final var a = zbdd.createVar();
     final var b = zbdd.createVar();
@@ -565,7 +565,7 @@ class ZbddTest
   @DisplayName("Operation 'difference'")
   void difference()
   {
-    final var zbdd = ZbddFactory.create();
+    final var zbdd = ZbddTestSupport.create();
 
     final var a = zbdd.createVar();
     final var b = zbdd.createVar();
@@ -597,7 +597,7 @@ class ZbddTest
   @DisplayName("Operation 'removeBase'")
   void removeBase()
   {
-    final var zbdd = ZbddFactory.create();
+    final var zbdd = ZbddTestSupport.create();
     final var a = zbdd.createVar();
     final var b = zbdd.createVar();
     final var c = zbdd.createVar();
@@ -619,7 +619,7 @@ class ZbddTest
   @DisplayName("Operation 'contains'")
   void contains()
   {
-    final var zbdd = ZbddFactory.create();
+    final var zbdd = ZbddTestSupport.create();
     final var a = zbdd.createVar();
     final var b = zbdd.createVar();
     final var c = zbdd.createVar();
@@ -645,7 +645,7 @@ class ZbddTest
   @DisplayName("Cartesian product")
   void cartesianProduct()
   {
-    final var zbdd = ZbddFactory.create(DefaultCapacityAdvisor.INSTANCE);
+    final var zbdd = ZbddTestSupport.create(DefaultCapacityAdvisor.INSTANCE);
 
     final var a = zbdd.createVar();
     final var b = zbdd.createVar();
@@ -670,7 +670,7 @@ class ZbddTest
   void isValidZbdd()
   {
     final var advisor = DefaultCapacityAdvisor.INSTANCE;
-    final var zbdd = ZbddFactory.create(advisor);
+    final var zbdd = ZbddTestSupport.create(advisor);
 
     final var a = zbdd.createVar();
     final var b = zbdd.createVar();
@@ -693,7 +693,7 @@ class ZbddTest
   @DisplayName("Valid var")
   void isValidVar()
   {
-    final var zbdd = ZbddFactory.create();
+    final var zbdd = ZbddTestSupport.create();
 
     final var a = zbdd.createVar();
     final var b = zbdd.createVar();
@@ -713,7 +713,7 @@ class ZbddTest
   @DisplayName("Zbdd node info")
   void getZbddNodeInfo()
   {
-    final var zbdd = ZbddFactory.create();
+    final var zbdd = ZbddTestSupport.create();
 
     final var a = zbdd.createVar();
     final var b = zbdd.createVar();
@@ -764,7 +764,7 @@ class ZbddTest
   @DisplayName("Operation 'atomize'")
   void atomize()
   {
-    final var zbdd = ZbddFactory.create();
+    final var zbdd = ZbddTestSupport.create();
     final var variableToLiteralMap = new TreeMap<Integer,String>();
     final var variables = new int[16];
 
@@ -834,7 +834,7 @@ class ZbddTest
   @DisplayName("Operation 'asSingleCubeZbdds'")
   void asSingleCubeZbdds()
   {
-    final var zbdd = ZbddFactory.create();
+    final var zbdd = ZbddTestSupport.create();
     final var variableToLiteralMap = new TreeMap<Integer,String>();
     final var variables = new int[16];
 
@@ -907,7 +907,7 @@ class ZbddTest
   @SuppressWarnings({"ConstantValue", "DataFlowIssue"})
   void zbddCallback()
   {
-    final var zbdd = ZbddFactory.create();
+    final var zbdd = ZbddTestSupport.create();
 
     final int a = zbdd.createVar();
     final int b = zbdd.createVar();
@@ -954,7 +954,7 @@ class ZbddTest
   @DisplayName("Dead node count after gc")
   void deadNodeCountAfterGc()
   {
-    final var zbdd = ZbddFactory.create();
+    final var zbdd = ZbddTestSupport.create();
     final var statistics = zbdd.getStatistics();
 
     final var a = zbdd.incRef(zbdd.cube(zbdd.createVar()));
@@ -1002,7 +1002,7 @@ class ZbddTest
   @ValueSource(ints = { 0, -4 })
   void capacityAdvisorNoIncrement(int increment)
   {
-    final var zbdd = ZbddFactory.create(new ZbddCapacityAdvisor() {
+    final var zbdd = ZbddTestSupport.create(new ZbddCapacityAdvisor() {
       @Override public int getInitialCapacity() { return 16; }
       @Override public int getMinimumFreeNodes(@NotNull ZbddStatistics statistics) { return 1; }
       @Override public int adviseIncrement(@NotNull ZbddStatistics statistics) { return increment; }
@@ -1032,7 +1032,7 @@ class ZbddTest
   @DisplayName("No protected nodes left after failed operation")
   void noProtectedNodesAfterFailedOperation()
   {
-    final var zbdd = ZbddFactory.create(new ZbddCapacityAdvisor() {
+    final var zbdd = ZbddTestSupport.create(new ZbddCapacityAdvisor() {
       @Override public int getInitialCapacity() { return 16; }
       @Override public int getMinimumFreeNodes(@NotNull ZbddStatistics statistics) { return 1; }
       @Override public int adviseIncrement(@NotNull ZbddStatistics statistics) { return 0; }
@@ -1063,7 +1063,7 @@ class ZbddTest
   @DisplayName("Operation 'getNode' enforces variable order")
   void getNodeVarOrder()
   {
-    final var zbdd = ZbddFactory.create();
+    final var zbdd = ZbddTestSupport.create();
     final var v1 = zbdd.createVar();
     final var v2 = zbdd.createVar();
     final var cubeV1 = zbdd.cube(v1);
@@ -1088,7 +1088,7 @@ class ZbddTest
   @DisplayName("Refcount underflow")
   void refCountUnderflow()
   {
-    final var zbdd = ZbddFactory.create();
+    final var zbdd = ZbddTestSupport.create();
     final var r = zbdd.cube(zbdd.createVar());
 
     zbdd.incRef(r);

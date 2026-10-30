@@ -169,9 +169,9 @@ class ZbddContainsTest
   {
     return switch(variant) {
       case "cached" -> ZbddFactory.createCached(new ZbddFastCache(1024));
-      case "concurrent" -> ZbddFactory.asConcurrent(ZbddFactory.create());
+      case "concurrent" -> ZbddFactory.asConcurrent(ZbddTestSupport.create());
       case "cached+concurrent" -> ZbddFactory.asConcurrent(ZbddFactory.createCached(new ZbddFastCache(1024)));
-      default -> ZbddFactory.create();
+      default -> ZbddTestSupport.create();
     };
   }
 }

@@ -1,5 +1,5 @@
 # CI script
-image: localhost:5000/sayayi-jdk:21
+image: localhost:5000/sayayi-jdk:lts
 
 stages:
   - build
@@ -7,6 +7,7 @@ stages:
 variables:
   GRADLE_OPTS: "-Dorg.gradle.daemon=false"
   GRADLE_USER_HOME: ".gradle-cache"
+  ZBDD_WINE_JAVA: "1"
 
 before_script:
   - export JAVA_HOME="/usr/lib/jvm/jdk-21"
@@ -19,7 +20,8 @@ build:
   stage: build
   tags:
     - docker
-  script: ./gradlew clean build
+  script:
+    - ./gradlew clean build --stacktrace
   artifacts:
     name: "zbdd-artifacts"
     paths:

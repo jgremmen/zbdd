@@ -27,10 +27,10 @@
  * <ul>
  *   <li>{@link de.sayayi.lib.zbdd.Zbdd}: the central interface providing variable management, set operations such
  *     as union, intersection, difference, multiplication, division and modulo, traversal and reference counting
- *     based memory management. The nested {@link de.sayayi.lib.zbdd.Zbdd.WithCache Zbdd.WithCache} and
- *     {@link de.sayayi.lib.zbdd.Zbdd.Concurrent Zbdd.Concurrent} interfaces describe cached and thread safe
- *     variants.</li>
- *   <li>{@link de.sayayi.lib.zbdd.ZbddFactory}: creates plain, cached and concurrent ZBDD instances.</li>
+ *     based memory management. The nested {@link de.sayayi.lib.zbdd.Zbdd.WithCache Zbdd.WithCache},
+ *     {@link de.sayayi.lib.zbdd.Zbdd.Native Zbdd.Native} and {@link de.sayayi.lib.zbdd.Zbdd.Concurrent Zbdd.Concurrent}
+ *     interfaces describe cached, native and thread safe variants.</li>
+ *   <li>{@link de.sayayi.lib.zbdd.ZbddFactory}: creates plain, cached, native and concurrent ZBDD instances.</li>
  *   <li>{@link de.sayayi.lib.zbdd.ZbddCapacityAdvisor}: controls initial node capacity and growth.</li>
  *   <li>{@link de.sayayi.lib.zbdd.ZbddLiteralResolver}: converts variables into readable literal names.</li>
  *   <li>{@link de.sayayi.lib.zbdd.ZbddStatistics}: exposes statistics about node usage and memory.</li>

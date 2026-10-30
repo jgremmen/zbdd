@@ -51,7 +51,7 @@ import static java.util.Objects.requireNonNull;
  * @since 0.5.0
  */
 @ApiStatus.Internal
-public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcurrent.WithCache
+public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcurrent.Native, ZbddConcurrent.WithCache
 {
   protected final Zbdd zbdd;
   protected final Lock lock;
@@ -853,12 +853,51 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
     /** {@inheritDoc} */
     @Override
-    @Contract(mutates = "this,param1")
     public void setZbddCache(@NotNull ZbddCache zbddCache)
     {
       lock.lock();
       try {
         ((Zbdd.WithCache)zbdd).setZbddCache(zbddCache);
+      } finally {
+        lock.unlock();
+      }
+    }
+  }
+
+
+
+
+  /**
+   * Thread-safe wrapper around a native ZBDD instance, which can be closed. Closing waits for the operation of another
+   * thread to finish, as the lock is held for its duration. Once closed, the operations of all threads fail with a
+   * {@link de.sayayi.lib.zbdd.exception.ZbddException ZbddException}.
+   * <p>
+   * Instances are created through
+   * {@link de.sayayi.lib.zbdd.ZbddFactory#asConcurrent(Zbdd.Native) ZbddFactory.asConcurrent}.
+   *
+   * @since 0.8.0
+   */
+  @ApiStatus.Internal
+  public static final class Native extends ZbddConcurrent implements Zbdd.Native
+  {
+    /**
+     * Creates a new concurrent wrapper around the given native ZBDD instance.
+     *
+     * @param zbdd  native ZBDD instance to wrap, not {@code null}
+     */
+    public Native(@NotNull Zbdd.Native zbdd) {
+      super(zbdd);
+    }
+
+
+    /** {@inheritDoc} */
+    @Override
+    @Contract(mutates = "this")
+    public void close()
+    {
+      lock.lock();
+      try {
+        ((Zbdd.Native)zbdd).close();
       } finally {
         lock.unlock();
       }

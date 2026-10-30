@@ -45,7 +45,23 @@ repositories {
 }
 
 
+configurations {
+  nativeLibs {
+    canBeConsumed = false
+    canBeResolved = true
+  }
+
+  junitConsole {
+    canBeConsumed = false
+    canBeResolved = true
+  }
+}
+
+
 dependencies {
+  // native libraries
+  nativeLibs project(path: ':native', configuration: 'nativeLibs')
+
   // java
   compileOnlyApi libs.jetbrains.annotations
 
@@ -54,6 +70,15 @@ dependencies {
   testImplementation libs.junit.jupiter.params
   testRuntimeOnly libs.junit.jupiter.engine
   testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+  junitConsole libs.junit.platform.console
+}
+
+
+processResources {
+  from(configurations.nativeLibs) {
+    into 'META-INF/native'
+  }
 }
 
 
@@ -106,6 +131,9 @@ tasks.withType(Jar).configureEach {
     from files('LICENSE')
   }
 }
+
+
+apply from: 'gradle/native-test.gradle'
 
 
 jar.dependsOn test

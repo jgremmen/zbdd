@@ -2,7 +2,7 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 [![Java](https://img.shields.io/badge/Java-21%2B-orange.svg)](https://openjdk.org/)
-[![Maven Central](https://img.shields.io/maven-central/v/de.sayayi.lib/zbdd.svg)](https://central.sonatype.com/artifact/de.sayayi.lib/zbdd)
+[![Maven Central][maven-badge]][maven-central]
 
 A Java implementation of Shin-ichi Minato's **Zero-Suppressed Binary Decision Diagrams (ZBDDs)** for efficient
 representation and manipulation of families of sets.
@@ -31,11 +31,14 @@ algebra — such as solving constraint satisfaction problems, configuration anal
 
 ## Features
 
-- **Core set operations** — `union`, `intersection`, `difference`, `subset0`, `subset1`, `change`, `count`, and `countExact`
+- **Core set operations** — `union`, `intersection`, `difference`, `subset0`, `subset1`, `change`, `count`, and
+  `countExact`
 - **Algebraic operations** — `multiply` (Cartesian product), `divide` (quotient), and `modulo` (remainder)
 - **Set manipulation** — `cube`, `atomize`, and `removeBase`
 - **Set queries** — `contains` and `hasCubeWithVar`
 - **Operation caching** — optional memoization of operation results via a pluggable cache (`ZbddCache`)
+- **Native implementation** — optional C implementation with a more compact memory layout, for Linux and Windows on
+  x86_64 and macOS on arm64
 - **Thread safety** — any ZBDD instance can be wrapped for concurrent access
 - **Memory management** — reference counting with automatic garbage collection of unused nodes
 - **Configurable capacity** — pluggable capacity advisor for fine-tuning node allocation and GC behavior
@@ -49,6 +52,7 @@ algebra — such as solving constraint satisfaction problems, configuration anal
 ## Requirements
 
 - **Java 21** or later
+- **Docker**, only for building this library from source: the native libraries are compiled in a container
 
 ---
 
@@ -119,6 +123,12 @@ Zbdd zbdd = ZbddFactory.create(myCapacityAdvisor);
 // With operation caching (recommended for complex computations)
 Zbdd.WithCache zbdd = ZbddFactory.createCached(new ZbddFastCache(65536));
 
+// Native implementation (small operation cache, not thread-safe)
+Zbdd.Native zbdd = ZbddFactory.createNative();
+
+// Native implementation with a custom capacity advisor
+Zbdd.Native zbdd = ZbddFactory.createNative(myCapacityAdvisor);
+
 // Thread-safe wrapper
 Zbdd.Concurrent zbdd = ZbddFactory.asConcurrent(existingZbdd);
 
@@ -126,6 +136,33 @@ Zbdd.Concurrent zbdd = ZbddFactory.asConcurrent(existingZbdd);
 var zbdd = ZbddFactory.asConcurrent(
     ZbddFactory.createCached(new ZbddFastCache(65536)));
 ```
+
+A native instance keeps its nodes outside the Java heap, in 9–10 bytes per node compared to 24 bytes for `create()`.
+Beyond 32767 nodes or variables it changes to 18–20 bytes per node automatically, with the same limits as `create()`.
+Its memory is released when the instance becomes unreachable. As the JVM is not aware of that memory, release it right
+away where it matters:
+
+```java
+try(Zbdd.Native zbdd = ZbddFactory.createNative()) {
+  // ...
+}
+```
+
+`createNative` fails with a `ZbddException` if the native library can't be used, which `ZbddFactory.isNativeAvailable()`
+checks up front, so a Java instance can be used instead:
+
+```java
+Zbdd zbdd = ZbddFactory.isNativeAvailable() ? ZbddFactory.createNative() : ZbddFactory.create();
+
+// ...
+
+if (zbdd instanceof Zbdd.Native nativeZbdd)
+  nativeZbdd.close();
+```
+
+Unsynchronized concurrent access to a native instance can crash the JVM, so use `asConcurrent` when sharing one between
+threads. The wrapper is a `Zbdd.Native` as well, so it can be closed in the same way. Starting with JDK 24, enable native access to avoid a warning: `--enable-native-access=de.sayayi.lib.zbdd`, or
+`--enable-native-access=ALL-UNNAMED` on the class path. See [native/README.md](native/README.md) for details.
 
 ### Variables and Cubes
 
@@ -223,6 +260,19 @@ zbdd.setZbddCache(new ZbddFastCache(131072));
 
 You can also implement the `ZbddCache` interface for a custom caching strategy.
 
+A native instance always caches results in native memory, in a cache written entirely in C. `createNative` creates a
+small cache with one entry for each node of the initial capacity and at least 1024 entries, which doesn't grow along
+with the nodes. For larger computations, request a number of cache entries, rounded up to a power of 2 between 1024 and
+2^30, each taking 12 bytes. The capacity advisor may be `null` to use the default one:
+
+```java
+Zbdd.Native zbdd = ZbddFactory.createNative(myCapacityAdvisor, 65536);
+```
+
+This cache can't be configured from the outside, so a native instance is not a `Zbdd.WithCache`. It covers all pure operations, including `count`, `countExact`, `contains` and
+`hasCubeWithVar`, and is emptied by each garbage collection and by `clear()`. See [native/README.md](native/README.md)
+for details.
+
 ### Thread Safety
 
 A concurrent wrapper serializes all method invocations, including read-only ones, using a single reentrant lock.
@@ -301,9 +351,11 @@ module your.module {
 ```
 
 Exported packages:
-- `de.sayayi.lib.zbdd` — Core API (`Zbdd`, `ZbddFactory`, `ZbddCapacityAdvisor`, `ZbddLiteralResolver`, `ZbddStatistics`)
+- `de.sayayi.lib.zbdd` — Core API (`Zbdd`, `ZbddFactory`, `ZbddCapacityAdvisor`, `ZbddLiteralResolver`,
+  `ZbddStatistics`)
 - `de.sayayi.lib.zbdd.cache` — Cache API (`ZbddCache`, `ZbddFastCache`)
-- `de.sayayi.lib.zbdd.exception` — Exceptions (`ZbddException`, `InvalidVarException`, `InvalidZbddException`, `ZbddOutOfRangeException`)
+- `de.sayayi.lib.zbdd.exception` — Exceptions (`ZbddException`, `InvalidVarException`, `InvalidZbddException`,
+  `ZbddOutOfRangeException`)
 
 The package `de.sayayi.lib.zbdd.internal` is not exported. When the library is used on the class path, its classes
 are technically accessible, but using them directly is not supported. Always create instances through `ZbddFactory`.
@@ -329,4 +381,7 @@ This project is licensed under the [Apache License, Version 2.0](https://www.apa
 - Shin-ichi Minato, [*"Zero-Suppressed BDDs for Set Manipulation in Combinatorial Problems"*][zbdd-paper], DAC '93
 - [Zero-suppressed decision diagram](https://en.wikipedia.org/wiki/Zero-suppressed_decision_diagram) — Wikipedia
 
-[zbdd-paper]: https://dl.acm.org/doi/pdf/10.1145/157485.164890 "Zero-Suppressed BDDs for Set Manipulation in Combinatorial Problems"
+[maven-badge]: https://img.shields.io/maven-central/v/de.sayayi.lib/zbdd.svg
+[maven-central]: https://central.sonatype.com/artifact/de.sayayi.lib/zbdd
+[zbdd-paper]: https://dl.acm.org/doi/pdf/10.1145/157485.164890
+  "Zero-Suppressed BDDs for Set Manipulation in Combinatorial Problems"
