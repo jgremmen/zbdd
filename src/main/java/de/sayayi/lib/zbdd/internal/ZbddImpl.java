@@ -29,7 +29,6 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.StringJoiner;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 
 import static java.lang.Integer.MAX_VALUE;
@@ -844,14 +843,92 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   @Contract(pure = true)
   protected int __count(int zbdd)
   {
-    return __countCubes(zbdd, 0, 1, (count1, count2) -> {
-      final var count = count1 + count2;
+    // the node numbers of EMPTY and BASE are equal to their number of cubes
+    if (zbdd < 2)
+      return zbdd;
 
-      if (count < 0)
-        throw new ArithmeticException("number of cubes exceeds " + Integer.MAX_VALUE + ", use countExact instead");
+    final var zbddCountMap = new IntIntMap();
+    final var stack = new IntStack(__getVar(zbdd) + 1);
 
-      return count;
-    });
+    stack.push(zbdd);
+
+    do {
+      final var z = stack.pop();
+
+      if (zbddCountMap.get(z) == IntIntMap.NO_VALUE)
+      {
+        final var offset = z * NODE_RECORD_SIZE;
+        final var p0 = nodes[offset + _P0];
+        final var p1 = nodes[offset + _P1];
+        final var p0Count = __count_lookup(zbddCountMap, p0);
+        final var p1Count = __count_lookup(zbddCountMap, p1);
+
+        if (p0Count != IntIntMap.NO_VALUE && p1Count != IntIntMap.NO_VALUE)
+        {
+          final var count = p0Count + p1Count;
+
+          if (count < 0)
+            throw new ArithmeticException("number of cubes exceeds " + Integer.MAX_VALUE + ", use countExact instead");
+
+          zbddCountMap.put(z, count);
+          __count_store(z, count);
+        }
+        else
+        {
+          stack.push(z);
+
+          if (p0Count == IntIntMap.NO_VALUE)
+            stack.push(p0);
+
+          if (p1Count == IntIntMap.NO_VALUE)
+            stack.push(p1);
+        }
+      }
+    } while(stack.isNotEmpty());
+
+    return zbddCountMap.get(zbdd);
+  }
+
+
+  /**
+   * Returns the known number of cubes of the given {@code node}.
+   *
+   * @return  number of cubes or {@link IntIntMap#NO_VALUE} if it has not been computed yet
+   */
+  private int __count_lookup(@NotNull IntIntMap zbddCountMap, int node)
+  {
+    if (node < 2)
+      return node;
+
+    var count = zbddCountMap.get(node);
+
+    if (count == IntIntMap.NO_VALUE && (count = __count_retrieve(node)) != IntIntMap.NO_VALUE)
+      zbddCountMap.put(node, count);
+
+    return count;
+  }
+
+
+  /**
+   * Returns the number of cubes of the given {@code node} from a previous count, if available. This implementation does
+   * not retain counts.
+   *
+   * @return  number of cubes or {@link Integer#MIN_VALUE} if not available
+   *
+   * @since 0.8.0
+   */
+  @Contract(pure = true)
+  protected int __count_retrieve(int node) {
+    return Integer.MIN_VALUE;
+  }
+
+
+  /**
+   * Called for each node whose number of cubes has been computed. This implementation does nothing.
+   *
+   * @since 0.8.0
+   */
+  protected void __count_store(int node, int count) {
   }
 
 
@@ -859,34 +936,27 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   @Override
   @Contract(pure = true)
   public @NotNull BigInteger countExact(int zbdd) {
-    return __countCubes(checkZbdd(zbdd, "zbdd"), ZERO, ONE, BigInteger::add);
+    return __countExact(checkZbdd(zbdd, "zbdd"));
   }
 
 
   /**
-   * Counts the cubes in the given {@code zbdd} using the given arithmetic.
+   * Counts the cubes in the given {@code zbdd}.
    * <p>
    * Counts are computed bottom-up and memoized per distinct node. The count of a node is the sum of the counts of its
-   * 0- and 1-branch, with {@code emptyCount} and {@code baseCount} as the counts of the terminal nodes.
+   * 0- and 1-branch.
    *
-   * @param zbdd        valid zbdd node
-   * @param emptyCount  count for the {@link #EMPTY} node, not {@code null}
-   * @param baseCount   count for the {@link #BASE} node, not {@code null}
-   * @param add         function adding two counts, not {@code null}
+   * @param zbdd  valid zbdd node
    *
    * @return  number of cubes, never {@code null}
-   *
-   * @param <T>  count type
    */
   @Contract(pure = true)
-  @SuppressWarnings("unchecked")
-  private <T> @NotNull T __countCubes(int zbdd, @NotNull T emptyCount, @NotNull T baseCount,
-                                      @NotNull BinaryOperator<@NotNull T> add)
+  private @NotNull BigInteger __countExact(int zbdd)
   {
     if (zbdd == EMPTY)
-      return emptyCount;
+      return ZERO;
     else if (zbdd == BASE)
-      return baseCount;
+      return ONE;
 
     final var zbddCountMap = new IntObjectMap();
     final var stack = new IntStack(__getVar(zbdd) + 1);
@@ -901,11 +971,11 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
         final var offset = z * NODE_RECORD_SIZE;
         final var p0 = nodes[offset + _P0];
         final var p1 = nodes[offset + _P1];
-        final var p0Count = p0 < 2 ? (p0 == EMPTY ? emptyCount : baseCount) : (T)zbddCountMap.get(p0);
-        final var p1Count = p1 < 2 ? (p1 == EMPTY ? emptyCount : baseCount) : (T)zbddCountMap.get(p1);
+        final var p0Count = p0 < 2 ? (p0 == EMPTY ? ZERO : ONE) : (BigInteger)zbddCountMap.get(p0);
+        final var p1Count = p1 < 2 ? (p1 == EMPTY ? ZERO : ONE) : (BigInteger)zbddCountMap.get(p1);
 
         if (p0Count != null && p1Count != null)
-          zbddCountMap.put(z, add.apply(p0Count, p1Count));
+          zbddCountMap.put(z, p0Count.add(p1Count));
         else
         {
           stack.push(z);
@@ -919,7 +989,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
       }
     } while(stack.isNotEmpty());
 
-    return (T)zbddCountMap.get(zbdd);
+    return (BigInteger)zbddCountMap.get(zbdd);
   }
 
 

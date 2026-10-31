@@ -367,11 +367,37 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
     if (zbdd < 2)
       return zbdd;
 
-    var r = zbddCache.getResult(COUNT, zbdd);
-    if (r == MIN_VALUE)
-      zbddCache.putResult(COUNT, zbdd, r = super.__count(zbdd));
+    final var r = zbddCache.getResult(COUNT, zbdd);
 
-    return r;
+    return r != MIN_VALUE ? r : super.__count(zbdd);
+  }
+
+
+  /**
+   * {@inheritDoc}
+   * <p>
+   * This implementation retrieves the count from the {@link ZbddCache}.
+   *
+   * @since 0.8.0
+   */
+  @Override
+  @Contract(mutates = "this")
+  protected int __count_retrieve(int node) {
+    return zbddCache.getResult(COUNT, node);
+  }
+
+
+  /**
+   * {@inheritDoc}
+   * <p>
+   * This implementation stores the count in the {@link ZbddCache}.
+   *
+   * @since 0.8.0
+   */
+  @Override
+  @Contract(mutates = "this")
+  protected void __count_store(int node, int count) {
+    zbddCache.putResult(COUNT, node, count);
   }
 
 

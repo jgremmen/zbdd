@@ -25,6 +25,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import java.math.BigInteger;
 import java.util.Random;
 
+import static de.sayayi.lib.zbdd.cache.ZbddCache.Operation1.COUNT;
 import static java.math.BigInteger.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
@@ -121,6 +122,65 @@ class ZbddCountTest
       assertThrowsExactly(ArithmeticException.class, () -> zbdd.count(powerSet));
       assertEquals(TWO.pow(varCount), zbdd.countExact(powerSet));
     }
+  }
+
+
+  @Test
+  @DisplayName("Count stores the result of every visited node in the cache")
+  void cachesVisitedNodes()
+  {
+    final var cache = new ZbddFastCache();
+    final var zbdd = ZbddFactory.createCached(cache);
+    final var levels = new int[20];
+    var powerSet = Zbdd.BASE;
+
+    for(var n = 0; n < levels.length; n++)
+      levels[n] = powerSet = zbdd.incRef(zbdd.getNode(zbdd.createVar(), powerSet, powerSet));
+
+    assertEquals(1 << levels.length, zbdd.count(powerSet));
+
+    for(var n = 0; n < levels.length; n++)
+      assertEquals(2 << n, cache.getResult(COUNT, levels[n]));
+  }
+
+
+  @Test
+  @DisplayName("Count uses cached results of sub-diagrams")
+  void usesCachedSubDiagrams()
+  {
+    final var cache = new ZbddFastCache();
+    final var zbdd = ZbddFactory.createCached(cache);
+    final var inner = zbdd.incRef(powerSet(zbdd, 4));
+    final var top = zbdd.incRef(zbdd.getNode(zbdd.createVar(), inner, inner));
+
+    // a count of 1000 for inner can only be returned from the cache
+    cache.putResult(COUNT, inner, 1000);
+
+    assertEquals(2000, zbdd.count(top));
+  }
+
+
+  @Test
+  @DisplayName("A failed count leaves correct results in the cache")
+  void failedCountCachesCorrectResults()
+  {
+    final var cache = new ZbddFastCache();
+    final var zbdd = ZbddFactory.createCached(cache);
+    final var levels = new int[40];
+    var powerSet = Zbdd.BASE;
+
+    for(var n = 0; n < levels.length; n++)
+      levels[n] = powerSet = zbdd.incRef(zbdd.getNode(zbdd.createVar(), powerSet, powerSet));
+
+    final var top = powerSet;
+
+    assertThrowsExactly(ArithmeticException.class, () -> zbdd.count(top));
+
+    for(var n = 0; n < 30; n++)
+      assertEquals(2 << n, cache.getResult(COUNT, levels[n]));
+
+    for(var n = 30; n < levels.length; n++)
+      assertEquals(Integer.MIN_VALUE, cache.getResult(COUNT, levels[n]));
   }
 
 
