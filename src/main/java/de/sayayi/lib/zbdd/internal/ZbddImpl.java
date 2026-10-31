@@ -1004,7 +1004,8 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
     // check validity first before protecting nodes
     for(var i = 0; i < n; i++)
-      checkZbdd(p[i], "p[" + i + ']');
+      if (!isValidZbdd(p[i]))
+        checkZbdd(p[i], "p[" + i + ']');
 
     final var mark = protectedNodes.size();
     try {

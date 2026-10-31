@@ -70,6 +70,34 @@ class ZbddCacheKeyTest
   }
 
 
+  @ParameterizedTest(name = "operation = {0}")
+  @DisplayName("Union and multiply look up the result for their operands once")
+  @EnumSource(value = ZbddCache.Operation2.class, names = { "UNION", "MULTIPLY" })
+  void singleRootLookup(ZbddCache.Operation2 operation)
+  {
+    final var cache = new RecordingCache();
+    final var zbdd = createCached(cache);
+    final IntBinaryOperator op = operation == UNION ? zbdd::union : zbdd::multiply;
+
+    final var a = zbdd.createVar();
+    final var b = zbdd.createVar();
+    final var c = zbdd.createVar();
+
+    final var p = zbdd.incRef(zbdd.union(zbdd.cube(a, c), zbdd.cube(b, c)));
+    final var q = zbdd.incRef(zbdd.union(zbdd.cube(a, c), zbdd.cube(c)));
+
+    cache.operation = operation;
+    cache.lookupKey1 = Math.min(p, q);
+    cache.lookupKey2 = Math.max(p, q);
+
+    final var r = op.applyAsInt(p, q);
+    assertEquals(1, cache.keyLookupCount);  // miss
+
+    assertEquals(r, op.applyAsInt(p, q));
+    assertEquals(2, cache.keyLookupCount);  // hit
+  }
+
+
 
 
   private static final class RecordingCache implements ZbddCache
@@ -77,6 +105,9 @@ class ZbddCacheKeyTest
     private final ZbddCache cache = new ZbddFastCache();
     private Operation2 operation;
     private int putCount;
+    private int lookupKey1;
+    private int lookupKey2;
+    private int keyLookupCount;
 
 
     @Override
@@ -89,7 +120,12 @@ class ZbddCacheKeyTest
     public int getResult(@NotNull Operation2 operation, int p1, int p2)
     {
       if (operation == this.operation)
+      {
         assertTrue(p1 <= p2, "cache key not normalized");
+
+        if (p1 == lookupKey1 && p2 == lookupKey2)
+          keyLookupCount++;
+      }
 
       return cache.getResult(operation, p1, p2);
     }

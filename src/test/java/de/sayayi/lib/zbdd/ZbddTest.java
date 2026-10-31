@@ -431,6 +431,23 @@ class ZbddTest
   }
 
 
+  @Test
+  @DisplayName("Operation 'union' with multiple operands names the invalid operand")
+  void unionManyInvalidOperand()
+  {
+    final var zbdd = ZbddFactory.create();
+    final var a = zbdd.cube(zbdd.createVar());
+
+    final var outOfRange =
+        assertThrowsExactly(ZbddOutOfRangeException.class, () -> zbdd.union(a, -1, a));
+    assertTrue(outOfRange.getMessage().contains("p[1]"));
+
+    final var invalid =
+        assertThrowsExactly(InvalidZbddException.class, () -> zbdd.union(a, a, a + 1));
+    assertTrue(invalid.getMessage().contains("p[2]"));
+  }
+
+
   @ParameterizedTest(name = "cached: {0}")
   @DisplayName("Operation 'subset0' with multiple variables equals repeated single variable 'subset0'")
   @ValueSource(booleans = { false, true })

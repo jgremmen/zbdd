@@ -417,13 +417,22 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
     if (p == EMPTY)
       return q;
 
+    if (p > q)
+    {
+      // normalize the cache key: swap p <-> q
+      final var tmp = p; p = q; q = tmp;
+    }
+
+    final var cached = zbddCache.getResult(UNION, p, q);
+    if (cached != MIN_VALUE)
+      return cached;
+
     final var mark = saveAndProtect(p, q);
     final var tasks = new IntStack(24);
     final var results = new IntStack(24);
 
-    tasks.push(p);
-    tasks.push(q);
-    tasks.push(TASK_COMPUTE);
+    // the cache has been checked for (p, q) already, so start with its branches
+    __union_pushBranches(tasks, p, q);
 
     do {
       final var task = tasks.pop();
@@ -470,49 +479,15 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
           r = q;
         else
         {
-          var p_var = __getVar(p);
-          var q_var = __getVar(q);
-
           if (p > q)
           {
-            // normalize the cache key: swap p <-> q, p_var <-> q_var
-            var tmp = p; p = q; q = tmp;
-            tmp = p_var; p_var = q_var; q_var = tmp;
+            // normalize the cache key: swap p <-> q
+            final var tmp = p; p = q; q = tmp;
           }
 
           if ((r = zbddCache.getResult(UNION, p, q)) == MIN_VALUE)
           {
-            tasks.push(p);
-            tasks.push(q);
-
-            if (p_var > q_var)
-            {
-              // swap p <-> q, p_var <-> q_var
-              var tmp = p; p = q; q = tmp;
-              tmp = p_var; p_var = q_var; q_var = tmp;
-            }
-
-            if (p_var < q_var)
-            {
-              // union(p, q) = getNode(q_var, union(p, q0), q1)
-              tasks.push(__getP1(q));
-              tasks.push(q_var);
-              tasks.push(TASK_COMBINE_P1);
-              tasks.push(p);
-              tasks.push(__getP0(q));
-            }
-            else
-            {
-              tasks.push(p_var);
-              tasks.push(TASK_COMBINE);
-              tasks.push(__getP1(p));
-              tasks.push(__getP1(q));
-              tasks.push(TASK_COMPUTE);
-              tasks.push(__getP0(p));
-              tasks.push(__getP0(q));
-            }
-
-            tasks.push(TASK_COMPUTE);
+            __union_pushBranches(tasks, p, q);
             continue;
           }
         }
@@ -524,6 +499,55 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
     protectedNodes.truncate(mark);
 
     return results.pop();
+  }
+
+
+  /**
+   * Pushes the tasks computing the union of {@code p} and {@code q} from the branches of these nodes.
+   *
+   * @param tasks  task stack, not {@code null}
+   * @param p      first operand, with {@code p} &lt; {@code q}
+   * @param q      second operand
+   *
+   * @since 0.8.0
+   */
+  @Contract(mutates = "param1")
+  private void __union_pushBranches(@NotNull IntStack tasks, int p, int q)
+  {
+    tasks.push(p);
+    tasks.push(q);
+
+    var p_var = __getVar(p);
+    var q_var = __getVar(q);
+
+    if (p_var > q_var)
+    {
+      // swap p <-> q, p_var <-> q_var
+      var tmp = p; p = q; q = tmp;
+      tmp = p_var; p_var = q_var; q_var = tmp;
+    }
+
+    if (p_var < q_var)
+    {
+      // union(p, q) = getNode(q_var, union(p, q0), q1)
+      tasks.push(__getP1(q));
+      tasks.push(q_var);
+      tasks.push(TASK_COMBINE_P1);
+      tasks.push(p);
+      tasks.push(__getP0(q));
+    }
+    else
+    {
+      tasks.push(p_var);
+      tasks.push(TASK_COMBINE);
+      tasks.push(__getP1(p));
+      tasks.push(__getP1(q));
+      tasks.push(TASK_COMPUTE);
+      tasks.push(__getP0(p));
+      tasks.push(__getP0(q));
+    }
+
+    tasks.push(TASK_COMPUTE);
   }
 
 
@@ -790,13 +814,22 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
     if (q == BASE)
       return p;
 
+    if (p > q)
+    {
+      // normalize the cache key: swap p <-> q
+      final var tmp = p; p = q; q = tmp;
+    }
+
+    final var cached = zbddCache.getResult(MULTIPLY, p, q);
+    if (cached != MIN_VALUE)
+      return cached;
+
     final var mark = saveAndProtect(p, q);
     final var tasks = new IntStack(24);
     final var results = new IntStack(24);
 
-    tasks.push(p);
-    tasks.push(q);
-    tasks.push(TASK_COMPUTE);
+    // the cache has been checked for (p, q) already, so start with its branches
+    __multiply_pushBranches(tasks, p, q);
 
     do {
       final var task = tasks.pop();
@@ -850,65 +883,15 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
           r = p;
         else
         {
-          var p_var = __getVar(p);
-          var q_var = __getVar(q);
-
           if (p > q)
           {
-            // normalize the cache key: swap p <-> q, p_var <-> q_var
-            var tmp = p; p = q; q = tmp;
-            tmp = p_var; p_var = q_var; q_var = tmp;
+            // normalize the cache key: swap p <-> q
+            final var tmp = p; p = q; q = tmp;
           }
 
           if ((r = zbddCache.getResult(MULTIPLY, p, q)) == MIN_VALUE)
           {
-            tasks.push(p);
-            tasks.push(q);
-
-            if (p_var > q_var)
-            {
-              // swap p <-> q, p_var <-> q_var
-              var tmp = p; p = q; q = tmp;
-              tmp = p_var; p_var = q_var; q_var = tmp;
-            }
-
-            tasks.push(protectedNodes.size());
-            tasks.push(q_var);
-
-            if (p_var < q_var)
-            {
-              // v = q_var does not occur in p: r = p * (q0 + v * q1) = p * q0 + v * (p * q1)
-              tasks.push(TASK_COMBINE);
-              tasks.push(p);
-              tasks.push(__getP1(q));
-              tasks.push(TASK_COMPUTE);
-              tasks.push(p);
-              tasks.push(__getP0(q));
-              tasks.push(TASK_COMPUTE);
-            }
-            else
-            {
-              // compute the products p0q0, p0q1, p1q0 and p1q1 in this order
-              final var p0 = __getP0(p);
-              final var p1 = __getP1(p);
-              final var q0 = __getP0(q);
-              final var q1 = __getP1(q);
-
-              tasks.push(TASK_COMBINE_PRODUCTS);
-              tasks.push(p1);
-              tasks.push(q1);
-              tasks.push(TASK_COMPUTE);
-              tasks.push(p1);
-              tasks.push(q0);
-              tasks.push(TASK_COMPUTE);
-              tasks.push(p0);
-              tasks.push(q1);
-              tasks.push(TASK_COMPUTE);
-              tasks.push(p0);
-              tasks.push(q0);
-              tasks.push(TASK_COMPUTE);
-            }
-
+            __multiply_pushBranches(tasks, p, q);
             continue;
           }
         }
@@ -920,6 +903,70 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
     protectedNodes.truncate(mark);
 
     return results.pop();
+  }
+
+
+  /**
+   * Pushes the tasks computing the product of {@code p} and {@code q} from the branches of these nodes.
+   *
+   * @param tasks  task stack, not {@code null}
+   * @param p      first operand, with {@code p} &lt; {@code q}
+   * @param q      second operand
+   *
+   * @since 0.8.0
+   */
+  @Contract(mutates = "param1")
+  private void __multiply_pushBranches(@NotNull IntStack tasks, int p, int q)
+  {
+    tasks.push(p);
+    tasks.push(q);
+
+    var p_var = __getVar(p);
+    var q_var = __getVar(q);
+
+    if (p_var > q_var)
+    {
+      // swap p <-> q, p_var <-> q_var
+      var tmp = p; p = q; q = tmp;
+      tmp = p_var; p_var = q_var; q_var = tmp;
+    }
+
+    tasks.push(protectedNodes.size());
+    tasks.push(q_var);
+
+    if (p_var < q_var)
+    {
+      // v = q_var does not occur in p: r = p * (q0 + v * q1) = p * q0 + v * (p * q1)
+      tasks.push(TASK_COMBINE);
+      tasks.push(p);
+      tasks.push(__getP1(q));
+      tasks.push(TASK_COMPUTE);
+      tasks.push(p);
+      tasks.push(__getP0(q));
+      tasks.push(TASK_COMPUTE);
+    }
+    else
+    {
+      // compute the products p0q0, p0q1, p1q0 and p1q1 in this order
+      final var p0 = __getP0(p);
+      final var p1 = __getP1(p);
+      final var q0 = __getP0(q);
+      final var q1 = __getP1(q);
+
+      tasks.push(TASK_COMBINE_PRODUCTS);
+      tasks.push(p1);
+      tasks.push(q1);
+      tasks.push(TASK_COMPUTE);
+      tasks.push(p1);
+      tasks.push(q0);
+      tasks.push(TASK_COMPUTE);
+      tasks.push(p0);
+      tasks.push(q1);
+      tasks.push(TASK_COMPUTE);
+      tasks.push(p0);
+      tasks.push(q0);
+      tasks.push(TASK_COMPUTE);
+    }
   }
 
 
