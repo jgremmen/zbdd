@@ -303,6 +303,9 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
     if (top < var)
       return __getNode(var, EMPTY, zbdd);
 
+    if (top == var)
+      return __getNode(var, __getP1(zbdd), __getP0(zbdd));
+
     final var mark = saveAndProtect(zbdd);
     final var tasks = new IntStack(24);
     final var results = new IntStack(24);
@@ -328,20 +331,17 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
       }
       else if ((top = __getVar(node)) < var)
         r = __getNode(var, EMPTY, node);
+      else if (top == var)
+        r = __getNode(var, __getP1(node), __getP0(node));
       else if ((r = zbddCache.getResult(CHANGE, node, var)) == MIN_VALUE)
       {
-        if (top > var)
-        {
-          tasks.push(node);
-          tasks.push(TASK_COMBINE);
-          tasks.push(__getP1(node));
-          tasks.push(TASK_COMPUTE);
-          tasks.push(__getP0(node));
-          tasks.push(TASK_COMPUTE);
-          continue;
-        }
-
-        zbddCache.putResult(CHANGE, node, var, r = __getNode(var, __getP1(node), __getP0(node)));
+        tasks.push(node);
+        tasks.push(TASK_COMBINE);
+        tasks.push(__getP1(node));
+        tasks.push(TASK_COMPUTE);
+        tasks.push(__getP0(node));
+        tasks.push(TASK_COMPUTE);
+        continue;
       }
 
       results.push(protect(r));
@@ -678,6 +678,8 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
   {
     if (p == EMPTY || p == q)
       return EMPTY;
+    if (q == BASE)
+      return __removeBase(p);
     if (q == EMPTY)
       return p;
 
@@ -738,52 +740,49 @@ public final class ZbddCachedImpl extends ZbddImpl implements WithCache
 
         if (p == EMPTY || p == q)
           r = EMPTY;
+        else if (q == BASE)
+          r = __removeBase(p);
         else if (q == EMPTY)
           r = p;
         else if ((r = zbddCache.getResult(DIFFERENCE, p, q)) == MIN_VALUE)
         {
-          if (q == BASE)
-            zbddCache.putResult(DIFFERENCE, p, q, r = __removeBase(p));
+          final var p_var = __getVar(p);
+          final var q_var = __getVar(q);
+
+          if (p_var < q_var)
+          {
+            tasks.push(p);
+            tasks.push(q);
+            tasks.push(TASK_STORE);
+            tasks.push(p);
+            tasks.push(__getP0(q));
+          }
+          else if (p_var > q_var)
+          {
+            // difference(p, q) = getNode(p_var, difference(p0, q), p1)
+            tasks.push(p);
+            tasks.push(q);
+            tasks.push(__getP1(p));
+            tasks.push(p_var);
+            tasks.push(TASK_COMBINE_P1);
+            tasks.push(__getP0(p));
+            tasks.push(q);
+          }
           else
           {
-            final var p_var = __getVar(p);
-            final var q_var = __getVar(q);
-
-            if (p_var < q_var)
-            {
-              tasks.push(p);
-              tasks.push(q);
-              tasks.push(TASK_STORE);
-              tasks.push(p);
-              tasks.push(__getP0(q));
-            }
-            else if (p_var > q_var)
-            {
-              // difference(p, q) = getNode(p_var, difference(p0, q), p1)
-              tasks.push(p);
-              tasks.push(q);
-              tasks.push(__getP1(p));
-              tasks.push(p_var);
-              tasks.push(TASK_COMBINE_P1);
-              tasks.push(__getP0(p));
-              tasks.push(q);
-            }
-            else
-            {
-              tasks.push(p);
-              tasks.push(q);
-              tasks.push(p_var);
-              tasks.push(TASK_COMBINE);
-              tasks.push(__getP1(p));
-              tasks.push(__getP1(q));
-              tasks.push(TASK_COMPUTE);
-              tasks.push(__getP0(p));
-              tasks.push(__getP0(q));
-            }
-
+            tasks.push(p);
+            tasks.push(q);
+            tasks.push(p_var);
+            tasks.push(TASK_COMBINE);
+            tasks.push(__getP1(p));
+            tasks.push(__getP1(q));
             tasks.push(TASK_COMPUTE);
-            continue;
+            tasks.push(__getP0(p));
+            tasks.push(__getP0(q));
           }
+
+          tasks.push(TASK_COMPUTE);
+          continue;
         }
       }
 
