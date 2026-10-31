@@ -290,6 +290,45 @@ The test suite demonstrates the library on real-world combinatorial problems:
 
 ---
 
+## Benchmarks
+
+The directory `src/jmh` contains [JMH](https://github.com/openjdk/jmh) benchmarks. They are compiled by the regular
+build, but only run on request:
+
+```bash
+# run all benchmarks, which takes about an hour
+./gradlew jmh
+
+# run selected benchmarks using a regular expression
+./gradlew jmh --args="WarmOperationBenchmark.union -p variant=CACHED"
+
+# include allocation rates and list all options
+./gradlew jmh --args="ColdOperationBenchmark -prof gc"
+./gradlew jmh --args="-h"
+```
+
+Results are written to `.build/reports/jmh/results.json`.
+
+| Benchmark                                                                 | Measures                                                                                                 |
+|---------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------|
+| `ColdOperationBenchmark`                                                  | Operations doing their full amount of work, with an empty operation cache and without existing result    |
+| `WarmOperationBenchmark`                                                  | The same operations with a known result, which a cached instance answers from its cache                   |
+| `ReadOperationBenchmark`                                                  | Operations that create no nodes and don't use the cache, such as `contains` and `visitCubes`              |
+| `SharedNodesBenchmark`                                                    | Scaling on diagrams with many paths through few nodes, comparing plain and cached instances               |
+| `GarbageCollectionBenchmark`                                              | A single garbage collection, depending on the table size and the amount of garbage                        |
+| `GcPolicyBenchmark`                                                       | Capacity advisor policies on a table nearly full of live nodes                                            |
+| `LifecycleBenchmark`                                                      | Creating variables, building sets, growing the table and clearing an instance                             |
+| `ConcurrentReadBenchmark`, `ConcurrentWriteBenchmark`                     | Throughput with 1 to 8 threads; the read benchmark compares locked with direct access (see below)         |
+| `ConcurrentMixedBenchmark`                                                | Readers competing with a thread that writes or runs garbage collections (see below)                       |
+| `CacheBenchmark`                                                          | `ZbddFastCache` by itself: hits, misses, storing results and clearing                                     |
+| `CacheSizeBenchmark`                                                      | Complete workloads with different cache sizes                                                             |
+| `QueensBenchmark`                                                         | Solving the n-queens problem from scratch with each type of instance                                      |
+
+The scores of the `Concurrent*` benchmarks are their secondary results: `:operations`, or `:reads` and `:writes`. Their
+primary score only counts fixed periods of time and has no meaning.
+
+---
+
 ## Module System
 
 The library is a named Java module:
