@@ -248,17 +248,18 @@ concurrent.runAtomic(z -> {
 ```java
 ZbddStatistics stats = zbdd.getStatistics();
 
-stats.getNodesCapacity();       // total node capacity
-stats.getOccupiedNodes();       // actively used nodes
-stats.getFreeNodes();           // unused node slots
-stats.getDeadNodes();           // nodes whose reference count dropped to 0
-stats.getNewNodes();            // nodes that have never been referenced (e.g. intermediate results)
-stats.getUnreferencedNodes();   // new + dead nodes, candidates for GC
-stats.getGCCount();             // number of GC runs
-stats.getGCFreedNodes();        // cumulative freed nodes
-stats.getNodeLookupHitRatio();  // ratio of node lookups reusing an existing node (0.0 – 1.0)
-stats.getMemoryUsage();         // estimated memory in bytes
-stats.getRegisteredVars();      // number of registered variables
+stats.getNodesCapacity();          // total node capacity
+stats.getOccupiedNodes();          // terminal nodes and nodes with a reference count
+stats.getFreeNodes();              // unused node slots
+stats.getDeadNodes();              // nodes whose reference count dropped to 0
+stats.getNewNodes();               // nodes that have never been referenced (e.g. intermediate results)
+stats.getUnreferencedNodes();      // new + dead nodes, upper limit of what a GC can free
+stats.getNodesAllocatedSinceGC();  // estimate of what the next GC can free
+stats.getGCCount();                // number of GC runs
+stats.getGCFreedNodes();           // cumulative freed nodes
+stats.getNodeLookupHitRatio();     // ratio of node lookups reusing an existing node (0.0 – 1.0)
+stats.getMemoryUsage();            // estimated memory in bytes
+stats.getRegisteredVars();         // number of registered variables
 ```
 
 ### Callbacks

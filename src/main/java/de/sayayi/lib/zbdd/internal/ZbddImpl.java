@@ -114,6 +114,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   private int nodesFree;
   private int nodesDead;
   private int nodesNew;
+  private int nodesLiveAfterGC;
 
   private int @NotNull [] nodes;
   private int nextFreeNode;
@@ -265,6 +266,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     nodesNew = 0;
     nextFreeNode = 2;
     nodesFree = nodesCapacity - 2;
+    nodesLiveAfterGC = 2;
 
     // clear the hash chain heads for zbdd < 2
     nodes[EMPTY * NODE_RECORD_SIZE + _CHAIN] = 0;
@@ -2060,8 +2062,8 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   /**
    * Performs garbage collection on the internal ZBDD structure.
    * <p>
-   * After garbage collection, all dead and unreferenced nodes have been freed and the statistics have been updated
-   * accordingly.
+   * After garbage collection, all nodes that are neither referenced nor reachable from a referenced node have been
+   * freed and the statistics have been updated accordingly.
    *
    * @return  the number of freed ZBDD nodes
    *
@@ -2094,6 +2096,8 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     gc_freeUnreferencedNodes();
 
     final var gcFreedNodesCount = nodesFree - oldNodesFree;
+
+    nodesLiveAfterGC = nodesCapacity - nodesFree;
 
     statistics.gcFreedNodes += gcFreedNodesCount;
     statistics.gcCount++;
@@ -2761,6 +2765,12 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     @Override
     public int getNewNodes() {
       return nodesNew;
+    }
+
+
+    @Override
+    public int getNodesAllocatedSinceGC() {
+      return nodesCapacity - nodesFree - nodesLiveAfterGC;
     }
 
 

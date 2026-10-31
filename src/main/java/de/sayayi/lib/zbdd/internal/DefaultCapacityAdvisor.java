@@ -20,6 +20,9 @@ import de.sayayi.lib.zbdd.ZbddStatistics;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
+import static de.sayayi.lib.zbdd.internal.ZbddImpl.MAX_NODES;
+import static java.lang.Math.min;
+
 
 /**
  * Default {@link ZbddCapacityAdvisor} implementation used when no custom advisor is provided to the
@@ -68,6 +71,11 @@ public enum DefaultCapacityAdvisor implements ZbddCapacityAdvisor
   {
     final var capacity = statistics.getNodesCapacity();
 
-    return capacity > 250000 || statistics.getUnreferencedNodes() > (capacity / 10);
+    // new nodes that survived the last garbage collection are most likely still in use
+    final var freeableNodes = statistics.getDeadNodes() +
+        min(statistics.getNewNodes(), statistics.getNodesAllocatedSinceGC());
+
+    // the capacity can't be increased any further, so garbage collection is the only way left to obtain free nodes
+    return capacity == MAX_NODES || freeableNodes > (capacity / 10);
   }
 }

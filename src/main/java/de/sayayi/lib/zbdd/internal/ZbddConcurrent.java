@@ -937,6 +937,19 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
 
     /** {@inheritDoc} */
     @Override
+    public int getNodesAllocatedSinceGC()
+    {
+      lock.lock();
+      try {
+        return statistics.getNodesAllocatedSinceGC();
+      } finally {
+        lock.unlock();
+      }
+    }
+
+
+    /** {@inheritDoc} */
+    @Override
     public int getUnreferencedNodes()
     {
       lock.lock();

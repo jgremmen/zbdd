@@ -30,8 +30,10 @@ import java.util.ArrayList;
 
 import static de.sayayi.lib.zbdd.Zbdd.BASE;
 import static de.sayayi.lib.zbdd.Zbdd.EMPTY;
+import static de.sayayi.lib.zbdd.internal.ZbddImpl.MAX_NODES;
 import static de.sayayi.lib.zbdd.internal.ZbddImpl.MAX_VAR;
 import static java.lang.Integer.MAX_VALUE;
+import static java.lang.reflect.Proxy.newProxyInstance;
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -317,5 +319,107 @@ class ZbddImplTest
       zbdd.cube(zbdd.createVar());
 
     assertEquals(expectedCapacity, statistics.getNodesCapacity());
+  }
+
+
+  @Test
+  @DisplayName("Nodes allocated since the last garbage collection")
+  void nodesAllocatedSinceGC()
+  {
+    final var zbdd = new ZbddImpl(DefaultCapacityAdvisor.INSTANCE);
+    final var statistics = zbdd.getStatistics();
+
+    assertEquals(0, statistics.getNodesAllocatedSinceGC());
+
+    final var root = zbdd.incRef(zbdd.cube(zbdd.createVar(), zbdd.createVar()));
+    assertEquals(2, statistics.getNodesAllocatedSinceGC());
+
+    zbdd.cube(zbdd.createVar());
+    assertEquals(3, statistics.getNodesAllocatedSinceGC());
+
+    // the interior node of root survives as a new node, but isn't counted as allocated anymore
+    zbdd.gc();
+    assertEquals(0, statistics.getNodesAllocatedSinceGC());
+    assertEquals(1, statistics.getNewNodes());
+
+    zbdd.cube(zbdd.createVar());
+    assertEquals(1, statistics.getNodesAllocatedSinceGC());
+
+    zbdd.decRef(root);
+    zbdd.clear();
+    assertEquals(0, statistics.getNodesAllocatedSinceGC());
+
+    // a capacity increase doesn't allocate nodes
+    final var capacity = statistics.getNodesCapacity();
+    var allocated = 0;
+
+    while(statistics.getNodesCapacity() == capacity)
+    {
+      zbdd.incRef(zbdd.cube(zbdd.createVar()));
+      assertEquals(++allocated, statistics.getNodesAllocatedSinceGC());
+    }
+  }
+
+
+  @ParameterizedTest(name = "roots released: {0}")
+  @DisplayName("Default advisor only collects garbage if it is likely to free nodes")
+  @CsvSource({ "false, 0, 5000", "true, 1, 2000" })
+  void gcAfterGarbageCollection(boolean releaseRoots, int expectedGcCount, int expectedCapacity)
+  {
+    final var zbdd = new ZbddImpl(DefaultCapacityAdvisor.INSTANCE);
+    final var statistics = zbdd.getStatistics();
+    final var roots = new ArrayList<Integer>();
+
+    // only roots are referenced, so half of the nodes are reported as unreferenced while all of them are in use
+    while(statistics.getNodesCapacity() - statistics.getFreeNodes() < 1960)
+      roots.add(zbdd.incRef(zbdd.cube(zbdd.createVar(), zbdd.createVar())));
+
+    assertEquals(2000, statistics.getNodesCapacity());
+
+    zbdd.gc();
+
+    final var gcCount = statistics.getGCCount();
+
+    if (releaseRoots)
+      roots.forEach(zbdd::decRef);
+
+    while(statistics.getFreeNodes() >= 2)
+      zbdd.cube(zbdd.createVar());
+
+    zbdd.cube(zbdd.createVar());
+
+    assertEquals(expectedGcCount, statistics.getGCCount() - gcCount);
+    assertEquals(expectedCapacity, statistics.getNodesCapacity());
+  }
+
+
+  @Test
+  @DisplayName("Default advisor doesn't collect garbage in a large table with little garbage")
+  void noGcInLargeTable()
+  {
+    final var zbdd = new ZbddImpl(DefaultCapacityAdvisor.INSTANCE);
+    final var statistics = zbdd.getStatistics();
+
+    for(var i = 0; statistics.getNodesCapacity() <= 500000; i++)
+    {
+      final var cube = zbdd.cube(zbdd.createVar());
+
+      if (i % 20 != 0)
+        zbdd.incRef(cube);
+    }
+
+    assertEquals(0, statistics.getGCCount());
+  }
+
+
+  @Test
+  @DisplayName("Default advisor collects garbage if the capacity can't be increased any further")
+  void gcAtMaximumCapacity()
+  {
+    final var statistics = (ZbddStatistics)newProxyInstance(ZbddStatistics.class.getClassLoader(),
+        new Class<?>[] { ZbddStatistics.class },
+        (proxy, method, args) -> method.getName().equals("getNodesCapacity") ? (Object)MAX_NODES : (Object)0);
+
+    assertTrue(DefaultCapacityAdvisor.INSTANCE.isGCRequired(statistics));
   }
 }

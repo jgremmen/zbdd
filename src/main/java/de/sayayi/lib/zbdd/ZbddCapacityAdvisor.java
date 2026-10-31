@@ -73,8 +73,8 @@ public interface ZbddCapacityAdvisor
    * {@linkplain ZbddStatistics#getUnreferencedNodes() unreferenced} node.
    * <p>
    * Garbage collection is an expensive operation and only useful if a substantial number of nodes are expected to be
-   * freed in the process. The current number of unreferenced nodes may be a good indicator, but is not a guarantee that
-   * those nodes are freed, as they may still be reachable from referenced nodes.
+   * freed in the process. The current number of unreferenced nodes is an upper limit only, as those nodes may still be
+   * reachable from referenced nodes. {@link ZbddStatistics#getNodesAllocatedSinceGC()} gives a better estimate.
    *
    * @param statistics  current zbdd statistics, not {@code null}
    *

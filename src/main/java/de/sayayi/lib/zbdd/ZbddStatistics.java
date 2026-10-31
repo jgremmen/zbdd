@@ -79,9 +79,29 @@ public interface ZbddStatistics
 
 
   /**
+   * Returns the number of nodes allocated since the last garbage collection, or since the instance was created or
+   * cleared if there hasn't been one.
+   * <p>
+   * This is an estimate of what the next garbage collection can free, based on nodes surviving a garbage collection
+   * being likely to stay in use. It is not exact: nodes allocated since may still be in use, and it leaves out older
+   * nodes that are no longer in use. For the latter, take {@linkplain #getDeadNodes() dead} nodes into account as well.
+   *
+   * @return  number of nodes allocated since the last garbage collection, always &ge; 0
+   *
+   * @since 0.8.0
+   */
+  @Contract(pure = true)
+  int getNodesAllocatedSinceGC();
+
+
+  /**
    * Returns the number of unreferenced nodes, which is the sum of {@linkplain #getNewNodes() new} and
    * {@linkplain #getDeadNodes() dead} nodes. Unreferenced nodes are freed by garbage collection, unless they are
    * reachable from a referenced node.
+   * <p>
+   * As a reference count is normally held by root nodes only, this number includes the interior nodes of all referenced
+   * diagrams. It is an upper limit of what a garbage collection can free, and may be far off:
+   * {@link #getNodesAllocatedSinceGC()} gives a better estimate.
    *
    * @return  unreferenced node count, always &ge; 0
    *
@@ -95,8 +115,8 @@ public interface ZbddStatistics
 
   /**
    * Returns the number of available nodes, which is the sum of {@linkplain #getFreeNodes() free} and
-   * {@linkplain #getUnreferencedNodes() unreferenced} nodes. These nodes can potentially be reused without
-   * increasing capacity.
+   * {@linkplain #getUnreferencedNodes() unreferenced} nodes. It is an upper limit of the nodes that can be reused
+   * without increasing capacity, as unreferenced nodes reachable from a referenced node can't be freed.
    *
    * @return  available node count, always &ge; 0
    */
@@ -107,8 +127,10 @@ public interface ZbddStatistics
 
 
   /**
-   * Returns the number of occupied (actively used) nodes. This is the difference between the
-   * {@linkplain #getNodesCapacity() capacity} and the {@linkplain #getAvailableNodes() available} nodes.
+   * Returns the number of occupied nodes. This is the difference between the {@linkplain #getNodesCapacity() capacity}
+   * and the {@linkplain #getAvailableNodes() available} nodes, which comes down to the terminal nodes and the nodes with
+   * a reference count. It is a lower limit of the nodes in use, as it leaves out unreferenced nodes reachable from a
+   * referenced node, such as the interior nodes of a diagram.
    *
    * @return  occupied node count, always &ge; 0
    */

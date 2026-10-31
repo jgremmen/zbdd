@@ -23,9 +23,8 @@ import org.openjdk.jmh.annotations.*;
 
 import java.util.Random;
 
-import static de.sayayi.lib.zbdd.benchmark.Workloads.createVars;
-import static de.sayayi.lib.zbdd.benchmark.Workloads.fillNodes;
-import static de.sayayi.lib.zbdd.benchmark.Workloads.randomSet;
+import static de.sayayi.lib.zbdd.benchmark.Workloads.*;
+import static java.lang.Math.min;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.openjdk.jmh.annotations.AuxCounters.Type.EVENTS;
 import static org.openjdk.jmh.annotations.Mode.AverageTime;
@@ -56,7 +55,8 @@ public class GcPolicyBenchmark
   @Param
   public Policy policy;
 
-  @Param("1100000")
+  // 86% of the capacity of 1220700: with less than 10% free, the default advisor grows whatever the minimum is
+  @Param("1050000")
   public int liveNodes;
 
   private Zbdd zbdd;
@@ -133,9 +133,10 @@ public class GcPolicyBenchmark
       @Override
       public boolean isGCRequired(@NotNull ZbddStatistics statistics)
       {
-        final var capacity = statistics.getNodesCapacity();
+        final var freeableNodes = statistics.getDeadNodes() +
+            min(statistics.getNewNodes(), statistics.getNodesAllocatedSinceGC());
 
-        return capacity > 250000 || statistics.getUnreferencedNodes() > (capacity / 10);
+        return freeableNodes > (statistics.getNodesCapacity() / 10);
       }
     });
 
