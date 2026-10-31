@@ -107,8 +107,8 @@ public class GcPolicyBenchmark
     /** The advisor used by default. */
     DEFAULT(null),
 
-    /** The same as the default advisor, except for a minimum of 25% of free nodes after a garbage collection. */
-    FREE_25_PERCENT(new ZbddCapacityAdvisor() {
+    /** The same as the default advisor, except for a minimum of 5% of free nodes after a garbage collection. */
+    FREE_5_PERCENT(new ZbddCapacityAdvisor() {
       @Override
       public int getInitialCapacity() {
         return 128;
@@ -117,7 +117,7 @@ public class GcPolicyBenchmark
 
       @Override
       public int getMinimumFreeNodes(@NotNull ZbddStatistics statistics) {
-        return statistics.getNodesCapacity() / 4;
+        return statistics.getNodesCapacity() / 20;
       }
 
 

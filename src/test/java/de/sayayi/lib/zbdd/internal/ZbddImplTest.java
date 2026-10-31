@@ -22,6 +22,8 @@ import de.sayayi.lib.zbdd.exception.ZbddException;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.platform.commons.util.ReflectionUtils;
 
 import java.util.ArrayList;
@@ -292,5 +294,28 @@ class ZbddImplTest
 
     assertThrowsExactly(NullPointerException.class, () -> zbdd.visitCubes(EMPTY, null));
     assertThrowsExactly(NullPointerException.class, () -> zbdd.visitCubeZbdds(EMPTY, null));
+  }
+
+
+  @ParameterizedTest(name = "live nodes = {0}, capacity = {1}")
+  @DisplayName("Default advisor grows the table if a garbage collection leaves less than 25% of free nodes")
+  @CsvSource({ "1000, 2000", "1600, 5000" })
+  void capacityAfterGarbageCollection(int liveNodes, int expectedCapacity)
+  {
+    final var zbdd = new ZbddImpl(DefaultCapacityAdvisor.INSTANCE);
+    final var statistics = zbdd.getStatistics();
+
+    while(statistics.getNodesCapacity() - statistics.getFreeNodes() < liveNodes)
+      zbdd.incRef(zbdd.cube(zbdd.createVar()));
+
+    assertEquals(2000, statistics.getNodesCapacity());
+
+    final var gcCount = statistics.getGCCount();
+
+    // create garbage until the table is full
+    while(statistics.getGCCount() == gcCount)
+      zbdd.cube(zbdd.createVar());
+
+    assertEquals(expectedCapacity, statistics.getNodesCapacity());
   }
 }

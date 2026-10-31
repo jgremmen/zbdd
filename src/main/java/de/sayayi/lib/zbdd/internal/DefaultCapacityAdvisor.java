@@ -46,7 +46,7 @@ public enum DefaultCapacityAdvisor implements ZbddCapacityAdvisor
   /** {@inheritDoc} */
   @Override
   public int getMinimumFreeNodes(@NotNull ZbddStatistics statistics) {
-    return statistics.getNodesCapacity() / 20;  // 5%
+    return statistics.getNodesCapacity() / 4;  // 25%
   }
 
 
