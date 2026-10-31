@@ -115,6 +115,59 @@ class ZbddConcurrentTest
 
 
   @Test
+  @DisplayName("Wrapping an instance again returns the same wrapper")
+  void wrapTwice()
+  {
+    final var zbdd = ZbddFactory.create();
+    final var concurrent = asConcurrent(zbdd);
+
+    assertSame(concurrent, asConcurrent(zbdd));
+    assertSame(concurrent, asConcurrent(concurrent));
+  }
+
+
+  @Test
+  @DisplayName("Wrapping a cached instance again returns the same wrapper")
+  void wrapCachedTwice()
+  {
+    final var zbdd = createCached(new ZbddFastCache());
+    final Zbdd.Concurrent concurrent = asConcurrent(zbdd);
+
+    assertInstanceOf(Zbdd.WithCache.class, concurrent);
+    assertSame(concurrent, asConcurrent((Zbdd)zbdd));
+    assertSame(concurrent, asConcurrent(concurrent));
+  }
+
+
+  @Test
+  @DisplayName("Threads wrapping the same instance share one wrapper")
+  void wrapFromMultipleThreads() throws Exception
+  {
+    for(var round = 0; round < 1000; round++)
+    {
+      final var zbdd = ZbddFactory.create();
+      final var start = new CountDownLatch(1);
+      final var futures = new ArrayList<Future<Zbdd.Concurrent>>();
+
+      try(final var executor = newFixedThreadPool(4)) {
+        for(var t = 0; t < 4; t++)
+        {
+          futures.add(executor.submit(() -> {
+            start.await();
+            return asConcurrent(zbdd);
+          }));
+        }
+
+        start.countDown();
+
+        for(var future: futures)
+          assertSame(asConcurrent(zbdd), future.get());
+      }
+    }
+  }
+
+
+  @Test
   @DisplayName("Concurrent count with cache")
   void concurrentCountWithCache() throws Exception {
     assertConcurrentCounts(asConcurrent(createCached(new ZbddFastCache())));

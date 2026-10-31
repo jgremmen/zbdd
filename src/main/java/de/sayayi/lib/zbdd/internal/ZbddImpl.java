@@ -15,10 +15,7 @@
  */
 package de.sayayi.lib.zbdd.internal;
 
-import de.sayayi.lib.zbdd.Zbdd;
-import de.sayayi.lib.zbdd.ZbddCapacityAdvisor;
-import de.sayayi.lib.zbdd.ZbddLiteralResolver;
-import de.sayayi.lib.zbdd.ZbddStatistics;
+import de.sayayi.lib.zbdd.*;
 import de.sayayi.lib.zbdd.exception.InvalidVarException;
 import de.sayayi.lib.zbdd.exception.InvalidZbddException;
 import de.sayayi.lib.zbdd.exception.ZbddException;
@@ -50,10 +47,10 @@ import static java.util.Objects.requireNonNull;
  * Core implementation of the {@link Zbdd} interface, providing the fundamental operations on Zero-suppressed
  * Binary Decision Diagrams.
  * <p>
- * This class is not thread-safe. Use {@link de.sayayi.lib.zbdd.ZbddFactory#asConcurrent(Zbdd)} to obtain a
+ * This class is not thread-safe. Use {@link ZbddFactory#asConcurrent(Zbdd)} to obtain a
  * thread-safe wrapper.
  * <p>
- * Instances are created through {@link de.sayayi.lib.zbdd.ZbddFactory#create() ZbddFactory.create}.
+ * Instances are created through {@link ZbddFactory#create() ZbddFactory.create}.
  * <p>
  * Nodes are stored as fixed-size records in a flat {@code int[]} array. Each node number addresses one record:
  * <pre>
@@ -125,6 +122,8 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
   private @NotNull ZbddLiteralResolver literalResolver = var -> "v" + var;
 
+  private Zbdd.Concurrent concurrentWrapper;
+
 
   /**
    * Creates a new ZBDD instance with the given capacity advisor.
@@ -159,6 +158,30 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     nodes[offset + _P0] = zbdd;
     nodes[offset + _P1] = zbdd;
     nodes[offset + _REFCOUNT] = 1;
+  }
+
+
+  /**
+   * Returns the thread-safe wrapper for this instance. The wrapper is created once, so all threads share the same lock,
+   * regardless of how many times this method is invoked. This method may be invoked from any thread.
+   *
+   * @return  thread-safe wrapper for this instance, never {@code null}
+   *
+   * @see ZbddFactory#asConcurrent(Zbdd)
+   *
+   * @since 0.8.0
+   */
+  @Contract(mutates = "this")
+  public final synchronized @NotNull Zbdd.Concurrent asConcurrent()
+  {
+    if (concurrentWrapper == null)
+    {
+      concurrentWrapper = this instanceof Zbdd.WithCache withCache
+          ? new ZbddConcurrent.WithCache(withCache)
+          : new ZbddConcurrent(this);
+    }
+
+    return concurrentWrapper;
   }
 
 

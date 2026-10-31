@@ -18,7 +18,6 @@ package de.sayayi.lib.zbdd;
 import de.sayayi.lib.zbdd.cache.ZbddCache;
 import de.sayayi.lib.zbdd.internal.DefaultCapacityAdvisor;
 import de.sayayi.lib.zbdd.internal.ZbddCachedImpl;
-import de.sayayi.lib.zbdd.internal.ZbddConcurrent;
 import de.sayayi.lib.zbdd.internal.ZbddImpl;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -110,9 +109,9 @@ public final class ZbddFactory
   /**
    * Wraps the given {@code zbdd} instance to make it thread-safe. If the instance is already concurrent, it is returned
    * as-is. If the instance is {@link Zbdd.WithCache cached}, the returned wrapper preserves cache support and
-   * implements {@link Zbdd.WithCache} as well, regardless of the static type of {@code zbdd}. After wrapping, access
-   * the underlying instance only through the returned wrapper; direct access through another reference bypasses
-   * synchronization.
+   * implements {@link Zbdd.WithCache} as well, regardless of the static type of {@code zbdd}. Wrapping an instance
+   * again, from any thread, returns the same wrapper. After wrapping, access the underlying instance only through the
+   * returned wrapper; direct access through another reference bypasses synchronization.
    *
    * @param zbdd  ZBDD instance to wrap, not {@code null}
    *
@@ -120,22 +119,17 @@ public final class ZbddFactory
    *
    * @see #asConcurrent(Zbdd.WithCache)
    */
-  @Contract(pure = true)
-  public static @NotNull Zbdd.Concurrent asConcurrent(@NotNull Zbdd zbdd)
-  {
-    if (zbdd instanceof Zbdd.Concurrent concurrent)
-      return concurrent;
-    else if (zbdd instanceof Zbdd.WithCache withCache)
-      return new ZbddConcurrent.WithCache(withCache);
-    else
-      return new ZbddConcurrent(zbdd);
+  @Contract(mutates = "param1")
+  public static @NotNull Zbdd.Concurrent asConcurrent(@NotNull Zbdd zbdd) {
+    return zbdd instanceof Zbdd.Concurrent concurrent ? concurrent : ((ZbddImpl)zbdd).asConcurrent();
   }
 
 
   /**
    * Wraps the given cached {@code zbdd} instance to make it thread-safe while preserving cache support. If the
-   * instance is already concurrent, it is returned as-is. After wrapping, access the underlying instance only through
-   * the returned wrapper; direct access through another reference bypasses synchronization.
+   * instance is already concurrent, it is returned as-is. Wrapping an instance again, from any thread, returns the same
+   * wrapper. After wrapping, access the underlying instance only through the returned wrapper; direct access through
+   * another reference bypasses synchronization.
    *
    * @param zbdd  cached ZBDD instance to wrap, not {@code null}
    *
@@ -143,9 +137,9 @@ public final class ZbddFactory
    *
    * @return  thread-safe cached ZBDD instance, never {@code null}
    */
-  @Contract(pure = true)
+  @Contract(mutates = "param1")
   @SuppressWarnings("unchecked")
   public static <T extends Zbdd.Concurrent & Zbdd.WithCache> @NotNull T asConcurrent(@NotNull Zbdd.WithCache zbdd) {
-    return (T)(zbdd instanceof Zbdd.Concurrent ? zbdd : new ZbddConcurrent.WithCache(zbdd));
+    return (T)asConcurrent((Zbdd)zbdd);
   }
 }
