@@ -26,7 +26,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.math.BigInteger;
 import java.util.BitSet;
-import java.util.HashSet;
 import java.util.List;
 import java.util.StringJoiner;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -1786,29 +1785,25 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   protected final boolean __contains(int p, int q)
   {
     final var stack = new IntStack(24);
-    final var visited = new HashSet<Long>();
+    final var visited = new LongSet();
 
     for(;;)
     {
       // q is contained in p, if q = {} or p = q
       if (q != EMPTY && p != q)
       {
-        if (p == EMPTY)
+        if (p == EMPTY || p == BASE)
           return false;
 
-        if (q == BASE)
+        if (visited.add(((long)p << 32) | q))
         {
-          // the empty combination is reachable from p following the 0-branches only
-          while(p >= 2)
+          if (q == BASE)
+          {
+            // the empty combination is reachable from p following the 0-branches only
             p = __getP0(p);
+            continue;
+          }
 
-          if (p == EMPTY)
-            return false;
-        }
-        else if (p == BASE)
-          return false;
-        else if (visited.add(((long)p << 32) | q))
-        {
           final var pVar = __getVar(p);
           final var qVar = __getVar(q);
 

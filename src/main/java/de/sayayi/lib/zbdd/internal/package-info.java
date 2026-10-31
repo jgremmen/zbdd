@@ -52,6 +52,9 @@
  *     {@code int} values.
  *   </li>
  *   <li>
+ *     {@code LongSet} - Lightweight set used by the ZBDD implementations to track {@code long} values.
+ *   </li>
+ *   <li>
  *     {@code IntStack} - Lightweight, growable stack of {@code int} values used by the ZBDD implementations.
  *   </li>
  * </ul>

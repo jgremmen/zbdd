@@ -115,6 +115,52 @@ class ZbddContainsTest
   }
 
 
+  @ParameterizedTest(name = "variant = {0}")
+  @DisplayName("Base set reached through many nodes sharing a 0-branch chain")
+  @ValueSource(strings = { "plain", "cached", "concurrent", "cached+concurrent" })
+  void sharedZeroBranchChain(String variant)
+  {
+    final var zbdd = create(variant);
+    final var size = 200;
+    final var chainVars = new int[size];
+    final var branchVars = new int[size];
+    final var topVars = new int[size];
+
+    for(var i = 0; i < size; i++)
+      chainVars[i] = zbdd.createVar();
+    for(var i = 0; i < size; i++)
+      branchVars[i] = zbdd.createVar();
+    for(var i = 0; i < size; i++)
+      topVars[i] = zbdd.createVar();
+
+    var chain = EMPTY;
+
+    for(var chainVar: chainVars)
+      chain = zbdd.incRef(zbdd.union(chain, zbdd.cube(chainVar)));
+
+    final var chainAndBase = zbdd.incRef(zbdd.union(chain, BASE));
+    var withBase = EMPTY;
+    var withoutBase = EMPTY;
+    var tops = EMPTY;
+
+    for(var i = 0; i < size; i++)
+    {
+      final var top = zbdd.incRef(zbdd.cube(topVars[i]));
+      final var branch = zbdd.incRef(zbdd.cube(branchVars[i]));
+
+      withBase = zbdd.incRef(zbdd.union(withBase,
+          zbdd.incRef(zbdd.multiply(top, zbdd.incRef(zbdd.union(chainAndBase, branch))))));
+      withoutBase = zbdd.incRef(zbdd.union(withoutBase,
+          zbdd.incRef(zbdd.multiply(top, zbdd.incRef(zbdd.union(chain, branch))))));
+      tops = zbdd.incRef(zbdd.union(tops, top));
+    }
+
+    // every top variable alone requires the empty combination below it, at the end of the shared chain
+    assertTrue(zbdd.contains(withBase, tops));
+    assertFalse(zbdd.contains(withoutBase, tops));
+  }
+
+
   private static int randomSet(@NotNull Zbdd zbdd, int @NotNull [] vars, @NotNull Random random)
   {
     var set = random.nextBoolean() ? BASE : EMPTY;
