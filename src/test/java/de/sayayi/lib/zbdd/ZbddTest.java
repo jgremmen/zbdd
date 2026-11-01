@@ -20,7 +20,6 @@ import de.sayayi.lib.zbdd.exception.InvalidVarException;
 import de.sayayi.lib.zbdd.exception.InvalidZbddException;
 import de.sayayi.lib.zbdd.exception.ZbddException;
 import de.sayayi.lib.zbdd.exception.ZbddOutOfRangeException;
-import de.sayayi.lib.zbdd.internal.DefaultCapacityAdvisor;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -662,7 +661,7 @@ class ZbddTest
   @DisplayName("Cartesian product")
   void cartesianProduct()
   {
-    final var zbdd = ZbddFactory.create(DefaultCapacityAdvisor.INSTANCE);
+    final var zbdd = ZbddFactory.create(ZbddCapacityAdvisor.DEFAULT);
 
     final var a = zbdd.createVar();
     final var b = zbdd.createVar();
@@ -686,7 +685,7 @@ class ZbddTest
   @DisplayName("Valid zbdd")
   void isValidZbdd()
   {
-    final var advisor = DefaultCapacityAdvisor.INSTANCE;
+    final var advisor = ZbddCapacityAdvisor.DEFAULT;
     final var zbdd = ZbddFactory.create(advisor);
 
     final var a = zbdd.createVar();

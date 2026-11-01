@@ -16,11 +16,12 @@
 package de.sayayi.lib.zbdd;
 
 import de.sayayi.lib.zbdd.cache.ZbddCache;
-import de.sayayi.lib.zbdd.internal.DefaultCapacityAdvisor;
 import de.sayayi.lib.zbdd.internal.ZbddCachedImpl;
 import de.sayayi.lib.zbdd.internal.ZbddImpl;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+
+import static de.sayayi.lib.zbdd.ZbddCapacityAdvisor.DEFAULT;
 
 
 /**
@@ -61,7 +62,7 @@ public final class ZbddFactory
    */
   @Contract(value = "_ -> new", pure = true)
   public static @NotNull Zbdd create(ZbddCapacityAdvisor capacityAdvisor) {
-    return new ZbddImpl(capacityAdvisor != null ? capacityAdvisor : DefaultCapacityAdvisor.INSTANCE);
+    return new ZbddImpl(capacityAdvisor != null ? capacityAdvisor : DEFAULT);
   }
 
 
@@ -102,7 +103,7 @@ public final class ZbddFactory
   @Contract(value = "_, _ -> new", mutates = "param2")
   public static @NotNull Zbdd.WithCache createCached(ZbddCapacityAdvisor capacityAdvisor,
                                                      @NotNull ZbddCache zbddCache) {
-    return new ZbddCachedImpl(capacityAdvisor != null ? capacityAdvisor : DefaultCapacityAdvisor.INSTANCE, zbddCache);
+    return new ZbddCachedImpl(capacityAdvisor != null ? capacityAdvisor : DEFAULT, zbddCache);
   }
 
 

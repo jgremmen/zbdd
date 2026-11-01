@@ -40,8 +40,8 @@
  *     access.
  *   </li>
  *   <li>
- *     {@link de.sayayi.lib.zbdd.internal.DefaultCapacityAdvisor} - Default
- *     {@link de.sayayi.lib.zbdd.ZbddCapacityAdvisor} used when no custom advisor is provided.
+ *     {@link de.sayayi.lib.zbdd.internal.PresetCapacityAdvisor} - The advisors offered as constants by
+ *     {@link de.sayayi.lib.zbdd.ZbddCapacityAdvisor}, including the default used when no custom advisor is provided.
  *   </li>
  *   <li>
  *     {@code IntObjectMap} - Lightweight map used by the ZBDD implementations to associate {@code int} keys with

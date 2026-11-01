@@ -16,7 +16,6 @@
 package de.sayayi.lib.zbdd;
 
 import de.sayayi.lib.zbdd.cache.ZbddFastCache;
-import de.sayayi.lib.zbdd.internal.DefaultCapacityAdvisor;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,6 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import static de.sayayi.lib.zbdd.ZbddCapacityAdvisor.HIGH_PERFORMANCE;
 import static de.sayayi.lib.zbdd.ZbddFactory.createCached;
 import static java.util.Arrays.copyOf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -49,7 +49,7 @@ class SudokuTest
   @BeforeEach
   void init()
   {
-    zbdd = createCached(DefaultCapacityAdvisor.INSTANCE, new ZbddFastCache(65536));
+    zbdd = createCached(HIGH_PERFORMANCE, new ZbddFastCache(65536));
     gridToVar = new HashMap<>();
 
     for(var row = 1; row <= 9; row++)

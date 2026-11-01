@@ -113,7 +113,8 @@ The `ZbddFactory` provides factory methods for creating ZBDD instances:
 // Basic instance (no caching, not thread-safe)
 Zbdd zbdd = ZbddFactory.create();
 
-// With a custom capacity advisor
+// With a predefined or custom capacity advisor (see below)
+Zbdd zbdd = ZbddFactory.create(ZbddCapacityAdvisor.BALANCED);
 Zbdd zbdd = ZbddFactory.create(myCapacityAdvisor);
 
 // With operation caching (recommended for complex computations)
@@ -126,6 +127,28 @@ Zbdd.Concurrent zbdd = ZbddFactory.asConcurrent(existingZbdd);
 var zbdd = ZbddFactory.asConcurrent(
     ZbddFactory.createCached(new ZbddFastCache(65536)));
 ```
+
+### Capacity Advisors
+
+A capacity advisor decides how the node table grows and when it is garbage collected. No advisor is the best one for
+every application, but `ZbddCapacityAdvisor` provides a constant for the most common priorities:
+
+| Advisor            | Purpose                                    | Growth | Free after GC | GC if freeable | Table size¹ | Run time¹ |
+|--------------------|--------------------------------------------|--------|---------------|----------------|-------------|-----------|
+| `DEFAULT`          | Used if no advisor is provided             | 150%²  | 25%           | > 10%          | -           | -         |
+| `MINIMAL_MEMORY`   | Smallest table, whatever the costs         | 12%    | 10%           | > 10%          | -40%        | +40%      |
+| `LOW_MEMORY`       | Large memory savings at a moderate cost    | 25%    | 15%           | > 10%          | -35%        | +20%      |
+| `BALANCED`         | Memory savings, hardly losing performance  | 50%    | 25%           | > 10%          | -25%        | +3%       |
+| `HIGH_PERFORMANCE` | Fastest, if memory is available            | 150%³  | 50%           | > 25%          | +20%⁴       | -10%      |
+
+¹ Compared to `DEFAULT`, as the geometric mean over the workloads of `CapacityAdvisorBenchmark`.<br>
+² Growing by 30% from 500000 nodes (12 MB) on.<br>
+³ Growing by 50% from 4 million nodes (96 MB) on.<br>
+⁴ Up to 2.5 times as large for workloads keeping more than half of the table in use.
+
+All of them start with a small table. A larger initial capacity turned out to have no measurable benefit for the
+workloads tested, as growing a small table is cheap, while it makes creating an instance considerably more expensive.
+An application that knows how many nodes it needs can still implement `ZbddCapacityAdvisor` itself.
 
 ### Variables and Cubes
 
@@ -318,6 +341,7 @@ Results are written to `.build/reports/jmh/results.json`.
 | `SharedNodesBenchmark`                                                    | Scaling on diagrams with many paths through few nodes, comparing plain and cached instances               |
 | `GarbageCollectionBenchmark`                                              | A single garbage collection, depending on the table size and the amount of garbage                        |
 | `GcPolicyBenchmark`                                                       | Capacity advisor policies on a table nearly full of live nodes                                            |
+| `CapacityAdvisorBenchmark`                                                | Run time and table size of complete workloads with each predefined capacity advisor                      |
 | `LifecycleBenchmark`                                                      | Creating variables, building sets, growing the table and clearing an instance                             |
 | `ConcurrentReadBenchmark`, `ConcurrentWriteBenchmark`                     | Throughput with 1 to 8 threads; the read benchmark compares locked with direct access (see below)         |
 | `ConcurrentMixedBenchmark`                                                | Readers competing with a thread that writes or runs garbage collections (see below)                       |

@@ -48,7 +48,7 @@ class ZbddImplTest
   @DisplayName("Node lookup in buckets 0 and 1 after clear")
   void lookupAfterClear()
   {
-    final var zbdd = new ZbddImpl(DefaultCapacityAdvisor.INSTANCE);
+    final var zbdd = new ZbddImpl(PresetCapacityAdvisor.DEFAULT);
 
     // populate the hash table, including the chains for buckets 0 and 1
     var vars = new int[60];
@@ -93,7 +93,7 @@ class ZbddImplTest
   @DisplayName("Lookup counters beyond int range")
   void lookupCountersBeyondIntRange() throws Exception
   {
-    final var zbdd = new ZbddImpl(DefaultCapacityAdvisor.INSTANCE);
+    final var zbdd = new ZbddImpl(PresetCapacityAdvisor.DEFAULT);
     final var statistics = zbdd.getStatistics();
 
     // simulate 2^31 - 1 node lookups, all of them hits
@@ -118,7 +118,7 @@ class ZbddImplTest
   @DisplayName("Lookup ratios without lookups")
   void lookupRatiosWithoutLookups()
   {
-    final var zbdd = new ZbddImpl(DefaultCapacityAdvisor.INSTANCE);
+    final var zbdd = new ZbddImpl(PresetCapacityAdvisor.DEFAULT);
 
     for(var statistics: new ZbddStatistics[] { zbdd.getStatistics(), new ZbddConcurrent(zbdd).getStatistics() })
     {
@@ -142,7 +142,7 @@ class ZbddImplTest
   @DisplayName("Highest variable survives garbage collection")
   void highestVarSurvivesGc() throws Exception
   {
-    final var zbdd = new ZbddImpl(DefaultCapacityAdvisor.INSTANCE);
+    final var zbdd = new ZbddImpl(PresetCapacityAdvisor.DEFAULT);
     final var lowVar = zbdd.createVar();
 
     // simulate MAX_VAR - 1 created variables
@@ -171,7 +171,7 @@ class ZbddImplTest
   @DisplayName("Cube with variable for variables far apart")
   void hasCubeWithVarForDistantVars() throws Exception
   {
-    final var zbdd = new ZbddImpl(DefaultCapacityAdvisor.INSTANCE);
+    final var zbdd = new ZbddImpl(PresetCapacityAdvisor.DEFAULT);
     final var lowVar = zbdd.createVar();
     final var midVar = zbdd.createVar();
 
@@ -241,7 +241,7 @@ class ZbddImplTest
   @DisplayName("Unmatched decRef leaves the reference count unchanged")
   void unmatchedDecRef()
   {
-    final var zbdd = new ZbddImpl(DefaultCapacityAdvisor.INSTANCE);
+    final var zbdd = new ZbddImpl(PresetCapacityAdvisor.DEFAULT);
     final var cube = zbdd.cube(zbdd.createVar());
     final var nodeInfo = zbdd.getZbddNodeInfo(cube);
 
@@ -268,7 +268,7 @@ class ZbddImplTest
   @DisplayName("Node info of a freed and a recycled node")
   void nodeInfoOfFreedNode()
   {
-    final var zbdd = new ZbddImpl(DefaultCapacityAdvisor.INSTANCE);
+    final var zbdd = new ZbddImpl(PresetCapacityAdvisor.DEFAULT);
     final var var1 = zbdd.createVar();
     final var var2 = zbdd.createVar();
     final var cube = zbdd.cube(var1);
@@ -292,7 +292,7 @@ class ZbddImplTest
   @SuppressWarnings("DataFlowIssue")
   void nullVisitorForEmptySet()
   {
-    final var zbdd = new ZbddImpl(DefaultCapacityAdvisor.INSTANCE);
+    final var zbdd = new ZbddImpl(PresetCapacityAdvisor.DEFAULT);
 
     assertThrowsExactly(NullPointerException.class, () -> zbdd.visitCubes(EMPTY, null));
     assertThrowsExactly(NullPointerException.class, () -> zbdd.visitCubeZbdds(EMPTY, null));
@@ -304,7 +304,7 @@ class ZbddImplTest
   @CsvSource({ "1000, 2000", "1600, 5000" })
   void capacityAfterGarbageCollection(int liveNodes, int expectedCapacity)
   {
-    final var zbdd = new ZbddImpl(DefaultCapacityAdvisor.INSTANCE);
+    final var zbdd = new ZbddImpl(PresetCapacityAdvisor.DEFAULT);
     final var statistics = zbdd.getStatistics();
 
     while(statistics.getNodesCapacity() - statistics.getFreeNodes() < liveNodes)
@@ -326,7 +326,7 @@ class ZbddImplTest
   @DisplayName("Nodes allocated since the last garbage collection")
   void nodesAllocatedSinceGC()
   {
-    final var zbdd = new ZbddImpl(DefaultCapacityAdvisor.INSTANCE);
+    final var zbdd = new ZbddImpl(PresetCapacityAdvisor.DEFAULT);
     final var statistics = zbdd.getStatistics();
 
     assertEquals(0, statistics.getNodesAllocatedSinceGC());
@@ -366,7 +366,7 @@ class ZbddImplTest
   @CsvSource({ "false, 0, 5000", "true, 1, 2000" })
   void gcAfterGarbageCollection(boolean releaseRoots, int expectedGcCount, int expectedCapacity)
   {
-    final var zbdd = new ZbddImpl(DefaultCapacityAdvisor.INSTANCE);
+    final var zbdd = new ZbddImpl(PresetCapacityAdvisor.DEFAULT);
     final var statistics = zbdd.getStatistics();
     final var roots = new ArrayList<Integer>();
 
@@ -397,7 +397,7 @@ class ZbddImplTest
   @DisplayName("Default advisor doesn't collect garbage in a large table with little garbage")
   void noGcInLargeTable()
   {
-    final var zbdd = new ZbddImpl(DefaultCapacityAdvisor.INSTANCE);
+    final var zbdd = new ZbddImpl(PresetCapacityAdvisor.DEFAULT);
     final var statistics = zbdd.getStatistics();
 
     for(var i = 0; statistics.getNodesCapacity() <= 500000; i++)
@@ -420,6 +420,6 @@ class ZbddImplTest
         new Class<?>[] { ZbddStatistics.class },
         (proxy, method, args) -> method.getName().equals("getNodesCapacity") ? (Object)MAX_NODES : (Object)0);
 
-    assertTrue(DefaultCapacityAdvisor.INSTANCE.isGCRequired(statistics));
+    assertTrue(PresetCapacityAdvisor.DEFAULT.isGCRequired(statistics));
   }
 }

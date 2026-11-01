@@ -15,6 +15,7 @@
  */
 package de.sayayi.lib.zbdd;
 
+import de.sayayi.lib.zbdd.internal.PresetCapacityAdvisor;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -22,6 +23,18 @@ import org.jetbrains.annotations.NotNull;
 /**
  * A zbdd capacity advisor manages the initial nodes capacity and how it grows over time.
  * It also determines the conditions for activating the garbage collector.
+ * <p>
+ * A generic advisor is never the best choice for a particular application, but the constants provided by this interface
+ * are sensible starting points, each making a different trade-off between memory usage and performance:
+ * <ul>
+ *   <li>{@link #DEFAULT}: the advisor used if none is provided</li>
+ *   <li>{@link #MINIMAL_MEMORY}: the smallest possible node table, whatever the costs</li>
+ *   <li>{@link #LOW_MEMORY}: nearly the same memory savings at a much lower cost</li>
+ *   <li>{@link #BALANCED}: memory savings with hardly any loss of performance</li>
+ *   <li>{@link #HIGH_PERFORMANCE}: the fastest, at the cost of a larger node table</li>
+ * </ul>
+ * The figures given by these constants are relative to {@link #DEFAULT} and were measured with the workloads
+ * of the {@code CapacityAdvisorBenchmark}. They are geometric means, so individual applications will differ.
  *
  * @author Jeroen Gremmen
  *
@@ -29,6 +42,63 @@ import org.jetbrains.annotations.NotNull;
  */
 public interface ZbddCapacityAdvisor
 {
+  /**
+   * The advisor used by {@link ZbddFactory} if no advisor is provided. It's what the figures of the other constants are
+   * relative to.
+   * <p>
+   * The table grows by 150%, by 30% from 500000 nodes (12 MB) on, and leaves 25% of the nodes free after a garbage
+   * collection, which happens if this is expected to free more than 10% of the nodes.
+   *
+   * @since 0.8.0
+   */
+  ZbddCapacityAdvisor DEFAULT = PresetCapacityAdvisor.DEFAULT;
+
+  /**
+   * Keeps the node table as small as possible, for an application where memory is scarce and run time is secondary.
+   * <p>
+   * The table grows by 12% only and is garbage collected as soon as this is expected to free 10% of the nodes. The
+   * table is about 40% smaller and an average workload takes about 40% more time, depending on the workload up to
+   * twice as much.
+   *
+   * @since 0.8.0
+   */
+  ZbddCapacityAdvisor MINIMAL_MEMORY = PresetCapacityAdvisor.MINIMAL_MEMORY;
+
+  /**
+   * Saves a substantial amount of memory at a moderate cost, for an application having to keep an eye on its memory
+   * usage.
+   * <p>
+   * The table grows by 25% and leaves 15% of the nodes free after a garbage collection. The table is about 35% smaller
+   * and an average workload takes about 20% more time.
+   *
+   * @since 0.8.0
+   */
+  ZbddCapacityAdvisor LOW_MEMORY = PresetCapacityAdvisor.LOW_MEMORY;
+
+  /**
+   * Saves memory with hardly any loss of performance. This is the advisor to start with if there's no particular reason
+   * to prefer one of the others.
+   * <p>
+   * The table grows by 50% and leaves 25% of the nodes free after a garbage collection. The table is about 25% smaller
+   * and an average workload takes about 3% more time.
+   *
+   * @since 0.8.0
+   */
+  ZbddCapacityAdvisor BALANCED = PresetCapacityAdvisor.BALANCED;
+
+  /**
+   * Avoids garbage collections and table growth where possible, for an application where run time is what counts and
+   * memory is available.
+   * <p>
+   * The table grows by 150%, by 50% from 4 million nodes (96 MB) on, and leaves half of the nodes free after a garbage
+   * collection. An average workload takes about 10% less time and has about 20% more nodes in its table. A workload
+   * keeping more than half of its table in use can end up with a table that is 2.5 times as large.
+   *
+   * @since 0.8.0
+   */
+  ZbddCapacityAdvisor HIGH_PERFORMANCE = PresetCapacityAdvisor.HIGH_PERFORMANCE;
+
+
   /**
    * Return the initial number of nodes available for zbdd operations.
    *
