@@ -18,6 +18,7 @@ package de.sayayi.lib.zbdd.internal;
 import de.sayayi.lib.zbdd.ZbddCapacityAdvisor;
 import de.sayayi.lib.zbdd.ZbddStatistics;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import static de.sayayi.lib.zbdd.internal.ZbddImpl.MAX_NODES;
