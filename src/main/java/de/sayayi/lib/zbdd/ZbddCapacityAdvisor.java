@@ -123,9 +123,12 @@ public interface ZbddCapacityAdvisor
 
 
   /**
-   * Returns the minimum number of free nodes. This method is invoked directly after node
-   * garbage collection. If the remaining number of free nodes is less than the value returned
-   * by this method, the zbdd node capacity is increased.
+   * Returns the minimum number of free nodes. This method is invoked directly after a garbage collection that was
+   * {@linkplain #isGCRequired(ZbddStatistics) required} to provide a new node. If the remaining number of free nodes is
+   * less than the value returned by this method, the zbdd node capacity is increased.
+   * <p>
+   * This method is not invoked after a garbage collection performed explicitly by {@link Zbdd#gc()} or
+   * {@link Zbdd#calculateNodeDependency()}.
    *
    * @param statistics  current zbdd statistics, not {@code null}
    *
@@ -155,6 +158,9 @@ public interface ZbddCapacityAdvisor
    * Tells whether unreferenced nodes should be garbage collected. This method is invoked as soon as a new node is
    * created, the number of free nodes is less than 2 and there is at least one
    * {@linkplain ZbddStatistics#getUnreferencedNodes() unreferenced} node.
+   * <p>
+   * While a {@linkplain Zbdd.ZbddCallback callback} is running, garbage collection is not possible. This method is not
+   * invoked then and the capacity is increased instead.
    * <p>
    * Garbage collection is an expensive operation and only useful if a substantial number of nodes are expected to be
    * freed in the process. The current number of unreferenced nodes is an upper limit only, as those nodes may still be

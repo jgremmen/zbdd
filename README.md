@@ -31,7 +31,7 @@ algebra — such as solving constraint satisfaction problems, configuration anal
 
 ## Features
 
-- **Core set operations** — `union`, `intersection`, `difference`, `subset0`, `subset1`, `change`, `count`, and `countExact`
+- **Core set operations** — `union`, `intersect`, `difference`, `subset0`, `subset1`, `change`, `count`, and `countExact`
 - **Algebraic operations** — `multiply` (Cartesian product), `divide` (quotient), and `modulo` (remainder)
 - **Set manipulation** — `cube`, `atomize`, and `removeBase`
 - **Set queries** — `contains` and `hasCubeWithVar`

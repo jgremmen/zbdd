@@ -725,11 +725,11 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
   /**
    * Perform garbage collection on the internal zbdd structure.
    * <p>
-   * This method frees all unreferenced zbdd nodes and updates statistics. Nodes with a reference count greater than
-   * zero are protected from garbage collection.
-   * <p>
-   * After garbage collection, all dead and not referenced nodes have been freed and the statistics have been updated
-   * accordingly.
+   * This method frees all zbdd nodes that are not protected and updates statistics accordingly. A node is protected if
+   * it has a reference count greater than zero, if it is an operand or intermediate result of a zbdd operation in
+   * progress (e.g. when invoked from a {@link CubeVisitor visitor}), or if it is reachable from a protected node.
+   * Unreferenced nodes, both {@linkplain ZbddNodeInfo#isNewNode() new} and {@linkplain ZbddNodeInfo#isDeadNode() dead},
+   * therefore survive garbage collection as long as they are reachable from a protected node.
    *
    * @return  the number of freed zbdd nodes
    *

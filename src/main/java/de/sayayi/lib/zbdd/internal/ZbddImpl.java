@@ -2066,8 +2066,8 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   /**
    * Performs garbage collection on the internal ZBDD structure.
    * <p>
-   * After garbage collection, all nodes that are neither referenced nor reachable from a referenced node have been
-   * freed and the statistics have been updated accordingly.
+   * After garbage collection, all nodes that are neither referenced, nor protected by a running operation, nor
+   * reachable from such a node have been freed and the statistics have been updated accordingly.
    *
    * @return  the number of freed ZBDD nodes
    *
