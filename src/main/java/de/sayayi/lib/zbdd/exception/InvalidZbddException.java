@@ -18,15 +18,20 @@ package de.sayayi.lib.zbdd.exception;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.Serial;
+
 
 /**
- * Thrown when an invalid or corrupted ZBDD node reference is encountered during an operation. This typically
- * indicates that a ZBDD node has been garbage collected or was never properly created.
+ * Thrown when an invalid or corrupted ZBDD node reference is encountered during an operation. This typically indicates
+ * that a ZBDD node has been garbage collected or was never properly created.
  *
  * @author Jeroen Gremmen
  */
 public class InvalidZbddException extends ZbddException
 {
+  @Serial
+  private static final long serialVersionUID = 2718376824110143331L;
+
   private final int zbdd;
 
 

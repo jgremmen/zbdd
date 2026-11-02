@@ -19,16 +19,21 @@ import de.sayayi.lib.zbdd.Zbdd;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.Serial;
+
 
 /**
- * Thrown when a ZBDD node reference is outside the valid range. The valid range of ZBDD node references
- * is from {@link #getLowBoundZbdd()} to {@link #getHighBoundZbdd()} inclusive.
+ * Thrown when a ZBDD node reference is outside the valid range. The valid range of ZBDD node references is from
+ * {@link #getLowBoundZbdd()} to {@link #getHighBoundZbdd()} inclusive.
  *
  * @author Jeroen Gremmen
  * @since 0.6.0
  */
 public class ZbddOutOfRangeException extends InvalidZbddException
 {
+  @Serial
+  private static final long serialVersionUID = 1685011163324773993L;
+
   private final int highBoundZbdd;
 
 

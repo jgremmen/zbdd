@@ -18,15 +18,20 @@ package de.sayayi.lib.zbdd.exception;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.Serial;
+
 
 /**
- * Thrown when an invalid variable identifier is used in a ZBDD operation. The valid range of variable identifiers
- * is from {@link #getLowBoundVar()} to {@link #getHighBoundVar()} inclusive.
+ * Thrown when an invalid variable identifier is used in a ZBDD operation. The valid range of variable identifiers is
+ * from {@link #getLowBoundVar()} to {@link #getHighBoundVar()} inclusive.
  *
  * @author Jeroen Gremmen
  */
 public final class InvalidVarException extends ZbddException
 {
+  @Serial
+  private static final long serialVersionUID = -466671807900629034L;
+
   private final int var;
   private final int highBoundVar;
 

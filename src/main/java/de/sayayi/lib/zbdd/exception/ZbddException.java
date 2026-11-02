@@ -17,10 +17,12 @@ package de.sayayi.lib.zbdd.exception;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.io.Serial;
+
 
 /**
- * Base runtime exception for all ZBDD-related errors. All specific ZBDD exceptions extend this class, allowing
- * callers to catch any ZBDD error with a single handler if desired.
+ * Base runtime exception for all ZBDD-related errors. All specific ZBDD exceptions extend this class, allowing callers
+ * to catch any ZBDD error with a single handler if desired.
  *
  * @author Jeroen Gremmen
  *
@@ -30,6 +32,10 @@ import org.jetbrains.annotations.NotNull;
  */
 public class ZbddException extends RuntimeException
 {
+  @Serial
+  private static final long serialVersionUID = -4488652111025220257L;
+
+
   /**
    * Constructs a ZBDD exception with the given {@code message}.
    *
@@ -37,5 +43,18 @@ public class ZbddException extends RuntimeException
    */
   public ZbddException(@NotNull String message) {
     super(message);
+  }
+
+
+  /**
+   * Constructs a ZBDD exception with the given {@code message} and {@code cause}.
+   *
+   * @param message  exception message, not {@code null}
+   * @param cause    cause of this exception, or {@code null} if the cause is nonexistent or unknown
+   *
+   * @since 0.8.0
+   */
+  public ZbddException(@NotNull String message, Throwable cause) {
+    super(message, cause);
   }
 }
