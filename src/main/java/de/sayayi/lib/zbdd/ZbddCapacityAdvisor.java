@@ -16,6 +16,7 @@
 package de.sayayi.lib.zbdd;
 
 import de.sayayi.lib.zbdd.internal.PresetCapacityAdvisor;
+import de.sayayi.lib.zbdd.internal.ZbddImpl;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -98,9 +99,22 @@ public interface ZbddCapacityAdvisor
    */
   ZbddCapacityAdvisor HIGH_PERFORMANCE = PresetCapacityAdvisor.HIGH_PERFORMANCE;
 
+  /**
+   * The maximum node capacity of a zbdd instance. It is the largest node table the JVM is able to allocate; neither the
+   * initial capacity nor a capacity increase can exceed it.
+   *
+   * @see #getInitialCapacity()
+   * @see #adviseIncrement(ZbddStatistics)
+   *
+   * @since 0.8.0
+   */
+  int MAX_CAPACITY = ZbddImpl.MAX_NODES;
+
 
   /**
    * Return the initial number of nodes available for zbdd operations.
+   * <p>
+   * A value below {@code 8} is treated as {@code 8}, a value above {@link #MAX_CAPACITY} as {@code MAX_CAPACITY}.
    *
    * @return  initial capacity, at least 8
    */

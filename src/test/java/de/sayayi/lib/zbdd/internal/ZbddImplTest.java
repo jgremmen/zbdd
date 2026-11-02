@@ -238,6 +238,38 @@ class ZbddImplTest
 
 
   @Test
+  @DisplayName("Initial capacity is limited to the supported range")
+  void initialCapacityRange()
+  {
+    assertEquals(8, new ZbddImpl(initialCapacityAdvisor(-1)).getStatistics().getNodesCapacity());
+
+    // the capacity is limited to MAX_NODES, which exceeds any reasonable heap, instead of overflowing the array size
+    assertThrowsExactly(OutOfMemoryError.class, () -> new ZbddImpl(initialCapacityAdvisor(MAX_VALUE)));
+  }
+
+
+  @Test
+  @DisplayName("A node table with the maximum capacity does not exceed the array size limit of the JVM")
+  void maximumCapacityFitsArrayLimit()
+  {
+    // 6 ints per node record; the JVM reliably allocates arrays with up to Integer.MAX_VALUE - 8 elements
+    assertEquals(357_913_939, MAX_NODES);
+    assertTrue(MAX_NODES * 6L <= MAX_VALUE - 8);
+  }
+
+
+  private static @NotNull ZbddCapacityAdvisor initialCapacityAdvisor(int initialCapacity)
+  {
+    return new ZbddCapacityAdvisor() {
+      @Override public int getInitialCapacity() { return initialCapacity; }
+      @Override public int getMinimumFreeNodes(@NotNull ZbddStatistics statistics) { return 2; }
+      @Override public int adviseIncrement(@NotNull ZbddStatistics statistics) { return 16; }
+      @Override public boolean isGCRequired(@NotNull ZbddStatistics statistics) { return false; }
+    };
+  }
+
+
+  @Test
   @DisplayName("Unmatched decRef leaves the reference count unchanged")
   void unmatchedDecRef()
   {

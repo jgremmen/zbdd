@@ -72,8 +72,12 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   private static final int NODE_RECORD_SIZE = 6;            // ints per node record
   private static final int FREE_LIST_END = -1;              // _NEXT of the last node in the free list
 
-  /** Maximum number of nodes supported by a single ZBDD instance. */
-  public static final int MAX_NODES = MAX_VALUE / NODE_RECORD_SIZE;
+  /**
+   * Maximum number of nodes supported by a single ZBDD instance. The node array is limited to
+   * {@code Integer.MAX_VALUE - 8} elements, the largest array size the JVM reliably allocates, so a table of this
+   * capacity can actually be allocated.
+   */
+  public static final int MAX_NODES = (MAX_VALUE - 8) / NODE_RECORD_SIZE;
 
   /**
    * Highest variable number supported by a single ZBDD instance. {@link Integer#MAX_VALUE} is excluded, as marking it
@@ -134,7 +138,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     this.capacityAdvisor = capacityAdvisor;
 
     //noinspection ConstantConditions
-    nodesCapacity = max(capacityAdvisor.getInitialCapacity(), 8);
+    nodesCapacity = clamp(capacityAdvisor.getInitialCapacity(), 8, MAX_NODES);
     nodes = new int[nodesCapacity * NODE_RECORD_SIZE];
 
     initTerminalNode(EMPTY);
