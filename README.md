@@ -158,7 +158,7 @@ int x = zbdd.createVar();
 
 // Create a variable with an associated object
 int y = zbdd.createVar("my-label");
-String label = zbdd.getVarObject(y);  // "my-label"
+String label = zbdd.getVarObject(y, String.class);  // "my-label"
 
 // Build cubes (single combinations of variables)
 int cube1 = zbdd.cube(x);     // { x }

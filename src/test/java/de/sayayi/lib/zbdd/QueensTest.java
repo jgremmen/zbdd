@@ -149,7 +149,7 @@ class QueensTest
       for(int c = n; c-- > 0;)
         vars[r][c] = zbdd.createVar(String.format(format, 'a' + c, n - r));
 
-    zbdd.setLiteralResolver(zbdd::getVarObject);
+    zbdd.setLiteralResolver(var -> zbdd.getVarObject(var, String.class));
 
     return vars;
   }

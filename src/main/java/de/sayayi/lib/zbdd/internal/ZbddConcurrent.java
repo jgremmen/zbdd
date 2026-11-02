@@ -198,7 +198,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   /** {@inheritDoc} */
   @Override
   @Contract(pure = true)
-  public <T> T getVarObject(int var)
+  public Object getVarObject(int var)
   {
     lock.lock();
     try {

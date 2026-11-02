@@ -233,6 +233,8 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
 
   /**
    * Return the associated object for the given {@code var}.
+   * <p>
+   * Use {@link #getVarObject(int, Class)} to obtain the object as a specific type.
    *
    * @param var  var to get the object for
    *
@@ -242,9 +244,35 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    *
    * @see #createVar()
    * @see #createVar(Object)
+   * @see #getVarObject(int, Class)
    */
   @Contract(pure = true)
-  <T> T getVarObject(int var);
+  Object getVarObject(int var);
+
+
+  /**
+   * Return the associated object for the given {@code var}, checking that it is an instance of {@code type}.
+   * <p>
+   * A mismatch is reported by this method, naming both the type of the associated object and {@code type}.
+   *
+   * @param var   var to get the object for
+   * @param type  expected type of the associated object, not {@code null}
+   *
+   * @return  object associated with {@code var} or {@code null} if the variable was created without an object
+   *
+   * @param <T>  expected type of the associated object
+   *
+   * @throws InvalidVarException  if {@code var} is not a valid variable
+   * @throws ClassCastException   if the associated object is not an instance of {@code type}
+   *
+   * @see #createVar(Object)
+   *
+   * @since 0.8.0
+   */
+  @Contract(pure = true)
+  default <T> T getVarObject(int var, @NotNull Class<T> type) {
+    return type.cast(getVarObject(var));
+  }
 
 
   /**

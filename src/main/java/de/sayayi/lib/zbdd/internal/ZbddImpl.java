@@ -339,9 +339,8 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   /** {@inheritDoc} */
   @Override
   @Contract(pure = true)
-  @SuppressWarnings("unchecked")
-  public <T> T getVarObject(int var) {
-    return (T)varObjectMap.get(checkVar(var));
+  public Object getVarObject(int var) {
+    return varObjectMap.get(checkVar(var));
   }
 
 

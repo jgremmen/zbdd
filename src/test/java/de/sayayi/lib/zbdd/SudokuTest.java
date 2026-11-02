@@ -214,7 +214,7 @@ class SudokuTest
 
       for(int var: vars)
       {
-        final var cell = zbdd.<GridCellValue>getVarObject(var);
+        final var cell = zbdd.getVarObject(var, GridCellValue.class);
         sudoku[cell.row - 1][cell.col - 1] = (char)('0' + cell.value);
       }
 
@@ -363,7 +363,7 @@ class SudokuTest
 
       for(int var: cubeVars)
       {
-        final var cell = zbdd.<GridCellValue>getVarObject(var);
+        final var cell = zbdd.getVarObject(var, GridCellValue.class);
         sudoku[10 * (cell.row - 1) + cell.col] = (char)('0' + cell.value);
       }
 

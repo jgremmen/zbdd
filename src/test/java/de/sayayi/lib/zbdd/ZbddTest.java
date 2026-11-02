@@ -745,6 +745,28 @@ class ZbddTest
   }
 
 
+  @ParameterizedTest(name = "concurrent: {0}")
+  @DisplayName("Var object with type check")
+  @ValueSource(booleans = { false, true })
+  @SuppressWarnings("DataFlowIssue")
+  void getVarObjectWithType(boolean concurrent)
+  {
+    final var zbdd = concurrent
+        ? ZbddFactory.asConcurrent(ZbddFactory.create())
+        : ZbddFactory.create();
+    final var labeled = zbdd.createVar("label");
+    final var unlabeled = zbdd.createVar();
+
+    assertEquals("label", zbdd.getVarObject(labeled, String.class));
+    assertEquals("label", zbdd.getVarObject(labeled, CharSequence.class));
+    assertNull(zbdd.getVarObject(unlabeled, Integer.class));
+
+    assertThrowsExactly(ClassCastException.class, () -> zbdd.getVarObject(labeled, Integer.class));
+    assertThrowsExactly(InvalidVarException.class, () -> zbdd.getVarObject(unlabeled + 1, String.class));
+    assertThrowsExactly(NullPointerException.class, () -> zbdd.getVarObject(labeled, null));
+  }
+
+
   @Test
   @DisplayName("Zbdd node info")
   void getZbddNodeInfo()
