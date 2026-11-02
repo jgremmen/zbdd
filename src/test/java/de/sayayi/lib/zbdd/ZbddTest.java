@@ -18,6 +18,7 @@ package de.sayayi.lib.zbdd;
 import de.sayayi.lib.zbdd.cache.ZbddFastCache;
 import de.sayayi.lib.zbdd.exception.InvalidVarException;
 import de.sayayi.lib.zbdd.exception.InvalidZbddException;
+import de.sayayi.lib.zbdd.exception.ZbddCapacityExhaustedException;
 import de.sayayi.lib.zbdd.exception.ZbddException;
 import de.sayayi.lib.zbdd.exception.ZbddOutOfRangeException;
 import org.jetbrains.annotations.NotNull;
@@ -1111,8 +1112,9 @@ class ZbddTest
     assertEquals(0, statistics.getFreeNodes());
 
     final var b = zbdd.createVar();
-    final var exception = assertThrowsExactly(ZbddException.class, () -> zbdd.cube(a, b));
-    assertEquals("nodes capacity exhausted", exception.getMessage());
+    final var exception = assertThrowsExactly(ZbddCapacityExhaustedException.class, () -> zbdd.cube(a, b));
+    assertEquals("nodes capacity exhausted at 16 nodes", exception.getMessage());
+    assertEquals(16, exception.getNodesCapacity());
 
     assertEquals(16, statistics.getNodesCapacity());
     assertEquals(0, statistics.getCapacityIncreaseCount());
@@ -1140,7 +1142,7 @@ class ZbddTest
     final var y = zbdd.incRef(zbdd.union(zbdd.cube(v[4], v[5]), zbdd.cube(v[0], v[3]), zbdd.cube(v[2])));
 
     // the product requires more nodes than available and fails while intermediate results are protected
-    assertThrowsExactly(ZbddException.class, () -> zbdd.multiply(x, y));
+    assertThrowsExactly(ZbddCapacityExhaustedException.class, () -> zbdd.multiply(x, y));
 
     zbdd.decRef(x);
     zbdd.decRef(y);

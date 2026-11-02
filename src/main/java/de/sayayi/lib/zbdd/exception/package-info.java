@@ -24,6 +24,7 @@
  * <pre>
  * {@link java.lang.RuntimeException}
  *   └── {@link de.sayayi.lib.zbdd.exception.ZbddException} - Base exception for all ZBDD-related errors
+ *         ├── {@link de.sayayi.lib.zbdd.exception.ZbddCapacityExhaustedException} - Node capacity exhausted
  *         ├── {@link de.sayayi.lib.zbdd.exception.InvalidVarException} - Invalid variable identifier
  *         └── {@link de.sayayi.lib.zbdd.exception.InvalidZbddException} - Invalid or corrupted ZBDD node reference
  *               └── {@link de.sayayi.lib.zbdd.exception.ZbddOutOfRangeException} - ZBDD node reference outside valid range

@@ -367,7 +367,7 @@ module your.module {
 Exported packages:
 - `de.sayayi.lib.zbdd` — Core API (`Zbdd`, `ZbddFactory`, `ZbddCapacityAdvisor`, `ZbddLiteralResolver`, `ZbddStatistics`)
 - `de.sayayi.lib.zbdd.cache` — Cache API (`ZbddCache`, `ZbddFastCache`)
-- `de.sayayi.lib.zbdd.exception` — Exceptions (`ZbddException`, `InvalidVarException`, `InvalidZbddException`, `ZbddOutOfRangeException`)
+- `de.sayayi.lib.zbdd.exception` — Exceptions (`ZbddException`, `ZbddCapacityExhaustedException`, `InvalidVarException`, `InvalidZbddException`, `ZbddOutOfRangeException`)
 
 The package `de.sayayi.lib.zbdd.internal` is not exported. When the library is used on the class path, its classes
 are technically accessible, but using them directly is not supported. Always create instances through `ZbddFactory`.

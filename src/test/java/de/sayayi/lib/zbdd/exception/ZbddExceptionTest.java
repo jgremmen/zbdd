@@ -60,6 +60,10 @@ class ZbddExceptionTest
     assertEquals("zbdd", invalidZbddException.getMessage());
     assertEquals(3, invalidZbddException.getZbdd());
 
+    final var capacityExhaustedException = roundTrip(new ZbddCapacityExhaustedException(128, "capacity"));
+    assertEquals("capacity", capacityExhaustedException.getMessage());
+    assertEquals(128, capacityExhaustedException.getNodesCapacity());
+
     final var outOfRangeException = roundTrip(new ZbddOutOfRangeException(42, 15, "range"));
     assertEquals("range", outOfRangeException.getMessage());
     assertEquals(42, outOfRangeException.getZbdd());
