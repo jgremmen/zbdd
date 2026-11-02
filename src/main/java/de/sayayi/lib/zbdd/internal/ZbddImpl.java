@@ -1946,38 +1946,40 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     }
 
     var hash = hash(var, p0, p1);
+    int r;
 
     // find node in the hash chain...
-    for(int r = nodes[hash * NODE_RECORD_SIZE + _CHAIN]; r != 0;)
+    if ((r = __getNode_find(var, p0, p1, hash)) != 0)
     {
-      final var offset = r * NODE_RECORD_SIZE;
-
-      if (nodes[offset + _VAR] == var && nodes[offset + _P0] == p0 && nodes[offset + _P1] == p1)
-      {
-        statistics.nodeLookupHitCount++;
-        return r;
-      }
-
-      r = nodes[offset + _NEXT];
+      statistics.nodeLookupHitCount++;
+      return r;
     }
 
     // increase the number of free nodes if there are not enough nodes available
     if (nodesFree < 2)
     {
+      final var gcCount = statistics.gcCount;
       final var mark = saveAndProtect(p0, p1);
 
       ensureCapacity();
 
       protectedNodes.truncate(mark);
 
-      if (nodesFree == 0)
-        throw new ZbddException("nodes capacity exhausted");
-
       // hash may have changed due to nodes capacity increase
       hash = hash(var, p0, p1);
+
+      // a beforeGc callback may have created the node in the meantime
+      if (statistics.gcCount != gcCount && (r = __getNode_find(var, p0, p1, hash)) != 0)
+      {
+        statistics.nodeLookupHitCount++;
+        return r;
+      }
+
+      if (nodesFree == 0)
+        throw new ZbddException("nodes capacity exhausted");
     }
 
-    final var r = nextFreeNode;
+    r = nextFreeNode;
     final var offset = r * NODE_RECORD_SIZE;
 
     nextFreeNode = nodes[offset + _NEXT];
@@ -1993,6 +1995,26 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
     prependHashChain(r, hash);
 
     return r;
+  }
+
+
+  /**
+   * Searches the hash chain {@code hash} for the node with the given {@code var}, {@code p0} and {@code p1}.
+   *
+   * @return  node or {@code 0} if the hash chain contains no such node
+   */
+  @Contract(pure = true)
+  private int __getNode_find(int var, int p0, int p1, int hash)
+  {
+    for(int r = nodes[hash * NODE_RECORD_SIZE + _CHAIN], offset; r != 0; r = nodes[offset + _NEXT])
+    {
+      offset = r * NODE_RECORD_SIZE;
+
+      if (nodes[offset + _VAR] == var && nodes[offset + _P0] == p0 && nodes[offset + _P1] == p1)
+        return r;
+    }
+
+    return 0;
   }
 
 

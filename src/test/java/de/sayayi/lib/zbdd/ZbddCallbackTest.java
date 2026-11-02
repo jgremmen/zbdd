@@ -156,6 +156,49 @@ class ZbddCallbackTest
   }
 
 
+  @ParameterizedTest(name = "cached = {0}")
+  @DisplayName("A node created in beforeGc is not created a second time by the operation triggering the gc")
+  @ValueSource(booleans = { false, true })
+  void nodeCreatedInBeforeGcStaysCanonical(boolean cached)
+  {
+    final var zbdd = cached
+        ? ZbddFactory.createCached(new SmallCapacityAdvisor(), new ZbddFastCache())
+        : ZbddFactory.create(new SmallCapacityAdvisor());
+    final var statistics = zbdd.getStatistics();
+    final var vars = new int[32];
+
+    for(var i = 0; i < vars.length; i++)
+      vars[i] = zbdd.createVar();
+
+    final var target = vars[vars.length - 1];
+
+    // occupy the table with unreferenced nodes until a single free node is left
+    for(var i = 0; statistics.getFreeNodes() > 1; i++)
+      zbdd.cube(vars[i]);
+
+    final var createdInCallback = new int[] { -1 };
+
+    zbdd.registerCallback(new ZbddCallback() {
+      @Override
+      public void beforeGc()
+      {
+        // the very node the operation triggering the gc is about to create
+        if (createdInCallback[0] == -1)
+          createdInCallback[0] = zbdd.incRef(zbdd.cube(target));
+      }
+    });
+
+    final var gcCount = statistics.getGCCount();
+    final var cube = zbdd.cube(target);
+
+    assertEquals(gcCount + 1, statistics.getGCCount(), "garbage collection expected during cube");
+    assertNotEquals(-1, createdInCallback[0]);
+    assertEquals(createdInCallback[0], cube, "node created twice");
+    assertEquals(cube, zbdd.cube(target));
+    assertEquals(Zbdd.EMPTY, zbdd.difference(cube, createdInCallback[0]));
+  }
+
+
   @Test
   @DisplayName("Results cached in beforeGc are not returned after the gc has freed them")
   void cachedResultsFromBeforeGc()
