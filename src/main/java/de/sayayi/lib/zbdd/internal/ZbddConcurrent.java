@@ -336,7 +336,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
   /** {@inheritDoc} */
   @Override
   @Contract(mutates = "this")
-  public int union(int... p)
+  public int union(int @NotNull ... p)
   {
     lock.lock();
     try {
@@ -1071,7 +1071,7 @@ public sealed class ZbddConcurrent implements Zbdd.Concurrent permits ZbddConcur
     {
       lock.lock();
       try {
-        return statistics.getNodesCapacity() - statistics.getAvailableNodes();
+        return statistics.getOccupiedNodes();
       } finally {
         lock.unlock();
       }

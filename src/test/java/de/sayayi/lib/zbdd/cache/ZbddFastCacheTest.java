@@ -15,6 +15,7 @@
  */
 package de.sayayi.lib.zbdd.cache;
 
+import de.sayayi.lib.zbdd.cache.ZbddCache.Operation1;
 import de.sayayi.lib.zbdd.cache.ZbddCache.Operation2;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -122,6 +123,70 @@ class ZbddFastCacheTest
       assertEquals(operation.ordinal() + 100, cache.getResult(operation, 12345, 67890));
 
     assertEquals(MIN_VALUE, cache.getResult(UNION, 12345, 67891));
+  }
+
+
+  @DisplayName("A hit in the back half of a unary chain moves the entry to the front")
+  @Test
+  void hitMovesUnaryEntryToFront() throws Exception
+  {
+    final var cache = new ZbddFastCache();
+    final var hash1 = ZbddFastCache.class.getDeclaredMethod("hash1", Operation1.class, int.class);
+    final var keys = new int[CHAIN_CAPACITY + 1];
+
+    hash1.setAccessible(true);
+
+    // keys sharing a single slot
+    for(int key = 2, n = 0, slot = (int)hash1.invoke(cache, COUNT, key); n < keys.length; key++)
+      if ((int)hash1.invoke(cache, COUNT, key) == slot)
+        keys[n++] = key;
+
+    // chain from front to back: keys[7] .. keys[0]
+    for(var n = 0; n < CHAIN_CAPACITY; n++)
+      cache.putResult(COUNT, keys[n], n);
+
+    // keys[0] is at the back of the chain and moves to the front
+    assertEquals(0, cache.getResult(COUNT, keys[0]));
+
+    // a new entry evicts keys[1], which is at the back of the chain now
+    cache.putResult(COUNT, keys[CHAIN_CAPACITY], CHAIN_CAPACITY);
+
+    assertEquals(MIN_VALUE, cache.getResult(COUNT, keys[1]));
+    assertEquals(0, cache.getResult(COUNT, keys[0]));
+    for(var n = 2; n <= CHAIN_CAPACITY; n++)
+      assertEquals(n, cache.getResult(COUNT, keys[n]));
+  }
+
+
+  @DisplayName("A hit in the back half of a binary chain moves the entry to the front")
+  @Test
+  void hitMovesBinaryEntryToFront() throws Exception
+  {
+    final var cache = new ZbddFastCache();
+    final var hash2 = ZbddFastCache.class.getDeclaredMethod("hash2", Operation2.class, int.class, int.class);
+    final var keys = new int[CHAIN_CAPACITY + 1];
+
+    hash2.setAccessible(true);
+
+    // key pairs (key, key + 1) sharing a single slot
+    for(int key = 2, n = 0, slot = (int)hash2.invoke(cache, UNION, key, key + 1); n < keys.length; key++)
+      if ((int)hash2.invoke(cache, UNION, key, key + 1) == slot)
+        keys[n++] = key;
+
+    // chain from front to back: keys[7] .. keys[0]
+    for(var n = 0; n < CHAIN_CAPACITY; n++)
+      cache.putResult(UNION, keys[n], keys[n] + 1, n);
+
+    // keys[0] is at the back of the chain and moves to the front
+    assertEquals(0, cache.getResult(UNION, keys[0], keys[0] + 1));
+
+    // a new entry evicts keys[1], which is at the back of the chain now
+    cache.putResult(UNION, keys[CHAIN_CAPACITY], keys[CHAIN_CAPACITY] + 1, CHAIN_CAPACITY);
+
+    assertEquals(MIN_VALUE, cache.getResult(UNION, keys[1], keys[1] + 1));
+    assertEquals(0, cache.getResult(UNION, keys[0], keys[0] + 1));
+    for(var n = 2; n <= CHAIN_CAPACITY; n++)
+      assertEquals(n, cache.getResult(UNION, keys[n], keys[n] + 1));
   }
 
 

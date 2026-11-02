@@ -459,7 +459,7 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * The result contains all combinations that appear in at least one input set. Supplying a single set returns that
    * set unchanged.
    *
-   * @param p  one or more ZBDD nodes to union
+   * @param p  one or more ZBDD nodes to union, not {@code null} or empty
    *
    * @return  ZBDD node representing the union of all input sets
    *
@@ -469,7 +469,7 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    *                                   increased
    */
   @Contract(mutates = "this")
-  int union(int... p);
+  int union(int @NotNull ... p);
 
 
   /**

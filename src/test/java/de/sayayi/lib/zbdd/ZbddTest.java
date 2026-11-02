@@ -726,6 +726,26 @@ class ZbddTest
 
 
   @Test
+  @DisplayName("Invalid var message")
+  @SuppressWarnings("WriteOnlyObject")
+  void invalidVarMessage()
+  {
+    final var zbdd = ZbddFactory.create();
+
+    var ex = assertThrowsExactly(InvalidVarException.class, () -> zbdd.cube(1));
+    assertEquals("invalid var 1, no variables have been created yet", ex.getMessage());
+    assertEquals(0, ex.getHighBoundVar());
+
+    zbdd.createVar();
+    zbdd.createVar();
+
+    ex = assertThrowsExactly(InvalidVarException.class, () -> zbdd.cube(3));
+    assertEquals("var must be in range 1..2", ex.getMessage());
+    assertEquals(2, ex.getHighBoundVar());
+  }
+
+
+  @Test
   @DisplayName("Zbdd node info")
   void getZbddNodeInfo()
   {

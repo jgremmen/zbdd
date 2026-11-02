@@ -1002,7 +1002,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   /** {@inheritDoc} */
   @Override
   @Contract(mutates = "this")
-  public int union(int... p)
+  public int union(int @NotNull ... p)
   {
     final var n = p.length;
     if (n == 0)
@@ -2478,7 +2478,11 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   protected int checkVar(int var)
   {
     if (var <= 0 || var > lastVarNumber)
-      throw new InvalidVarException(var, lastVarNumber, "var must be in range 1.." + lastVarNumber);
+    {
+      throw new InvalidVarException(var, lastVarNumber, lastVarNumber == 0
+          ? "invalid var " + var + ", no variables have been created yet"
+          : "var must be in range 1.." + lastVarNumber);
+    }
 
     return var;
   }
