@@ -157,7 +157,9 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
    * assigned zbdd cache are retained as well. Callbacks are notified {@linkplain ZbddCallback#beforeClear() before} and
    * {@linkplain ZbddCallback#afterClear() after} clearing.
    *
-   * @throws ZbddException  if invoked from a {@link ZbddCallback callback}
+   * @throws ZbddException  if invoked from a {@link ZbddCallback callback}, or while cubes are visited, i.e. from a
+   *                        {@link CubeVisitor cube visitor}, a {@link CubeZbddVisitor cube zbdd visitor} or the
+   *                        {@link ZbddLiteralResolver literal resolver} used by {@link #toString(int)}
    *
    * @see ZbddCache#clear()
    */
@@ -990,6 +992,9 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
 
   /**
    * Cube visitor interface to be used with {@link #visitCubes(int, CubeVisitor)}.
+   * <p>
+   * A visitor may use the zbdd instance, including the creation of new nodes and {@link #gc() garbage collection}, but
+   * must not invoke {@link #clear() clear}, which throws a {@link ZbddException ZbddException} while cubes are visited.
    */
   @FunctionalInterface
   interface CubeVisitor
@@ -1015,6 +1020,9 @@ public sealed interface Zbdd permits Zbdd.Concurrent, Zbdd.WithCache, ZbddImpl
 
   /**
    * Zbdd node visitor interface to be used with {@link #visitCubeZbdds(int, CubeZbddVisitor)}.
+   * <p>
+   * A visitor may use the zbdd instance, including the creation of new nodes and {@link #gc() garbage collection}, but
+   * must not invoke {@link #clear() clear}, which throws a {@link ZbddException ZbddException} while cubes are visited.
    * <p>
    * Up to version 0.7.x, this interface was named {@code ZbddVisitor}.
    *

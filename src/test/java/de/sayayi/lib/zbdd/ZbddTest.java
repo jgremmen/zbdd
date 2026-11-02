@@ -767,6 +767,40 @@ class ZbddTest
   }
 
 
+  @ParameterizedTest(name = "concurrent: {0}")
+  @DisplayName("Clear is rejected while cubes are visited")
+  @ValueSource(booleans = { false, true })
+  void clearWhileVisitingCubes(boolean concurrent)
+  {
+    final var zbdd = concurrent
+        ? ZbddFactory.asConcurrent(ZbddFactory.create())
+        : ZbddFactory.create();
+    final var a = zbdd.createVar();
+    final var b = zbdd.createVar();
+    final var set = zbdd.incRef(zbdd.union(zbdd.cube(a), zbdd.cube(a, b)));
+
+    assertThrowsExactly(ZbddException.class, () -> zbdd.visitCubes(set, vars -> { zbdd.clear(); return true; }));
+    assertThrowsExactly(ZbddException.class, () -> zbdd.visitCubes(Zbdd.BASE, vars -> { zbdd.clear(); return true; }));
+    assertThrowsExactly(ZbddException.class, () -> zbdd.visitCubeZbdds(set, cube -> { zbdd.clear(); return true; }));
+
+    zbdd.setLiteralResolver(var -> {
+      zbdd.clear();
+      return "v" + var;
+    });
+    assertThrowsExactly(ZbddException.class, () -> zbdd.toString(set));
+    zbdd.setLiteralResolver(var -> "v" + var);
+
+    // nothing has been cleared and garbage collection is still permitted while visiting cubes
+    assertEquals(2, zbdd.count(set));
+    assertTrue(zbdd.visitCubes(set, vars -> { zbdd.gc(); return true; }));
+    assertEquals("{ v1.v2, v1 }", zbdd.toString(set));
+
+    // outside of a traversal, clear is permitted again
+    zbdd.clear();
+    assertFalse(zbdd.isValidVar(a));
+  }
+
+
   @Test
   @DisplayName("Zbdd node info")
   void getZbddNodeInfo()

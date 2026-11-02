@@ -16,10 +16,7 @@
 package de.sayayi.lib.zbdd.internal;
 
 import de.sayayi.lib.zbdd.*;
-import de.sayayi.lib.zbdd.exception.InvalidVarException;
-import de.sayayi.lib.zbdd.exception.InvalidZbddException;
-import de.sayayi.lib.zbdd.exception.ZbddException;
-import de.sayayi.lib.zbdd.exception.ZbddOutOfRangeException;
+import de.sayayi.lib.zbdd.exception.*;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -111,6 +108,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
   private final @NotNull List<ZbddCallback> callbacks;
   private boolean callbacksRunning;
+  private int cubeTraversalsRunning;
 
   private int lastVarNumber;
 
@@ -236,6 +234,10 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   {
     if (callbacksRunning)
       throw new ZbddException("clear must not be invoked from a zbdd callback");
+
+    // the traversal in progress would continue on discarded nodes
+    if (cubeTraversalsRunning > 0)
+      throw new ZbddException("clear must not be invoked while visiting cubes");
 
     invokeCallbacks(ZbddCallback::beforeClear);
     beforeNodesRecycled();
@@ -1976,7 +1978,10 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
       }
 
       if (nodesFree == 0)
-        throw new ZbddException("nodes capacity exhausted");
+      {
+        throw new ZbddCapacityExhaustedException(nodesCapacity,
+            "nodes capacity exhausted at " + nodesCapacity + " nodes");
+      }
     }
 
     r = nextFreeNode;
@@ -2618,6 +2623,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
   {
     final var mark = saveAndProtect(zbdd);
 
+    cubeTraversalsRunning++;
     try {
       final var vars = new IntStack(__getVar(zbdd));
       final var workStack = new IntStack(24);
@@ -2645,6 +2651,7 @@ public sealed class ZbddImpl implements Zbdd permits ZbddCachedImpl
 
       return true;
     } finally {
+      cubeTraversalsRunning--;
       protectedNodes.truncate(mark);
     }
   }
